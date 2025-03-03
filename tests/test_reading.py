@@ -68,3 +68,27 @@ def test_load_stressing_tool():
     config, raw_yaml = _read_yaml_config("stressing_tool_user.yaml")
     _assert_modules_match(config, raw_yaml)
     _assert_exchange_matches(config, raw_yaml)
+
+def test_load_directory():
+    """Test loading multiple agent configs from a directory"""
+    configs = AgentConfig.load_directory(os.path.join("resources", "yaml"))
+    
+    # Verify expected files were loaded
+    expected_files = [
+        os.path.join("resources", "yaml", "echo.yaml"),
+        os.path.join("resources", "yaml", "echo_complete.yaml"), 
+        os.path.join("resources", "yaml", "stressing_tool_user.yaml")
+    ]
+
+    yaml = YAML(typ='safe')
+    for file in expected_files:
+        assert file in configs
+        
+        # Verify each config was loaded correctly
+        with open(file) as f:
+            raw_yaml = yaml.load(f.read())
+            config = configs[file]
+            
+            _assert_modules_match(config, raw_yaml)
+            _assert_exchange_matches(config, raw_yaml)
+

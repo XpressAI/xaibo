@@ -24,6 +24,37 @@ class AgentConfig(BaseModel):
     exchange: Optional[List[ExchangeConfig]] = None
 
     @classmethod
+    def load_directory(cls, directory: str) -> Dict[str, "AgentConfig"]:
+        """Load all agent configurations from a directory recursively.
+
+        Args:
+            directory: Path to directory containing YAML agent configurations
+
+        Returns:
+            Dictionary mapping filenames to AgentConfig instances
+
+        Raises:
+            ValueError: If any YAML files cannot be parsed as valid agent configs
+        """
+        import os
+
+        configs = {}
+
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if file.endswith(('.yml', '.yaml')):
+                    full_path = os.path.join(root, file)
+                    with open(full_path) as f:
+                        try:
+                            yaml_content = f.read()
+                            config = cls.from_yaml(yaml_content)
+                            configs[full_path] = config
+                        except Exception as e:
+                            raise ValueError(f"Invalid agent config in {full_path}: {str(e)}")
+
+        return configs
+
+    @classmethod
     def from_yaml(cls, yaml_str: str) -> "AgentConfig":
         """Load an AgentConfig from a YAML string.
 
