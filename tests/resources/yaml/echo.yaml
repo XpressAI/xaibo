@@ -1,0 +1,7 @@
+# This is the same as echo_complete but only configuring the bare necessities
+id: echo-agent-minimal
+modules:
+  - module: xaibo-examples.echo.Echo
+    id: echo
+    config:
+        prefix: "You said: "

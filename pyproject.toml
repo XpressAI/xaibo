@@ -1,0 +1,16 @@
+[project]
+name = "xaibo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.10.6",
+    "pydantic-yaml>=1.4.0",
+    "pytest>=8.3.4",
+]
+
+[dependency-groups]
+dev = [
+    "devtools>=0.12.2",
+]

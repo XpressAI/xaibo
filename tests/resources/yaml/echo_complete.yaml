@@ -1,0 +1,46 @@
+id: echo-agent
+modules:
+  # A module can be instantiated multiple times with different configuration options
+  # by providing an id we can disambiguate them easily
+  - module: xaibo-examples.echo.Echo
+    id: echo
+    # The provides keyword defines what kind of functionality the module provides.
+    # Usually, that would be inferred from the module definition, but for completeness
+    # we list it here as well.
+    # We use the `provides` and `uses` definitions to automatically match up modules.
+    # If the module can provide more protocols than you want, you can limit it to just
+    # the needed protocols with this configuration option.
+    provides: [TextMessageHandlerProtocol]
+    # The ResponseProtocol is set as a usage implicitly
+    uses: [ResponseProtocol]
+    # all config options are passed as a dictionary to the constructor of the module
+    # using the keyword `config`
+    config:
+        prefix: "You said: "
+  # the following is implicitly available on every agent, but we make it explicit here
+  # The double underscore prefix and suffix tells the system that this is an internal module
+  - module: xaibo.primitives.modules.response
+    id: __response__
+    provides: [ResponseProtocol]
+# The exchange option defines what module instance is supposed to be used
+# A lot of the configuration of it happens automatically by matching up the `provides` and `uses`
+# fields of all loaded modules.
+# If there are ambiguities (e.g. multiple modules providing the same protocol) you can tell the
+# system what should be used where exactly.
+exchange:
+  # The __entry__ module is special and exists implicitly on every agent
+  # If there is only one module that has a MessageHandlerProtocol, it will be
+  # picked up automatically.
+  # At least one module must provide that protocol for at least one modality,
+  # i.e. there must be at least one module providing one of the following:
+  # TextMessageHandlerProtocol, ImageMessageHandlerProtocol, AudioMessageHandlerProtocol,
+  # VideoMessageHandlerProtocol
+  - module: __entry__
+    protocol: TextMessageHandlerProtocol
+    provider: echo
+  # This would typically be configured automatically. For completeness it is shown here.
+  - module: echo
+    protocol: ResponseProtocol
+    provider: __response__
+    # if a module uses two different things that follow the same protocol
+    # the name of the parameter can also be provided here

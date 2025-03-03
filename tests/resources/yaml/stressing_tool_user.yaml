@@ -1,0 +1,14 @@
+id: stressing-tool-user
+modules:
+  - module: xaibo.modules.llm.RelayLLM
+    id: raw-llm
+  - module: xaibo.modules.tools.SystemPromptToolAdapter
+    id: adapted-llm
+  # the Incremental Stess Cognitive Module needs a tool provider
+  # that tool provider is going to be configured through Xircuits
+  - module: xaibo.modules.cognitive.IncrementalStressCognitiveModule
+    id: cognitive-module
+exchange:
+  - module: cognitive-module
+    protocol: LlmProtocol
+    provider: adapted-llm
