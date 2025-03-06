@@ -1,3 +1,4 @@
+from typing import Type, Union
 from .config import AgentConfig
 from .protocols.events import EventType, Event
 import time
@@ -5,7 +6,7 @@ import time
 class Exchange:
     """Handles module instantiation and dependency injection for agents."""
 
-    def instantiate_modules(self, config: AgentConfig, override_bindings: dict[str, any], event_listeners: list[tuple[str, callable]] = None) -> dict[str, any]:
+    def instantiate_modules(self, config: AgentConfig, override_bindings: dict[Union[str, Type], any], event_listeners: list[tuple[str, callable]] = None) -> dict[str, any]:
         """Create instances of all modules defined in config."""
         module_instances = {}
         event_listeners = event_listeners or []
@@ -23,7 +24,8 @@ class Exchange:
             if module_config.id not in module_instances and module_config.uses:
                 module_class = config._import_module_class(module_config.module)
                 dependencies = self._get_module_dependencies(config, module_config, module_instances, module_class)
-                dependencies.update(self._filter_overrides(module_class, override_bindings))
+                dependencies.update(self._get_overrides_by_type(module_class, override_bindings))
+
 
                 module_instances[module_config.id] = Proxy(module_class(
                     **dependencies,
@@ -32,6 +34,7 @@ class Exchange:
 
         module_instances['__entry__'] = self._get_entry_module(config, module_instances)
         return module_instances
+
     def _get_module_dependencies(self, config: AgentConfig, module_config: any, module_instances: dict[str, any], module_class: any) -> dict[str, any]:
         """Get dependencies for a module from exchange config."""
         dependencies = {}
@@ -51,14 +54,19 @@ class Exchange:
                 dependencies[matching_params[0]] = module_instances[exchange.provider]
         return dependencies
 
-    def _filter_overrides(self, module_class: any, override_bindings: dict[str, any]) -> dict[str, any]:
-        """Filter override bindings to only include valid module parameters."""
-        module_params = module_class.__init__.__code__.co_varnames
-        return {
-            k: v for k, v in override_bindings.items()
-            if k in module_params
-        }
+    def _get_overrides_by_type(self, module_class: any, override_bindings: dict[Union[str, Type], any]) -> dict[str, any]:
+        """Map override bindings to module parameters based on type matching."""
+        params = module_class.__init__.__annotations__
+        dependencies = {}
 
+        for param_name, param_type in params.items():
+            # Check for direct type match
+            if param_type in override_bindings:
+                dependencies[param_name] = override_bindings[param_type]
+            # Check for string type name match
+            elif param_type.__name__ in override_bindings:
+                dependencies[param_name] = override_bindings[param_type.__name__]
+        return dependencies
     def _get_entry_module(self, config: AgentConfig, module_instances: dict[str, any]) -> any:
         """Get the entry module from exchange config."""
         entry_module = None
@@ -72,7 +80,6 @@ class Exchange:
             raise ValueError("No message handler found in exchange config")
 
         return entry_module
-
 class MethodProxy:
     """A proxy class that wraps a method and delegates calls.
     

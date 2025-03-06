@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Union, Type
 
 from .agent import Agent
 from .config import AgentConfig
@@ -37,12 +37,12 @@ class Registry:
         """
         return self.get_agent_with(id, {})
     
-    def get_agent_with(self, id: str, override_bindings: dict[str, any]) -> Agent:
+    def get_agent_with(self, id: str, override_bindings: dict[Union[str, Type], any]) -> Agent:
         """Get an agent instance with custom bindings.
 
         Args:
             id (str): The ID of the agent configuration to use
-            override_bindings (dict[str, any]): Custom bindings to override defaults
+            override_bindings (dict[Union[str, Type], any]): Custom bindings to override defaults
 
         Returns:
             Agent: A new agent instance with the specified bindings
@@ -70,7 +70,7 @@ class Registry:
 
         Args:
             prefix (str): Event prefix to listen for. Empty string means all events.
-                         Otherwise should be in format: {package}.{class}.{method_name}.{call|result}
+                         Otherwise, should be in format: {package}.{class}.{method_name}.{call|result}
             handler (Callable[[Event], None]): Function to handle events. Receives Event object with properties:
                               - event_name: Full event name
                               - event_type: EventType.CALL or EventType.RESULT
