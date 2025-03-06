@@ -1,0 +1,69 @@
+import pytest
+from xaibo import AgentConfig, Registry
+
+@pytest.mark.asyncio
+async def test_instantiate_complete_echo():
+    """Test instantiating an echo agent from complete config"""
+    # Load the complete echo config
+    with open("resources/yaml/echo_complete.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+    
+    # Create registry and register agent
+    registry = Registry()
+    registry.registerAgent(config)
+    
+    # Get agent instance
+    agent = registry.getAgent("echo-agent")
+
+    # Test text handling
+    response = await agent.handle_text("Hello world")
+    assert response.text == "You said: Hello world"
+
+@pytest.mark.asyncio
+async def test_instantiate_minimal_echo():
+    """Test instantiating an echo agent from minimal config"""
+    # Load the minimal echo config
+    with open("resources/yaml/echo.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+    
+    # Create registry and register agent
+    registry = Registry()
+    registry.registerAgent(config)
+    
+    # Get agent instance
+    agent = registry.getAgent("echo-agent-minimal")
+    
+    # Test text handling
+    response = await agent.handle_text("Hello world")
+    assert response.text == "You said: Hello world"
+
+@pytest.mark.asyncio
+async def test_instantiate_with_overrides():
+    """Test instantiating an echo agent with custom bindings"""
+    with open("resources/yaml/echo.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+    
+    registry = Registry()
+    registry.registerAgent(config)
+    
+    # Create mock response handler
+    class MockResponse:
+        async def respond_text(self, text: str) -> None:
+            self.last_response = text
+    
+    mock_response = MockResponse()
+    
+    # Get agent with mock response handler
+    agent = registry.getAgentWith("echo-agent-minimal", {
+        "response": mock_response
+    })
+    
+    # Test text handling
+    test_message = "Hello world"
+    await agent.handle_text(test_message)
+    
+    # Verify echo response
+    assert mock_response.last_response == "You said: " + test_message

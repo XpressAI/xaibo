@@ -19,7 +19,7 @@ modules:
         prefix: "You said: "
   # the following is implicitly available on every agent, but we make it explicit here
   # The double underscore prefix and suffix tells the system that this is an internal module
-  - module: xaibo.primitives.modules.response
+  - module: xaibo.primitives.modules.ResponseHandler
     id: __response__
     provides: [ResponseProtocol]
 # The exchange option defines what module instance is supposed to be used

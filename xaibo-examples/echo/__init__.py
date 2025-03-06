@@ -19,10 +19,10 @@ class Echo(TextMessageHandlerProtocol):
         self.prefix: str = self.config.get("prefix", "")
         self.response: ResponseProtocol = response
     
-    def handle_text(self, text: str) -> None:
+    async def handle_text(self, text: str) -> None:
         """Handle an incoming text message by echoing it back with a prefix.
         
         Args:
             text: The text message to handle
         """
-        self.response.respond_text(f"{self.prefix}{text}")
+        await self.response.respond_text(f"{self.prefix}{text}")

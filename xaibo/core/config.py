@@ -100,7 +100,7 @@ class AgentConfig(BaseModel):
 
         if not has_response:
             response_module = ModuleConfig(
-                module="xaibo.primitives.modules.response",
+                module="xaibo.primitives.modules.ResponseHandler",
                 id="__response__",
                 provides=["ResponseProtocol"]
             )

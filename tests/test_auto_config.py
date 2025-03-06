@@ -1,5 +1,3 @@
-import os
-from ruamel.yaml import YAML
 from xaibo import AgentConfig
 
 def test_auto_config_text_handler():

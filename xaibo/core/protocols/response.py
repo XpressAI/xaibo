@@ -1,4 +1,4 @@
-from typing import Protocol, List, Optional, BinaryIO
+from typing import Protocol, List, Optional, BinaryIO, runtime_checkable
 from enum import Enum
 
 class FileType(Enum):
@@ -13,17 +13,33 @@ class FileAttachment:
     content: BinaryIO
     type: FileType
 
+    def __init__(self, content: BinaryIO, type: FileType) -> None:
+        self.content = content
+        self.type = type
+
 
 class Response:
     """Model for responses that can include text and file attachments"""
     text: Optional[str] = None
     attachments: List[FileAttachment] = []
 
+    def __init__(self, text: Optional[str] = None, attachments: Optional[List[FileAttachment]] = None) -> None:
+        self.text = text
+        self.attachments = attachments or []
 
+@runtime_checkable
 class ResponseProtocol(Protocol):
     """Protocol for sending responses."""
 
-    def respond_text(self, response: str) -> None:
+    def get_response(self) -> Response:
+        """Get the current response object.
+
+        Returns:
+            Response: The current response object containing text and/or attachments
+        """
+        ...
+
+    async def respond_text(self, response: str) -> None:
         """Send a response.
 
         Args:
@@ -31,7 +47,7 @@ class ResponseProtocol(Protocol):
         """
         ...
 
-    def respond_image(self, iolike: BinaryIO) -> None:
+    async def respond_image(self, iolike: BinaryIO) -> None:
         """Send an image response.
 
         Args:
@@ -39,7 +55,7 @@ class ResponseProtocol(Protocol):
         """
         ...
 
-    def respond_audio(self, iolike: BinaryIO) -> None:
+    async def respond_audio(self, iolike: BinaryIO) -> None:
         """Send an audio response.
 
         Args:
@@ -47,7 +63,7 @@ class ResponseProtocol(Protocol):
         """
         ...
 
-    def respond_file(self, iolike: BinaryIO) -> None:
+    async def respond_file(self, iolike: BinaryIO) -> None:
         """Send a file response.
 
         Args:
@@ -55,7 +71,7 @@ class ResponseProtocol(Protocol):
         """
         ...
 
-    def respond(self, response: Response) -> None:
+    async def respond(self, response: Response) -> None:
         """Send a complex response containing text and/or file attachments.
 
         Args:
