@@ -4,6 +4,7 @@ from xaibo.core.config import ModuleConfig, ExchangeConfig
 from xaibo.primitives.modules import ResponseHandler
 from xaibo.core.protocols import ResponseProtocol, TextMessageHandlerProtocol
 
+from xaibo_examples.echo import Echo
 
 def test_code_first_minimal():
     """Test creating a minimal agent config in code, equivalent to echo.yaml"""
@@ -52,7 +53,7 @@ def test_code_first_minimal_direct_refs():
     assert len(config.modules) == 2  # Echo module + implicit ResponseHandler
     
     echo_module = next(m for m in config.modules if m.id == "echo")
-    assert echo_module.module == "test_code_first_agent_config.Echo"
+    assert echo_module.module == "xaibo_examples.echo.Echo"
     assert echo_module.config["prefix"] == "You said: "
     
     response_module = next(m for m in config.modules if m.id == "__response__")
@@ -155,7 +156,7 @@ def test_code_first_complete_direct_refs():
     assert len(config.modules) == 2
     
     echo_module = next(m for m in config.modules if m.id == "echo")
-    assert echo_module.module == "test_code_first_agent_config.Echo"
+    assert echo_module.module == "xaibo_examples.echo.Echo"
     assert echo_module.provides == ["TextMessageHandlerProtocol"]
     assert echo_module.uses == ["ResponseProtocol"]
     assert echo_module.config["prefix"] == "You said: "
@@ -220,30 +221,3 @@ async def test_code_first_agent_execution_direct_refs():
     response = await agent.handle_text("Hello world")
     
     assert response.text == "You said: Hello world"
-
-
-class Echo(TextMessageHandlerProtocol):
-    """A simple echo module that repeats back the received text message with a prefix."""
-    
-    @classmethod
-    def provides(cls):
-        return [TextMessageHandlerProtocol]
-
-    def __init__(self, response: ResponseProtocol, config: dict = None):
-        """Initialize the Echo module.
-        
-        Args:
-            response: Response handler for sending messages (required)
-            config: Configuration dictionary that may contain a 'prefix' key
-        """
-        self.config: dict = config or {}
-        self.prefix: str = self.config.get("prefix", "")
-        self.response: ResponseProtocol = response
-    
-    async def handle_text(self, text: str) -> None:
-        """Handle an incoming text message by echoing it back with a prefix.
-        
-        Args:
-            text: The text message to handle
-        """
-        await self.response.respond_text(f"{self.prefix}{text}")
