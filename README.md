@@ -28,12 +28,13 @@ Or create the same agent in code:
 ```python
 from xaibo import AgentConfig, Registry
 from xaibo.core.config import ModuleConfig
+from xaibo_examples.echo import Echo
 
 config = AgentConfig(
     id="echo-agent-minimal",
     modules=[
         ModuleConfig(
-            module="xaibo_examples.echo.Echo", 
+            module=Echo, 
             id="echo",
             config={
                 "prefix": "You said: "
