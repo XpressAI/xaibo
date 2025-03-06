@@ -18,7 +18,7 @@ def _assert_modules_match(config, raw_yaml):
     raw_modules = list(raw_yaml["modules"])
     if not any(m["id"] == "__response__" for m in raw_modules):
         raw_modules.append({
-            "module": "xaibo.primitives.modules.response",
+            "module": "xaibo.primitives.modules.ResponseHandler",
             "id": "__response__",
             "provides": ["ResponseProtocol"]
         })

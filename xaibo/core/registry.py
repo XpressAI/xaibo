@@ -1,6 +1,9 @@
-from xaibo.core.agent import Agent
-from xaibo.core.config import AgentConfig
-from xaibo.core.exchange import Exchange
+from typing import Callable
+
+from .agent import Agent
+from .config import AgentConfig
+from .exchange import Exchange
+from .protocols.events import Event
 
 
 class Registry:
@@ -13,6 +16,7 @@ class Registry:
     def __init__(self):
         """Initialize a new Registry instance with an empty configuration dictionary."""
         self.known_agent_configs: dict[str, AgentConfig] = dict()
+        self.event_listeners: list[tuple[str, str | None, callable]] = []
 
     def register_agent(self, agent_config: AgentConfig) -> None:
         """Register a new agent configuration.
@@ -47,5 +51,35 @@ class Registry:
             raise KeyError(f"No agent configuration found for id: {id}")
         config = self.known_agent_configs[id]
         exchange = Exchange()
-        module_instances = exchange.instantiate_modules(config, override_bindings)
+        
+        # Filter event listeners for this agent
+        agent_listeners = [
+            (prefix, handler) for prefix, agent_filter, handler in self.event_listeners 
+            if agent_filter is None or agent_filter == id
+        ]
+        
+        module_instances = exchange.instantiate_modules(
+            config, 
+            override_bindings,
+            event_listeners=agent_listeners
+        )
         return Agent(id=id, modules=module_instances)
+
+    def register_event_listener(self, prefix: str, handler: Callable[[Event], None], agent_id: str | None = None) -> None:
+        """Register an event listener for module events.
+
+        Args:
+            prefix (str): Event prefix to listen for. Empty string means all events.
+                         Otherwise should be in format: {package}.{class}.{method_name}.{call|result}
+            handler (Callable[[Event], None]): Function to handle events. Receives Event object with properties:
+                              - event_name: Full event name
+                              - event_type: EventType.CALL or EventType.RESULT
+                              - module_class: Module class name
+                              - method_name: Method name
+                              - time: Event timestamp
+                              - call_id: Unique ID for this method call
+                              - arguments: Method arguments (for CALL events)
+                              - result: Method result (for RESULT events)
+            agent_id (str | None): Optional agent ID to filter events for
+        """
+        self.event_listeners.append((prefix, agent_id, handler))

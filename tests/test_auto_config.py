@@ -28,7 +28,7 @@ def test_auto_config_response():
     assert len(response_modules) == 1
     
     response = response_modules[0]
-    assert response.module == "xaibo.primitives.modules.response"
+    assert response.module == "xaibo.primitives.modules.ResponseHandler"
     assert response.provides == ["ResponseProtocol"]
 
 def test_auto_config_uses_field():

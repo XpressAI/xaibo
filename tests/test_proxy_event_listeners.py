@@ -1,0 +1,83 @@
+from xaibo.core.exchange import Proxy
+from xaibo.core.protocols.events import Event, EventType
+
+class DummyClass:
+    def test_method(self, arg1, arg2=None):
+        return f"{arg1}-{arg2}"
+    
+    def another_method(self):
+        return "hello"
+
+def test_proxy_event_listeners():
+    events = []
+    
+    def event_handler(event: Event):
+        events.append(event)
+        
+    obj = DummyClass()
+    proxy = Proxy(obj, event_listeners=[("", event_handler)], agent_id="test-agent")
+    
+    # Test method call events
+    result = proxy.test_method("foo", arg2="bar")
+    assert result == "foo-bar"
+    
+    # Should have generated 2 events (call and result)
+    assert len(events) == 2
+
+    call_event = events[0]
+    assert call_event.event_type == EventType.CALL
+    assert call_event.module_class == "DummyClass"
+    assert call_event.method_name == "test_method"
+    assert call_event.arguments == {"args": ("foo",), "kwargs": {"arg2": "bar"}}
+    assert call_event.agent_id == "test-agent"
+    
+    result_event = events[1]
+    assert result_event.event_type == EventType.RESULT
+    assert result_event.module_class == "DummyClass" 
+    assert result_event.method_name == "test_method"
+    assert result_event.result == "foo-bar"
+    assert result_event.call_id == call_event.call_id
+    assert result_event.agent_id == "test-agent"
+
+def test_proxy_event_filtering():
+    events = []
+    
+    def event_handler(event: Event):
+        events.append(event)
+        
+    obj = DummyClass()
+    # Only listen for test_method events
+    proxy = Proxy(obj, event_listeners=[("test_proxy_event_listeners.DummyClass.test_method", event_handler)], agent_id="test-agent")
+    
+    proxy.test_method("foo")  # Should generate events
+    proxy.another_method()    # Should not generate events
+    
+    assert len(events) == 2  # Only test_method call+result
+    assert all(e.method_name == "test_method" for e in events)
+    assert all(e.agent_id == "test-agent" for e in events)
+
+def test_multiple_event_listeners():
+    events1 = []
+    events2 = []
+    
+    def handler1(event: Event):
+        events1.append(event)
+        
+    def handler2(event: Event):
+        events2.append(event)
+        
+    obj = DummyClass()
+    proxy = Proxy(obj, event_listeners=[
+        ("test_proxy_event_listeners.DummyClass.test_method", handler1),
+        ("test_proxy_event_listeners.DummyClass.another_method", handler2)
+    ], agent_id="test-agent")
+    
+    proxy.test_method("foo")
+    proxy.another_method()
+    
+    assert len(events1) == 2  # test_method call+result
+    assert len(events2) == 2  # another_method call+result
+    assert all(e.method_name == "test_method" for e in events1)
+    assert all(e.method_name == "another_method" for e in events2)
+    assert all(e.agent_id == "test-agent" for e in events1)
+    assert all(e.agent_id == "test-agent" for e in events2)
