@@ -82,7 +82,7 @@ async def test_agent_event_prefix_filtering():
     registry.register_agent(config)
     
     # Register event listener with prefix filter
-    registry.register_event_listener("xaibo-examples.echo", event_handler)
+    registry.register_event_listener("xaibo_examples.echo", event_handler)
     
     # Get agent and handle message
     agent = registry.get_agent("echo-agent-minimal")
@@ -91,4 +91,4 @@ async def test_agent_event_prefix_filtering():
 
     # Should only have events matching prefix
     assert len(events) > 0
-    assert all(e.event_name.startswith("xaibo-examples.echo") for e in events)
+    assert all(e.event_name.startswith("xaibo_examples.echo") for e in events)

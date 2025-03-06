@@ -2,7 +2,7 @@ id: echo-agent
 modules:
   # A module can be instantiated multiple times with different configuration options
   # by providing an id we can disambiguate them easily
-  - module: xaibo-examples.echo.Echo
+  - module: xaibo_examples.echo.Echo
     id: echo
     # The provides keyword defines what kind of functionality the module provides.
     # Usually, that would be inferred from the module definition, but for completeness

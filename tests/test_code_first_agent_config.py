@@ -11,7 +11,7 @@ def test_code_first_minimal():
         id="echo-agent-minimal",
         modules=[
             ModuleConfig(
-                module="xaibo-examples.echo.Echo",
+                module="xaibo_examples.echo.Echo",
                 id="echo",
                 config={
                     "prefix": "You said: "
@@ -25,7 +25,7 @@ def test_code_first_minimal():
     assert len(config.modules) == 2  # Echo module + implicit ResponseHandler
     
     echo_module = next(m for m in config.modules if m.id == "echo")
-    assert echo_module.module == "xaibo-examples.echo.Echo"
+    assert echo_module.module == "xaibo_examples.echo.Echo"
     assert echo_module.config["prefix"] == "You said: "
     
     response_module = next(m for m in config.modules if m.id == "__response__")
@@ -65,7 +65,7 @@ def test_code_first_complete():
         id="echo-agent",
         modules=[
             ModuleConfig(
-                module="xaibo-examples.echo.Echo",
+                module="xaibo_examples.echo.Echo",
                 id="echo",
                 provides=["TextMessageHandlerProtocol"],
                 uses=["ResponseProtocol"],
@@ -98,7 +98,7 @@ def test_code_first_complete():
     assert len(config.modules) == 2
     
     echo_module = next(m for m in config.modules if m.id == "echo")
-    assert echo_module.module == "xaibo-examples.echo.Echo"
+    assert echo_module.module == "xaibo_examples.echo.Echo"
     assert echo_module.provides == ["TextMessageHandlerProtocol"]
     assert echo_module.uses == ["ResponseProtocol"]
     assert echo_module.config["prefix"] == "You said: "
@@ -180,7 +180,7 @@ async def test_code_first_agent_execution():
         id="echo-agent-test",
         modules=[
             ModuleConfig(
-                module="xaibo-examples.echo.Echo",
+                module="xaibo_examples.echo.Echo",
                 id="echo",
                 config={
                     "prefix": "You said: "

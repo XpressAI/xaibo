@@ -17,7 +17,7 @@ Create a simple echo agent in YAML:
 ```yaml
 id: echo-agent-minimal
 modules:
-  - module: xaibo-examples.echo.Echo
+  - module: xaibo_examples.echo.Echo
     id: echo
     config:
         prefix: "You said: "
@@ -33,7 +33,7 @@ config = AgentConfig(
     id="echo-agent-minimal",
     modules=[
         ModuleConfig(
-            module="xaibo-examples.echo.Echo", 
+            module="xaibo_examples.echo.Echo", 
             id="echo",
             config={
                 "prefix": "You said: "
@@ -65,7 +65,7 @@ For more complex agents, you can explicitly define protocols and wire up compone
 ```yaml
 id: echo-agent
 modules:
-  - module: xaibo-examples.echo.Echo
+  - module: xaibo_examples.echo.Echo
     id: echo
     provides: [TextMessageHandlerProtocol]
     uses: [ResponseProtocol]
