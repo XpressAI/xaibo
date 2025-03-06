@@ -11,10 +11,10 @@ async def test_instantiate_complete_echo():
     
     # Create registry and register agent
     registry = Registry()
-    registry.registerAgent(config)
+    registry.register_agent(config)
     
     # Get agent instance
-    agent = registry.getAgent("echo-agent")
+    agent = registry.get_agent("echo-agent")
 
     # Test text handling
     response = await agent.handle_text("Hello world")
@@ -30,10 +30,10 @@ async def test_instantiate_minimal_echo():
     
     # Create registry and register agent
     registry = Registry()
-    registry.registerAgent(config)
+    registry.register_agent(config)
     
     # Get agent instance
-    agent = registry.getAgent("echo-agent-minimal")
+    agent = registry.get_agent("echo-agent-minimal")
     
     # Test text handling
     response = await agent.handle_text("Hello world")
@@ -47,7 +47,7 @@ async def test_instantiate_with_overrides():
         config = AgentConfig.from_yaml(content)
     
     registry = Registry()
-    registry.registerAgent(config)
+    registry.register_agent(config)
     
     # Create mock response handler
     class MockResponse:
@@ -57,7 +57,7 @@ async def test_instantiate_with_overrides():
     mock_response = MockResponse()
     
     # Get agent with mock response handler
-    agent = registry.getAgentWith("echo-agent-minimal", {
+    agent = registry.get_agent_with("echo-agent-minimal", {
         "response": mock_response
     })
     

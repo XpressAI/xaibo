@@ -13,9 +13,8 @@ class Registry:
     def __init__(self):
         """Initialize a new Registry instance with an empty configuration dictionary."""
         self.known_agent_configs: dict[str, AgentConfig] = dict()
-        self.exchange = Exchange()
 
-    def registerAgent(self, agent_config: AgentConfig) -> None:
+    def register_agent(self, agent_config: AgentConfig) -> None:
         """Register a new agent configuration.
 
         Args:
@@ -23,7 +22,7 @@ class Registry:
         """
         self.known_agent_configs[agent_config.id] = agent_config
 
-    def getAgent(self, id: str) -> Agent:
+    def get_agent(self, id: str) -> Agent:
         """Get an agent instance with default bindings.
 
         Args:
@@ -32,9 +31,9 @@ class Registry:
         Returns:
             Agent: A new agent instance
         """
-        return self.getAgentWith(id, {})
+        return self.get_agent_with(id, {})
     
-    def getAgentWith(self, id: str, override_bindings: dict[str, any]) -> Agent:
+    def get_agent_with(self, id: str, override_bindings: dict[str, any]) -> Agent:
         """Get an agent instance with custom bindings.
 
         Args:
@@ -44,12 +43,9 @@ class Registry:
         Returns:
             Agent: A new agent instance with the specified bindings
         """
-        config = self._get_config_or_raise(id)
-        module_instances = self.exchange.instantiate_modules(config, override_bindings)
-        return Agent(id=id, modules=module_instances)
-
-    def _get_config_or_raise(self, id: str) -> AgentConfig:
-        """Get agent config by ID or raise KeyError if not found."""
         if id not in self.known_agent_configs:
             raise KeyError(f"No agent configuration found for id: {id}")
-        return self.known_agent_configs[id]
+        config = self.known_agent_configs[id]
+        exchange = Exchange()
+        module_instances = exchange.instantiate_modules(config, override_bindings)
+        return Agent(id=id, modules=module_instances)
