@@ -1,27 +1,55 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type, Union
 from pydantic import BaseModel, Field
 from pydantic_yaml import parse_yaml_raw_as, to_yaml_str
 from collections import defaultdict
 
 
 class ModuleConfig(BaseModel):
-    module: str
+    module: Union[str, Type]  # Can be string path or actual class
     id: str
-    provides: Optional[List[str]] = None
-    uses: Optional[List[str]] = None
+    provides: Optional[List[Union[str, Type]]] = None  # Can be string protocol names or actual protocol classes
+    uses: Optional[List[Union[str, Type]]] = None  # Can be string protocol names or actual protocol classes
     config: Optional[Dict] = None
+
+    def __init__(self, **data):
+        # Convert module class to string if needed
+        if 'module' in data and not isinstance(data['module'], str):
+            module_class = data['module']
+            data['module'] = f"{module_class.__module__}.{module_class.__name__}"
+
+        # Convert protocol classes to strings if needed
+        for field in ['provides', 'uses']:
+            if field in data and data[field] is not None:
+                data[field] = [
+                    p.__name__ if not isinstance(p, str) else p 
+                    for p in data[field]
+                ]
+
+        super().__init__(**data)
 
 
 class ExchangeConfig(BaseModel):
     module: str
-    protocol: str
+    protocol: Union[str, Type]  # Can be string name or actual protocol class
     provider: str
+
+    def __init__(self, **data):
+        # Convert protocol class to string if needed
+        if 'protocol' in data and not isinstance(data['protocol'], str):
+            protocol_class = data['protocol']
+            data['protocol'] = protocol_class.__name__
+
+        super().__init__(**data)
 
 
 class AgentConfig(BaseModel):
     id: str
     modules: List[ModuleConfig]
     exchange: Optional[List[ExchangeConfig]] = None
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.populate_implicits()
 
     @classmethod
     def load_directory(cls, directory: str) -> Dict[str, "AgentConfig"]:
@@ -66,7 +94,6 @@ class AgentConfig(BaseModel):
         """
 
         config = parse_yaml_raw_as(AgentConfig, yaml_str)
-        config.populate_implicits()
         return config
 
     def to_yaml(self) -> str:
