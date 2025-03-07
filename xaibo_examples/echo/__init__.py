@@ -1,6 +1,5 @@
 from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol
 
-
 class Echo(TextMessageHandlerProtocol):
     """A simple echo module that repeats back the received text message with a prefix."""
     

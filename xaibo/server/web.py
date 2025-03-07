@@ -21,6 +21,7 @@ class XaiboWebServer:
         self.app = cors(self.app, allow_origin="*")
         self.agent_dir = agent_dir
         self.configs = {}
+        self.watcher_task = None
 
         for adapter in adapters:
             clazz = get_class_by_path(adapter)
@@ -50,16 +51,27 @@ class XaiboWebServer:
         import asyncio
 
         async def watch_config_files():
-            async for _ in awatch(self.agent_dir):
-                self._load_configs()
+            try:
+                async for _ in awatch(self.agent_dir):
+                    self._load_configs()
+            except asyncio.CancelledError:
+                pass
 
         @self.app.before_serving
         async def start_file_watcher():
-            await asyncio.create_task(watch_config_files())
+            self.watcher_task = asyncio.create_task(watch_config_files())
+
+        @self.app.after_serving
+        async def cleanup():
+            if self.watcher_task:
+                self.watcher_task.cancel()
+                try:
+                    await self.watcher_task
+                except asyncio.CancelledError:
+                    pass
 
         self.app.run()
 
-        
 if __name__ == "__main__":
     import argparse
 
