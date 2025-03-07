@@ -1,1 +1,1 @@
-from .core import AgentConfig, Registry, Agent
+from .core import AgentConfig, Registry, Agent, Xaibo

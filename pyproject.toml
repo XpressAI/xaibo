@@ -11,6 +11,13 @@ dependencies = [
     "pytest-asyncio>=0.25.3",
 ]
 
+[project.optional-dependencies]
+webserver = [
+    "quart>=0.20.0",
+    "quart-cors>=0.8.0",
+    "watchfiles>=1.0.4",
+]
+
 [dependency-groups]
 dev = [
     "devtools>=0.12.2",

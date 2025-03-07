@@ -26,6 +26,23 @@ class Registry:
         """
         self.known_agent_configs[agent_config.id] = agent_config
 
+    def unregister_agent(self, agent_id: str) -> None:
+        """Unregister an agent configuration.
+
+        Args:
+            agent_id (str): The ID of the agent configuration to unregister
+        """
+        if agent_id in self.known_agent_configs:
+            del self.known_agent_configs[agent_id]
+
+    def list_agents(self) -> list[str]:
+        """Get a list of IDs for all registered agent configurations.
+
+        Returns:
+            list[str]: List of agent configuration IDs
+        """
+        return list(self.known_agent_configs.keys())
+
     def get_agent(self, id: str) -> Agent:
         """Get an agent instance with default bindings.
 
