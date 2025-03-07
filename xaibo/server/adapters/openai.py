@@ -64,34 +64,14 @@ class OpenAiApiAdapter:
             queue = Queue()
             
             class StreamingResponse:
-                def __init__(self, app, agent_id, conversation_id):
-                    self.app = app
-                    self.agent_id = agent_id
-                    self.conversation_id = conversation_id
-                    self.created = int(time.time())
-                    self.chat_id = f"chatcmpl-{conversation_id}"
-                    
                 async def respond_text(self, text: str) -> None:
-                    response = self._create_chunk_response({"content": text})
+                    response = create_chunk_response({"content": text})
                     await queue.put(f"data: {json.dumps(response)}\n\n")
-
-                def _create_chunk_response(self, delta, finish_reason=None):
-                    return {
-                        "id": self.chat_id,
-                        "created": self.created,
-                        "model": self.agent_id,
-                        "object": "chat.completion.chunk",
-                        "choices": [{
-                            "delta": delta,
-                            "finish_reason": finish_reason,
-                            "index": 0
-                        }]
-                    }
 
             try:
                 # Get agent with streaming response handler
                 agent = self.xaibo.get_agent_with(data['model'], {
-                    'ResponseProtocol': StreamingResponse(app, data['model'], conversation_id)
+                    'ResponseProtocol': StreamingResponse()
                 })
             except KeyError:
                 abort(400, "model not found")
