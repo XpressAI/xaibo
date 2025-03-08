@@ -1,6 +1,7 @@
 from typing import BinaryIO
 
-from xaibo.core.protocols import ResponseProtocol, FileAttachment, FileType, Response
+from xaibo.core.protocols import ResponseProtocol
+from xaibo.core.models import FileAttachment, FileType, Response
 
 
 class ResponseHandler(ResponseProtocol):

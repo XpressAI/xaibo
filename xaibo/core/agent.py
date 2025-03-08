@@ -1,6 +1,6 @@
 from typing import BinaryIO
 
-from xaibo.core.protocols import Response
+from xaibo.core.models import Response
 
 
 class Agent:

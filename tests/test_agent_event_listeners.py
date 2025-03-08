@@ -1,6 +1,7 @@
 import pytest
 from xaibo import AgentConfig, Registry
-from xaibo.core.protocols.events import Event, EventType
+from xaibo.core.models.events import Event
+
 
 @pytest.mark.asyncio
 async def test_agent_event_listeners():

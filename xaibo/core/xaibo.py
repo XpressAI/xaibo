@@ -1,6 +1,6 @@
 from typing import Union, Callable
 
-from .protocols import Event
+from .models import Event
 from .registry import Registry
 from .agent import Agent
 from .config import AgentConfig

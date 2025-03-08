@@ -3,7 +3,7 @@ from typing import Callable, Union, Type
 from .agent import Agent
 from .config import AgentConfig
 from .exchange import Exchange
-from .protocols.events import Event
+from xaibo.core.models import Event
 
 
 class Registry:

@@ -1,6 +1,6 @@
 from typing import Type, Union
 from .config import AgentConfig
-from .protocols.events import EventType, Event
+from xaibo.core.models import EventType, Event
 import time
 
 class Exchange:

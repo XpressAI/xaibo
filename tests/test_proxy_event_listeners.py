@@ -1,5 +1,5 @@
 from xaibo.core.exchange import Proxy
-from xaibo.core.protocols.events import Event, EventType
+from xaibo.core.models.events import Event, EventType
 
 class DummyClass:
     def test_method(self, arg1, arg2=None):

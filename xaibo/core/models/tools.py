@@ -1,0 +1,25 @@
+from typing import Optional, Any, Dict
+
+from pydantic import BaseModel, Field
+
+
+class ToolParameter(BaseModel):
+    """Parameter definition for a tool"""
+    type: str
+    description: Optional[str] = None
+    required: Optional[bool] = False
+    default: Optional[Any] = None
+
+
+class Tool(BaseModel):
+    """Definition of a tool that can be executed"""
+    name: str
+    description: str
+    parameters: Dict[str, ToolParameter] = Field(default_factory=dict)
+
+
+class ToolResult(BaseModel):
+    """Result of a tool execution"""
+    success: bool
+    result: Any
+    error: Optional[str] = None
