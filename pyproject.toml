@@ -17,6 +17,15 @@ webserver = [
     "quart-cors>=0.8.0",
     "watchfiles>=1.0.4",
 ]
+openai = [
+    "openai>=1.65.4",
+]
+anthropic = [
+    "anthropic>=0.49.0",
+]
+google = [
+    "google-genai>=1.5.0",
+]
 
 [dependency-groups]
 dev = [

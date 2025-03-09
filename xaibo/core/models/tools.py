@@ -1,4 +1,4 @@
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -9,6 +9,7 @@ class ToolParameter(BaseModel):
     description: Optional[str] = None
     required: Optional[bool] = False
     default: Optional[Any] = None
+    enum: Optional[List[str]] = None
 
 
 class Tool(BaseModel):
