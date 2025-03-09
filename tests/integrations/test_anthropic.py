@@ -20,7 +20,7 @@ async def test_anthropic_generate():
     
     # Create a simple message
     messages = [
-        LLMMessage(role=LLMRole.USER, content="Say hello world")
+        LLMMessage(role=LLMRole.USER, content="Say exactly 'hello world'")
     ]
     
     # Generate a response
@@ -29,6 +29,7 @@ async def test_anthropic_generate():
     # Verify the response
     assert response.content is not None
     assert len(response.content) > 0
+    assert "Hello World".lower() in response.content.lower()
     assert response.usage is not None
     assert response.usage.prompt_tokens > 0
     assert response.usage.completion_tokens > 0
