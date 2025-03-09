@@ -2,7 +2,7 @@ from xaibo import AgentConfig
 
 def test_auto_config_text_handler():
     """Test that text handler is automatically configured when unambiguous"""
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
         
@@ -19,7 +19,7 @@ def test_auto_config_text_handler():
 
 def test_auto_config_response():
     """Test that response module is automatically added"""
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
         
@@ -33,7 +33,7 @@ def test_auto_config_response():
 
 def test_auto_config_uses_field():
     """Test that uses field is correctly populated for modules that require protocols"""
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
         

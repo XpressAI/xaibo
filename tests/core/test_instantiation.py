@@ -7,7 +7,7 @@ from xaibo.core.protocols import ResponseProtocol
 async def test_instantiate_complete_echo():
     """Test instantiating an echo agent from complete config"""
     # Load the complete echo config
-    with open("resources/yaml/echo_complete.yaml") as f:
+    with open("../resources/yaml/echo_complete.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -26,7 +26,7 @@ async def test_instantiate_complete_echo():
 async def test_instantiate_minimal_echo():
     """Test instantiating an echo agent from minimal config"""
     # Load the minimal echo config
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -44,7 +44,7 @@ async def test_instantiate_minimal_echo():
 @pytest.mark.asyncio
 async def test_instantiate_with_overrides():
     """Test instantiating an echo agent with custom bindings"""
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -74,7 +74,7 @@ async def test_instantiate_with_overrides():
 @pytest.mark.asyncio
 async def test_instantiate_with_string_overrides():
     """Test instantiating an echo agent with custom bindings"""
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
 

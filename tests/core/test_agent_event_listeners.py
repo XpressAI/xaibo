@@ -12,7 +12,7 @@ async def test_agent_event_listeners():
         events.append(event)
         
     # Load config and create agent
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -39,11 +39,11 @@ async def test_agent_event_filtering():
         events.append(event)
         
     # Load configs for two agents
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config1 = AgentConfig.from_yaml(content)
         
-    with open("resources/yaml/echo_complete.yaml") as f:
+    with open("../resources/yaml/echo_complete.yaml") as f:
         content = f.read()
         config2 = AgentConfig.from_yaml(content)
     
@@ -75,7 +75,7 @@ async def test_agent_event_prefix_filtering():
         events.append(event)
         
     # Load config and create agent
-    with open("resources/yaml/echo.yaml") as f:
+    with open("../resources/yaml/echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
