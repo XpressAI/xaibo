@@ -1,6 +1,6 @@
 import pytest
 
-from xaibo.primitives.modules.tools.python_tool_provider import PythonToolProvider
+from xaibo.primitives.modules.tools.python_tool_provider import PythonToolProvider, tool
 
 
 @pytest.fixture
@@ -70,3 +70,136 @@ async def test_execute_tool_with_error(provider):
     
     assert result.success is False
     assert "missing" in result.error.lower() or "required" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_direct_function_tools():
+    """Test using directly provided functions as tools"""
+    @tool
+    def add_numbers(a: int, b: int):
+        """Add two numbers together
+        
+        Args:
+            a: First number
+            b: Second number
+            
+        Returns:
+            Sum of the two numbers
+        """
+        return a + b
+    
+    @tool
+    def greet(name: str, greeting: str = "Hello"):
+        """Generate a greeting
+        
+        Args:
+            name: Person to greet
+            greeting: Greeting to use (default: Hello)
+            
+        Returns:
+            Formatted greeting
+        """
+        return f"{greeting}, {name}!"
+    
+    provider = PythonToolProvider({"tool_functions": [add_numbers, greet]})
+    
+    # List tools
+    tools = await provider.list_tools()
+    assert len(tools) == 2
+    
+    # Verify tool definitions
+    add_tool = next(t for t in tools if t.name.endswith("-add_numbers"))
+    assert add_tool.description == "Add two numbers together"
+    assert "a" in add_tool.parameters
+    assert add_tool.parameters["a"].required is True
+    assert add_tool.parameters["a"].type == "int"
+    
+    greet_tool = next(t for t in tools if t.name.endswith("-greet"))
+    assert greet_tool.description == "Generate a greeting"
+    assert "name" in greet_tool.parameters
+    assert greet_tool.parameters["name"].required is True
+    assert "greeting" in greet_tool.parameters
+    assert greet_tool.parameters["greeting"].required is False
+    
+    # Execute tools
+    result = await provider.execute_tool(add_tool.name, {"a": 5, "b": 7})
+    assert result.success is True
+    assert result.result == 12
+    
+    result = await provider.execute_tool(greet_tool.name, {"name": "World"})
+    assert result.success is True
+    assert result.result == "Hello, World!"
+    
+    result = await provider.execute_tool(greet_tool.name, {"name": "World", "greeting": "Hi"})
+    assert result.success is True
+    assert result.result == "Hi, World!"
+
+
+@pytest.mark.asyncio
+async def test_unmarked_function_auto_marking():
+    """Test that unmarked functions are automatically marked as tools"""
+    def multiply(x: int, y: int):
+        """Multiply two numbers
+        
+        Args:
+            x: First number
+            y: Second number
+            
+        Returns:
+            Product of the two numbers
+        """
+        return x * y
+    
+    provider = PythonToolProvider({"tool_functions": [multiply]})
+    
+    # List tools
+    tools = await provider.list_tools()
+    assert len(tools) == 1
+    
+    # Verify the tool was marked and converted
+    assert hasattr(multiply, "__xaibo_tool__")
+    assert tools[0].name.endswith("-multiply")
+    
+    # Execute the tool
+    result = await provider.execute_tool(tools[0].name, {"x": 6, "y": 7})
+    assert result.success is True
+    assert result.result == 42
+
+
+@pytest.mark.asyncio
+async def test_mixed_tool_sources():
+    """Test using both package-based and direct function tools"""
+    @tool
+    def divide(numerator: float, denominator: float):
+        """Divide two numbers
+        
+        Args:
+            numerator: Number to divide
+            denominator: Number to divide by
+            
+        Returns:
+            Result of division
+        """
+        if denominator == 0:
+            raise ValueError("Cannot divide by zero")
+        return numerator / denominator
+    
+    provider = PythonToolProvider({
+        "tool_packages": ["xaibo_examples.demo_tools.test_tools"],
+        "tool_functions": [divide]
+    })
+    
+    # List tools
+    tools = await provider.list_tools()
+    assert len(tools) == 3  # 2 from package + 1 direct function
+    
+    # Execute direct function tool
+    divide_tool = next(t for t in tools if t.name.endswith("-divide"))
+    result = await provider.execute_tool(divide_tool.name, {"numerator": 10, "denominator": 2})
+    assert result.success is True
+    assert result.result == 5.0
+    
+    # Test error handling
+    result = await provider.execute_tool(divide_tool.name, {"numerator": 10, "denominator": 0})
+    assert result.success is False
+    assert "divide by zero" in result.error.lower()

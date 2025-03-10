@@ -1,7 +1,7 @@
 import importlib
 import inspect
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Callable, Union, Optional, Iterable
 
 import docstring_parser
 
@@ -18,12 +18,16 @@ class PythonToolProvider(ToolProviderProtocol):
         Args:
             config: Configuration dictionary containing:
                 tool_packages: List of Python package paths containing tool functions
+                tool_functions: Optional list of function objects to use as tools
         """
-        self.tool_packages = config["tool_packages"]
+        self.tool_packages = config.get("tool_packages", [])
+        self.tool_functions = config.get("tool_functions", [])
 
     async def list_tools(self) -> List[Tool]:
-        """List all available tools from the configured packages"""
+        """List all available tools from the configured packages and functions"""
         tools = []
+        
+        # Get tools from packages
         for package_path in self.tool_packages:
             try:
                 if package_path in sys.modules:
@@ -38,6 +42,15 @@ class PythonToolProvider(ToolProviderProtocol):
             except ImportError:
                 # Skip packages that don't exist
                 continue
+        
+        # Get tools from directly provided functions
+        for func in self.tool_functions:
+            if callable(func):
+                # Mark the function as a tool if not already marked
+                if not hasattr(func, "__xaibo_tool__"):
+                    setattr(func, "__xaibo_tool__", True)
+                tools.append(self._function_to_tool(func))
+        
         return tools
 
     async def execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> ToolResult:
@@ -50,7 +63,20 @@ class PythonToolProvider(ToolProviderProtocol):
         Returns:
             Result of the tool execution
         """
-        # Find the tool function
+        # Check directly provided functions first
+        for func in self.tool_functions:
+            if (hasattr(func, "__xaibo_tool__") and 
+                self._get_tool_name(func) == tool_name):
+                try:
+                    result = func(**parameters)
+                    return ToolResult(success=True, result=result)
+                except Exception as e:
+                    return ToolResult(
+                        success=False,
+                        error=str(e)
+                    )
+        
+        # Then check package-based tools
         for package_path in self.tool_packages:
             try:
                 pkg = importlib.import_module(package_path)
@@ -101,4 +127,3 @@ def tool(fn):
     """Decorator to mark a function as a tool"""
     setattr(fn, "__xaibo_tool__", True)
     return fn
-
