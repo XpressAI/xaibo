@@ -1,10 +1,15 @@
 import os
+from pathlib import Path
 from ruamel.yaml import YAML
 from xaibo import AgentConfig
 
 def _read_yaml_config(filename):
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
     yaml = YAML(typ='safe')
-    with open(f"../resources/yaml/{filename}") as f:
+    with open(resources_dir / "yaml" / filename) as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
         raw_yaml = yaml.load(content)
@@ -71,13 +76,18 @@ def test_load_stressing_tool():
 
 def test_load_directory():
     """Test loading multiple agent configs from a directory"""
-    configs = AgentConfig.load_directory(os.path.join("../resources", "yaml"))
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    yaml_dir = resources_dir / "yaml"
+    
+    configs = AgentConfig.load_directory(str(yaml_dir))
     
     # Verify expected files were loaded
     expected_files = [
-        os.path.join("../resources", "yaml", "echo.yaml"),
-        os.path.join("../resources", "yaml", "echo_complete.yaml"),
-        os.path.join("../resources", "yaml", "stressing_tool_user.yaml")
+        str(yaml_dir / "echo.yaml"),
+        str(yaml_dir / "echo_complete.yaml"),
+        str(yaml_dir / "stressing_tool_user.yaml")
     ]
 
     yaml = YAML(typ='safe')
@@ -91,4 +101,3 @@ def test_load_directory():
             
             _assert_modules_match(config, raw_yaml)
             _assert_exchange_matches(config, raw_yaml)
-

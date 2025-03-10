@@ -1,4 +1,6 @@
 import pytest
+import os
+from pathlib import Path
 from xaibo import AgentConfig, Registry
 from xaibo.core.models.events import Event
 
@@ -10,9 +12,13 @@ async def test_agent_event_listeners():
     
     def event_handler(event: Event):
         events.append(event)
-        
+    
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
     # Load config and create agent
-    with open("../resources/yaml/echo.yaml") as f:
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -37,13 +43,17 @@ async def test_agent_event_filtering():
     
     def event_handler(event: Event):
         events.append(event)
-        
+    
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
     # Load configs for two agents
-    with open("../resources/yaml/echo.yaml") as f:
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
         content = f.read()
         config1 = AgentConfig.from_yaml(content)
         
-    with open("../resources/yaml/echo_complete.yaml") as f:
+    with open(resources_dir / "yaml" / "echo_complete.yaml") as f:
         content = f.read()
         config2 = AgentConfig.from_yaml(content)
     
@@ -73,9 +83,13 @@ async def test_agent_event_prefix_filtering():
     
     def event_handler(event: Event):
         events.append(event)
-        
+    
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
     # Load config and create agent
-    with open("../resources/yaml/echo.yaml") as f:
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     

@@ -1,4 +1,6 @@
 import pytest
+import os
+from pathlib import Path
 from xaibo import AgentConfig, Registry
 from xaibo.core.protocols import ResponseProtocol
 
@@ -6,8 +8,12 @@ from xaibo.core.protocols import ResponseProtocol
 @pytest.mark.asyncio
 async def test_instantiate_complete_echo():
     """Test instantiating an echo agent from complete config"""
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
     # Load the complete echo config
-    with open("../resources/yaml/echo_complete.yaml") as f:
+    with open(resources_dir / "yaml" / "echo_complete.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -25,8 +31,12 @@ async def test_instantiate_complete_echo():
 @pytest.mark.asyncio
 async def test_instantiate_minimal_echo():
     """Test instantiating an echo agent from minimal config"""
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
     # Load the minimal echo config
-    with open("../resources/yaml/echo.yaml") as f:
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -44,7 +54,11 @@ async def test_instantiate_minimal_echo():
 @pytest.mark.asyncio
 async def test_instantiate_with_overrides():
     """Test instantiating an echo agent with custom bindings"""
-    with open("../resources/yaml/echo.yaml") as f:
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -74,7 +88,11 @@ async def test_instantiate_with_overrides():
 @pytest.mark.asyncio
 async def test_instantiate_with_string_overrides():
     """Test instantiating an echo agent with custom bindings"""
-    with open("../resources/yaml/echo.yaml") as f:
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
 
