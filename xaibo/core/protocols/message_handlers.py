@@ -1,6 +1,7 @@
-from typing import Protocol, BinaryIO
+from typing import Protocol, BinaryIO, runtime_checkable
 
 
+@runtime_checkable
 class TextMessageHandlerProtocol(Protocol):
     """Protocol for handling text messages."""
 
@@ -12,7 +13,7 @@ class TextMessageHandlerProtocol(Protocol):
         """
         ...
 
-
+@runtime_checkable
 class ImageMessageHandlerProtocol(Protocol):
     """Protocol for handling image messages."""
 
@@ -24,7 +25,7 @@ class ImageMessageHandlerProtocol(Protocol):
         """
         ...
 
-
+@runtime_checkable
 class AudioMessageHandlerProtocol(Protocol):
     """Protocol for handling audio messages."""
 
@@ -36,7 +37,7 @@ class AudioMessageHandlerProtocol(Protocol):
         """
         ...
 
-
+@runtime_checkable
 class VideoMessageHandlerProtocol(Protocol):
     """Protocol for handling video messages."""
 

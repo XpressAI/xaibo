@@ -1,8 +1,9 @@
-from typing import Protocol, List, Optional, AsyncIterator
+from typing import Protocol, List, Optional, AsyncIterator, runtime_checkable
 
 from ..models.llm import LLMMessage, LLMOptions, LLMResponse
 
 
+@runtime_checkable
 class LLMProtocol(Protocol):
     """Protocol for interacting with LLM models"""
     

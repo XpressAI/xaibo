@@ -1,8 +1,8 @@
-from typing import Protocol, List, Dict, Any
+from typing import Protocol, List, Dict, Any, runtime_checkable
 
 from xaibo.core.models.tools import Tool, ToolResult
 
-
+@runtime_checkable
 class ToolProviderProtocol(Protocol):
     """Protocol for providing and executing tools"""
     

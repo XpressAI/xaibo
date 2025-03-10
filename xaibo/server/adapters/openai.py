@@ -1,12 +1,16 @@
 import json
 import time
+import logging
 from uuid import uuid4
 
 from quart import Quart, request, abort
 
 from xaibo import Xaibo
+from xaibo.server.adapters.conversation import SimpleConversation
 
 from asyncio import wait_for, Queue, create_task, TimeoutError
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAiApiAdapter:
@@ -31,21 +35,27 @@ class OpenAiApiAdapter:
 
         @app.post("/openai/chat/completions")
         async def completion_request():
-            async with app.app_context():
-                data = await request.get_json()
-                messages = data.get("messages", [])
-                last_user_message = next((m['content'] for m in reversed(messages) if m['role'] == 'user'), None)
-                history = [m for m in messages if m['content'] is not last_user_message]
+            try:
+                async with app.app_context():
+                    data = await request.get_json()
+                    messages = data.get("messages", [])
+                    last_user_message = next((m['content'] for m in reversed(messages) if m['role'] == 'user'), None)
+                    
+                    # Create conversation history from messages
+                    conversation = SimpleConversation.from_openai_messages(messages)
 
-                is_stream = data.get('stream', False)
-                conversation_id = uuid4().hex
-                
-                if is_stream:
-                    return await self.handle_streaming_request(app, data, last_user_message, conversation_id)
-                else:
-                    return await self.handle_non_streaming_request(app, data, last_user_message, conversation_id)
+                    is_stream = data.get('stream', False)
+                    conversation_id = uuid4().hex
+                    
+                    if is_stream:
+                        return await self.handle_streaming_request(app, data, last_user_message, conversation_id, conversation)
+                    else:
+                        return await self.handle_non_streaming_request(app, data, last_user_message, conversation_id, conversation)
+            except Exception as e:
+                logger.exception(f"Unexpected error in completion_request: {str(e)}")
+                raise
 
-    async def handle_streaming_request(self, app, data, last_user_message, conversation_id):
+    async def handle_streaming_request(self, app, data, last_user_message, conversation_id, conversation):
         # Create response helper
         def create_chunk_response(delta={}, finish_reason=None):
             return {
@@ -69,12 +79,16 @@ class OpenAiApiAdapter:
                     await queue.put(f"data: {json.dumps(response)}\n\n")
 
             try:
-                # Get agent with streaming response handler
+                # Get agent with streaming response handler and conversation history
                 agent = self.xaibo.get_agent_with(data['model'], {
-                    'ResponseProtocol': StreamingResponse()
+                    'ResponseProtocol': StreamingResponse(),
+                    'ConversationHistoryProtocol': conversation
                 })
             except KeyError:
                 abort(400, "model not found")
+            except Exception as e:
+                logger.exception(f"Error getting agent for streaming request: {str(e)}")
+                raise
 
             # Start agent in background task
             agent_task = create_task(agent.handle_text(last_user_message))
@@ -86,6 +100,11 @@ class OpenAiApiAdapter:
                 try:
                     # Check if agent is done
                     if agent_task.done():
+                        # Check if there was an exception in the agent task
+                        if agent_task.exception():
+                            logger.exception(f"Agent task failed with exception: {agent_task.exception()}")
+                            raise agent_task.exception()
+                        
                         # Send final chunks and exit
                         yield f"data: {json.dumps(create_chunk_response({}, 'stop'))}\n\n"
                         yield "data: [DONE]\n\n"
@@ -98,32 +117,49 @@ class OpenAiApiAdapter:
                     # Send empty chunk on timeout
                     yield f"data: {json.dumps(create_chunk_response({'content': ''}))}\n\n"
                     continue
+                except Exception as e:
+                    logger.exception(f"Unexpected error in streaming response: {str(e)}")
+                    raise
 
-        return generate_stream(), 200, {'Content-Type': 'text/event-stream'}
-    
-    async def handle_non_streaming_request(self, app, data, last_user_message, conversation_id):
         try:
-            # Regular non-streaming response
-            agent = self.xaibo.get_agent(data['model'])
+            return generate_stream(), 200, {'Content-Type': 'text/event-stream'}
+        except Exception as e:
+            logger.exception(f"Error setting up streaming response: {str(e)}")
+            raise
+    
+    async def handle_non_streaming_request(self, app, data, last_user_message, conversation_id, conversation):
+        try:
+            # Regular non-streaming response with conversation history
+            agent = self.xaibo.get_agent_with(data['model'], {
+                'ConversationHistoryProtocol': conversation
+            })
         except KeyError:
             abort(400, "model not found")
+        except Exception as e:
+            logger.exception(f"Error getting agent for non-streaming request: {str(e)}")
+            raise
             
-        response = await agent.handle_text(last_user_message)
-        return {
-            'id': f"chatcmpl-{conversation_id}",
-            "object": "chat.completion", 
-            "created": int(time.time()),
-            "choices": [{
-                "index": 0,
-                "message": {
-                    "role": "assistant",
-                    "content": response.text
-                },
-                "finish_reason": "stop"
-            }],
-            "usage": {
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0
+        try:
+            response = await agent.handle_text(last_user_message)
+            
+            return {
+                'id': f"chatcmpl-{conversation_id}",
+                "object": "chat.completion", 
+                "created": int(time.time()),
+                "choices": [{
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": response.text
+                    },
+                    "finish_reason": "stop"
+                }],
+                "usage": {
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0
+                }
             }
-        }
+        except Exception as e:
+            logger.exception(f"Error handling non-streaming text request: {str(e)}")
+            raise

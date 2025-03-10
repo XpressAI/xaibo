@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 import asyncio
 import json
@@ -5,7 +7,7 @@ from quart import Quart
 
 from xaibo import Xaibo, AgentConfig, ModuleConfig
 from xaibo.server.adapters.openai import OpenAiApiAdapter
-from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol
+from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol, ConversationHistoryProtocol
 
 
 class Echo(TextMessageHandlerProtocol):
@@ -61,6 +63,29 @@ class StreamingEcho(TextMessageHandlerProtocol):
             await asyncio.sleep(0.05)
 
 
+class HistoryAwareEcho(TextMessageHandlerProtocol):
+    """Echo module that is aware of conversation history"""
+    
+    @classmethod
+    def provides(cls):
+        return [TextMessageHandlerProtocol]
+    
+    def __init__(self, response: ResponseProtocol, history: ConversationHistoryProtocol, config: dict = None):
+        self.config = config or {}
+        self.response = response
+        self.history = history
+        
+    async def handle_text(self, text: str) -> None:      
+        # Get the current conversation history
+        messages = await self.history.get_history()
+        message_count = len(messages)
+        
+        # Create a response that includes history information
+        response_text = f"History-aware response to: {text} (Message #{message_count} in conversation)"
+        
+        # Send the response
+        await self.response.respond_text(response_text)
+
 @pytest.fixture
 def xaibo_instance():
     """Create a Xaibo instance with test agents"""
@@ -112,6 +137,19 @@ def xaibo_instance():
     )
     xaibo.register_agent(streaming_config)
     
+    # Register a history-aware echo agent
+    history_config = AgentConfig(
+        id="history-agent",
+        modules=[
+            ModuleConfig(
+                module=HistoryAwareEcho,
+                id="history-echo",
+                config={}
+            )
+        ]
+    )
+    xaibo.register_agent(history_config)
+    
     return xaibo
 
 
@@ -144,6 +182,7 @@ async def test_openai_models_endpoint(client):
     assert "echo-agent" in model_ids
     assert "slow-agent" in model_ids
     assert "streaming-agent" in model_ids
+    assert "history-agent" in model_ids
 
 
 @pytest.mark.asyncio
@@ -263,3 +302,108 @@ async def test_openai_chat_completion_invalid_model(client):
         json=request_data
     )
     assert response.status_code == 400  # Bad request
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_completion_with_history(client, caplog):
+    """Test the OpenAI chat completion endpoint with conversation history"""
+    caplog.set_level(logging.DEBUG)
+
+    # First message
+    request_data = {
+        "model": "history-agent",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "First message"}
+        ]
+    }
+    
+    response = await client.post(
+        "/openai/chat/completions", 
+        json=request_data
+    )
+
+    assert response.status_code == 200
+    
+    data = await response.get_json()
+    assert data["choices"][0]["message"]["content"] == "History-aware response to: First message (Message #2 in conversation)"
+    
+    # Second message with history
+    request_data = {
+        "model": "history-agent",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "First message"},
+            {"role": "assistant", "content": "History-aware response to: First message (Message #2 in conversation)"},
+            {"role": "user", "content": "Second message"}
+        ]
+    }
+    
+    response = await client.post(
+        "/openai/chat/completions", 
+        json=request_data
+    )
+    assert response.status_code == 200
+    
+    data = await response.get_json()
+    assert data["choices"][0]["message"]["content"] == "History-aware response to: Second message (Message #4 in conversation)"
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_completion_streaming_with_history(client):
+    """Test the OpenAI streaming chat completion with conversation history"""
+    request_data = {
+        "model": "history-agent",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "First message"},
+            {"role": "assistant", "content": "History-aware response to: First message (Message #2 in conversation)"},
+            {"role": "user", "content": "Hello world"}
+        ],
+        "stream": True
+    }
+    
+    response = await client.post(
+        "/openai/chat/completions", 
+        json=request_data
+    )
+    assert response.status_code == 200
+    
+    # Read the streaming response
+    complete_content = ""
+    async for response_bytes in response.response:
+        response_text = str(response_bytes, "utf-8")
+        for line in response_text.splitlines():
+            if line.startswith("data: ") and line != "data: [DONE]":
+                data = json.loads(line[6:])  # Remove "data: " prefix
+                if "choices" in data and data["choices"][0]["delta"].get("content"):
+                    content = data["choices"][0]["delta"]["content"]
+                    complete_content += content
+    
+    assert "History-aware response to: Hello world (Message #4 in conversation)" == complete_content
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_completion_with_complex_history(client):
+    """Test the OpenAI chat completion with a more complex conversation history"""
+    request_data = {
+        "model": "history-agent",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "First question"},
+            {"role": "assistant", "content": "First answer"},
+            {"role": "user", "content": "Second question"},
+            {"role": "assistant", "content": "Second answer"},
+            {"role": "user", "content": "Final question"}
+        ]
+    }
+    
+    response = await client.post(
+        "/openai/chat/completions", 
+        json=request_data
+    )
+    assert response.status_code == 200
+    
+    data = await response.get_json()
+    # The HistoryAwareEcho agent should report the correct message count
+    assert data["choices"][0]["message"]["content"] == "History-aware response to: Final question (Message #6 in conversation)"
