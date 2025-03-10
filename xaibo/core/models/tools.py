@@ -22,5 +22,5 @@ class Tool(BaseModel):
 class ToolResult(BaseModel):
     """Result of a tool execution"""
     success: bool
-    result: Any
+    result: Optional[Any] = None
     error: Optional[str] = None

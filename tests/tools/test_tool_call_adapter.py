@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import AsyncMock, Mock
 
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMRole, LLMUsage
+from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMRole, LLMUsage
 from xaibo.core.models.tools import Tool, ToolParameter
-from xaibo.primitives.modules.tools.TextBasedToolCallAdapter import TextBasedToolCallAdapter
+from xaibo.primitives.modules.tools.no_function_calling_adapter import TextBasedToolCallAdapter
 
 
 @pytest.fixture
