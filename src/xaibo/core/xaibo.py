@@ -87,18 +87,21 @@ class Xaibo:
         """
         return self.registry.get_agent(agent_id)
 
-    def get_agent_with(self, agent_id: str, overrides: dict[Union[str|type], any]) -> Agent:
+    def get_agent_with(self, agent_id: str, overrides: dict[Union[str|type], any], additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
         """Create and return an agent instance with custom dependency bindings.
 
         This method allows more control over agent instantiation by specifying custom
-        implementations for the agent's dependencies. This is useful for testing,
-        mocking, or providing specialized implementations.
+        implementations for the agent's dependencies and registering additional event listeners.
+        This is useful for testing, mocking, providing specialized implementations, or adding
+        temporary monitoring.
 
         Args:
             agent_id (str): The ID of the agent configuration to use
             overrides (dict[Union[str, Type], any]): Custom bindings to override defaults
+            additional_event_listeners (list[tuple[str, callable]], optional): Additional event listeners to register.
+                Each tuple contains (prefix, handler). Defaults to None.
 
         Returns:
-            Agent: A new agent instance with the specified dependency bindings
+            Agent: A new agent instance with the specified dependency bindings and event listeners
         """
-        return self.registry.get_agent_with(agent_id, overrides)
+        return self.registry.get_agent_with(agent_id, overrides, additional_event_listeners)

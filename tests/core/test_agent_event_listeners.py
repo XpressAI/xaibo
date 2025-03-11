@@ -106,3 +106,89 @@ async def test_agent_event_prefix_filtering():
     # Should only have events matching prefix
     assert len(events) > 0
     assert all(e.event_name.startswith("xaibo_examples.echo") for e in events)
+
+@pytest.mark.asyncio
+async def test_additional_event_listeners():
+    """Test adding additional event listeners when getting an agent"""
+    events = []
+    additional_events = []
+    
+    def event_handler(event: Event):
+        events.append(event)
+    
+    def additional_handler(event: Event):
+        additional_events.append(event)
+    
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
+    # Load config and create agent
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+    
+    registry = Registry()
+    registry.register_agent(config)
+    
+    # Register global event listener
+    registry.register_event_listener("", event_handler)
+    
+    # Get agent with additional event listener
+    additional_listeners = [("", additional_handler)]
+    agent = registry.get_agent_with("echo-agent-minimal", {}, additional_listeners)
+    
+    # Handle message
+    await agent.handle_text("Hello world")
+    
+    # Both handlers should have received events
+    assert len(events) > 0
+    assert len(additional_events) > 0
+    
+    # Both should have the same events
+    assert len(events) == len(additional_events)
+
+@pytest.mark.asyncio
+async def test_additional_event_listeners_with_prefix():
+    """Test adding additional event listeners with prefix filtering"""
+    global_events = []
+    echo_events = []
+    
+    def global_handler(event: Event):
+        global_events.append(event)
+    
+    def echo_handler(event: Event):
+        echo_events.append(event)
+    
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
+    # Load config and create agent
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+    
+    registry = Registry()
+    registry.register_agent(config)
+    
+    # Get agent with additional event listeners with different prefixes
+    additional_listeners = [
+        ("", global_handler),
+        ("xaibo_examples.echo", echo_handler),
+    ]
+    
+    agent = registry.get_agent_with("echo-agent-minimal", {}, additional_listeners)
+    
+    # Handle message
+    await agent.handle_text("Hello world")
+    
+    # All handlers should have received events
+    assert len(global_events) > 0
+    assert len(echo_events) > 0
+    
+    # Global handler should have all events
+    assert len(global_events) >= len(echo_events)
+    
+    # Echo handler should only have echo events
+    assert all(e.event_name.startswith("xaibo_examples.echo") for e in echo_events)

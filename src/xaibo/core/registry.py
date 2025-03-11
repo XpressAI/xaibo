@@ -54,12 +54,14 @@ class Registry:
         """
         return self.get_agent_with(id, {})
     
-    def get_agent_with(self, id: str, override_bindings: dict[Union[str, Type], any]) -> Agent:
+    def get_agent_with(self, id: str, override_bindings: dict[Union[str, Type], any], additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
         """Get an agent instance with custom bindings.
 
         Args:
             id (str): The ID of the agent configuration to use
             override_bindings (dict[Union[str, Type], any]): Custom bindings to override defaults
+            additional_event_listeners (list[tuple[str, callable]], optional): Additional event listeners to register.
+                Each tuple contains (prefix, handler). Defaults to None.
 
         Returns:
             Agent: A new agent instance with the specified bindings
@@ -74,6 +76,10 @@ class Registry:
             (prefix, handler) for prefix, agent_filter, handler in self.event_listeners 
             if agent_filter is None or agent_filter == id
         ]
+
+        # Add any additional event listeners
+        if additional_event_listeners:
+            agent_listeners.extend(additional_event_listeners)
         
         module_instances = exchange.instantiate_modules(
             config, 
@@ -81,7 +87,6 @@ class Registry:
             event_listeners=agent_listeners
         )
         return Agent(id=id, modules=module_instances)
-
     def register_event_listener(self, prefix: str, handler: Callable[[Event], None], agent_id: str | None = None) -> None:
         """Register an event listener for module events.
 
