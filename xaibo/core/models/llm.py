@@ -14,11 +14,25 @@ class LLMRole(str, Enum):
     FUNCTION = "function"
 
 
+class LLMFunctionCall(BaseModel):
+    """Function call information returned by an LLM"""
+    id: str
+    name: str
+    arguments: Dict[str, Any]
+
+class LLMFunctionResult(BaseModel):
+    """Function call result from executing a function"""
+    id: str
+    name: str
+    content: str
+
 class LLMMessage(BaseModel):
     """A message in an LLM conversation"""
     role: LLMRole
-    content: str
+    content: Optional[str] = None
     name: Optional[str] = None
+    tool_calls: Optional[List[LLMFunctionCall]] = None
+    tool_results: Optional[List[LLMFunctionResult]] = None
 
 
 class LLMOptions(BaseModel):
@@ -45,12 +59,6 @@ class LLMOptions(BaseModel):
         return v
 
 
-class LLMFunctionCall(BaseModel):
-    """Function call information returned by an LLM"""
-    name: str
-    arguments: Dict[str, Any]
-
-
 class LLMUsage(BaseModel):
     """Token usage statistics from an LLM response"""
     prompt_tokens: int
@@ -61,6 +69,6 @@ class LLMUsage(BaseModel):
 class LLMResponse(BaseModel):
     """Response from an LLM"""
     content: str
-    function_call: Optional[LLMFunctionCall] = None
+    tool_calls: Optional[List[LLMFunctionCall]] = None
     usage: Optional[LLMUsage] = None
     vendor_specific: Optional[Dict[str, Any]] = Field(default_factory=dict)

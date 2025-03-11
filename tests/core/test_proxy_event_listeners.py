@@ -1,14 +1,17 @@
+import pytest
+
 from xaibo.core.exchange import Proxy
 from xaibo.core.models.events import Event, EventType
 
 class DummyClass:
-    def test_method(self, arg1, arg2=None):
+    async def test_method(self, arg1, arg2=None):
         return f"{arg1}-{arg2}"
     
-    def another_method(self):
+    async def another_method(self):
         return "hello"
 
-def test_proxy_event_listeners():
+@pytest.mark.asyncio
+async def test_proxy_event_listeners():
     events = []
     
     def event_handler(event: Event):
@@ -18,7 +21,7 @@ def test_proxy_event_listeners():
     proxy = Proxy(obj, event_listeners=[("", event_handler)], agent_id="test-agent")
     
     # Test method call events
-    result = proxy.test_method("foo", arg2="bar")
+    result = await proxy.test_method("foo", arg2="bar")
     assert result == "foo-bar"
     
     # Should have generated 2 events (call and result)
@@ -39,7 +42,8 @@ def test_proxy_event_listeners():
     assert result_event.call_id == call_event.call_id
     assert result_event.agent_id == "test-agent"
 
-def test_proxy_event_filtering():
+@pytest.mark.asyncio
+async def test_proxy_event_filtering():
     events = []
     
     def event_handler(event: Event):
@@ -49,14 +53,15 @@ def test_proxy_event_filtering():
     # Only listen for test_method events
     proxy = Proxy(obj, event_listeners=[("test_proxy_event_listeners.DummyClass.test_method", event_handler)], agent_id="test-agent")
     
-    proxy.test_method("foo")  # Should generate events
-    proxy.another_method()    # Should not generate events
+    await proxy.test_method("foo")  # Should generate events
+    await proxy.another_method()    # Should not generate events
     
     assert len(events) == 2  # Only test_method call+result
     assert all(e.method_name == "test_method" for e in events)
     assert all(e.agent_id == "test-agent" for e in events)
 
-def test_multiple_event_listeners():
+@pytest.mark.asyncio
+async def test_multiple_event_listeners():
     events1 = []
     events2 = []
     
@@ -72,8 +77,8 @@ def test_multiple_event_listeners():
         ("test_proxy_event_listeners.DummyClass.another_method", handler2)
     ], agent_id="test-agent")
     
-    proxy.test_method("foo")
-    proxy.another_method()
+    await proxy.test_method("foo")
+    await proxy.another_method()
     
     assert len(events1) == 2  # test_method call+result
     assert len(events2) == 2  # another_method call+result

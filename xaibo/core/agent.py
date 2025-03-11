@@ -32,7 +32,7 @@ class Agent:
         if not hasattr(self.modules["__entry__"], "handle_text"):
             raise AttributeError("Entry module does not implement TextMessageHandlerProtocol")
         await self.modules["__entry__"].handle_text(text)
-        return self.modules["__response__"].get_response()
+        return await self.modules["__response__"].get_response()
 
     async def handle_image(self, image: BinaryIO) -> Response:
         """Handle an incoming image by delegating to the entry module.
@@ -49,7 +49,7 @@ class Agent:
         if not hasattr(self.modules["__entry__"], "handle_image"):
             raise AttributeError("Entry module does not implement ImageMessageHandlerProtocol")
         await self.modules["__entry__"].handle_image(image)
-        return self.modules["__response__"].get_response()
+        return await self.modules["__response__"].get_response()
 
     async def handle_audio(self, audio: BinaryIO) -> Response:
         """Handle incoming audio by delegating to the entry module.
@@ -66,7 +66,7 @@ class Agent:
         if not hasattr(self.modules["__entry__"], "handle_audio"):
             raise AttributeError("Entry module does not implement AudioMessageHandlerProtocol")
         await self.modules["__entry__"].handle_audio(audio)
-        return self.modules["__response__"].get_response()
+        return await self.modules["__response__"].get_response()
 
     async def handle_video(self, video: BinaryIO) -> Response:
         """Handle incoming video by delegating to the entry module.
@@ -83,4 +83,4 @@ class Agent:
         if not hasattr(self.modules["__entry__"], "handle_video"):
             raise AttributeError("Entry module does not implement VideoMessageHandlerProtocol")
         await self.modules["__entry__"].handle_video(video)
-        return self.modules["__response__"].get_response()
+        return await self.modules["__response__"].get_response()

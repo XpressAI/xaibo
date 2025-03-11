@@ -3,7 +3,7 @@ import pytest
 
 from xaibo.primitives.modules.llm.openai import OpenAILLM
 from xaibo.core.models.tools import Tool, ToolParameter
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole
+from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionCall, LLMFunctionResult
 
 
 @pytest.mark.asyncio
@@ -20,7 +20,7 @@ async def test_openai_generate():
     
     # Create a simple message
     messages = [
-        LLMMessage(role=LLMRole.USER, content="Say hello world")
+        LLMMessage(role=LLMRole.USER, content="Say exactly 'hello world'")
     ]
     
     # Generate a response
@@ -107,18 +107,76 @@ async def test_openai_function_calling():
     
     # Create options with the function
     options = LLMOptions(
-        functions=[get_weather_function],
-        vendor_specific={"function_call": "auto"}
+        functions=[get_weather_function]
     )
     
     # Generate a response
     response = await llm.generate(messages, options)
     
     # Verify function call
-    assert response.function_call is not None
-    assert response.function_call.name == "get_weather"
-    assert "location" in response.function_call.arguments
-    assert response.function_call.arguments["location"] == "San Francisco"
+    assert response.tool_calls is not None
+    assert len(response.tool_calls) == 1
+    assert response.tool_calls[0].name == "get_weather"
+    assert "location" in response.tool_calls[0].arguments
+    assert response.tool_calls[0].arguments["location"] == "San Francisco"
+
+@pytest.mark.asyncio
+async def test_openai_tool_response():
+    """Test processing of tool call responses with OpenAI"""
+    # Skip if no API key is available
+    if not os.environ.get("OPENAI_API_KEY"):
+        pytest.skip("OPENAI_API_KEY environment variable not set")
+    
+    # Initialize the LLM
+    llm = OpenAILLM({
+        "model": "gpt-3.5-turbo"
+    })
+    
+    # Define a function
+    get_weather_function = Tool(
+        name="get_weather",
+        description="Get the current weather in a given location",
+        parameters={
+            "location": ToolParameter(
+                type="string",
+                description="The city and state, e.g. San Francisco, CA",
+                required=True
+            )
+        }
+    )
+    
+    # Create conversation with function call and result
+    messages = [
+        LLMMessage(role=LLMRole.USER, content="What's the weather like in San Francisco?"),
+        LLMMessage(
+            role=LLMRole.FUNCTION,
+            content="",
+            tool_calls=[
+                LLMFunctionCall(
+                    id="call_1",
+                    name="get_weather",
+                    arguments={"location": "San Francisco, CA"}
+                )
+            ]
+        ),
+        LLMMessage(
+            role=LLMRole.FUNCTION,
+            tool_results=[
+                LLMFunctionResult(
+                    id="call_1",
+                    name="get_weather",
+                    content="72°F and sunny"
+                )
+            ]
+        )
+    ]
+    
+    # Generate a response
+    response = await llm.generate(messages, LLMOptions(functions=[get_weather_function]))
+    
+    # Verify response incorporates tool result
+    assert response.content is not None
+    assert "72" in response.content or "sunny" in response.content
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,5 @@
 from typing import Union, Callable
+import os
 
 from .models import Event
 from .registry import Registry
@@ -17,6 +18,11 @@ class Xaibo:
     def __init__(self):
         """Initialize a new Xaibo instance with an empty registry."""
         self.registry = Registry()
+        
+        # Register debug event listener if XAIBO_DEBUG environment variable is set
+        if os.environ.get("XAIBO_DEBUG"):
+            from xaibo.primitives.event_listeners.debug_event_listener import register_debug_listener
+            register_debug_listener(self.registry)
 
     def register_agent(self, agent_config: AgentConfig) -> None:
         """Register a new agent configuration.

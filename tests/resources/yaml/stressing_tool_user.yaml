@@ -9,7 +9,7 @@ modules:
     id: simple-tools
     config:
       tool_packages: ['xaibo_examples.demo_tools.demo_tools']
-  - module: xaibo.primitives.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
     id: orchestrator
     config:
       max_thoughts: 10

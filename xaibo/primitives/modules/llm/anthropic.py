@@ -5,8 +5,7 @@ from typing import List, Optional, AsyncIterator, Dict, Any
 from anthropic import AsyncAnthropic
 
 from xaibo.core.protocols.llm import LLMProtocol
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage
-
+from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 
 logger = logging.getLogger(__name__)
 
@@ -58,18 +57,56 @@ class AnthropicLLM(LLMProtocol):
         system_message = None
         
         for msg in messages:
-            if msg.role == "system":
+            if msg.role == LLMRole.SYSTEM:
                 # System messages are handled separately in Anthropic
                 system_message = msg.content
                 continue
-            
-            anthropic_messages.append({
-                "role": "assistant" if msg.role == "assistant" else "user",
-                "content": msg.content
-            })
+                
+            if msg.role == LLMRole.FUNCTION:
+                if msg.tool_calls:
+                    # This is the message that originally called for tool execution
+                    message = {
+                        "role": "assistant",
+                        "content": []                        
+                    }
+                    if msg.content:
+                        message["content"].append({
+                            "type": "text",
+                            "text": msg.content
+                        })
+                    for tool_call in msg.tool_calls:
+                        message["content"].append({
+                            "type": "tool_use",
+                            "id": tool_call.id,
+                            "name": tool_call.name,
+                            "input": tool_call.arguments
+                        })                        
+                    anthropic_messages.append(message)
+                elif msg.tool_results:
+                    # This is the message that contains the tool execution results
+                    message = {
+                        "role": "user",
+                        "content": []
+                    }                                        
+                    for result in msg.tool_results:
+                        message["content"].append({
+                            "type": "tool_result",
+                            "tool_use_id": result.id,
+                            "content": result.content
+                        })
+                    anthropic_messages.append(message)
+                else:
+                    # This is a malformed message
+                    logger.warning("Malformed function message - missing both tool_calls and tool_results")
+            else:
+                message = {
+                    "role": "assistant" if msg.role == LLMRole.ASSISTANT else "user",
+                    "content": msg.content,
+                    **({"name": msg.name} if msg.name else {})
+                }
+                anthropic_messages.append(message)
             
         return anthropic_messages, system_message
-    
     def _prepare_tools(self, options: LLMOptions) -> Optional[List[Dict[str, Any]]]:
         """Prepare tool calling if needed"""
         if not options.functions:
@@ -159,6 +196,7 @@ class AnthropicLLM(LLMProtocol):
                     content_parts.append(content_item.text)
                 elif content_item.type == "tool_use":
                     function_call = LLMFunctionCall(
+                        id=content_item.id,
                         name=content_item.name,
                         arguments=content_item.input
                     )
@@ -177,7 +215,7 @@ class AnthropicLLM(LLMProtocol):
             
             return LLMResponse(
                 content=content,
-                function_call=function_call,
+                tool_calls=[function_call] if function_call else None,
                 usage=usage,
                 vendor_specific={"id": response.id, "model": response.model}
             )

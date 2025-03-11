@@ -26,7 +26,6 @@ class Exchange:
                 dependencies = self._get_module_dependencies(config, module_config, module_instances, module_class)
                 dependencies.update(self._get_overrides_by_type(module_class, override_bindings))
 
-
                 module_instances[module_config.id] = Proxy(module_class(
                     **dependencies,
                     config=module_config.config
@@ -62,11 +61,12 @@ class Exchange:
         for param_name, param_type in params.items():
             # Check for direct type match
             if param_type in override_bindings:
-                dependencies[param_name] = override_bindings[param_type]
+                dependencies[param_name] = Proxy(override_bindings[param_type])
             # Check for string type name match
             elif param_type.__name__ in override_bindings:
-                dependencies[param_name] = override_bindings[param_type.__name__]
+                dependencies[param_name] = Proxy(override_bindings[param_type.__name__])
         return dependencies
+
     def _get_entry_module(self, config: AgentConfig, module_instances: dict[str, any]) -> any:
         """Get the entry module from exchange config."""
         entry_module = None
@@ -80,6 +80,8 @@ class Exchange:
             raise ValueError("No message handler found in exchange config")
 
         return entry_module
+
+
 class MethodProxy:
     """A proxy class that wraps a method and delegates calls.
     
@@ -132,7 +134,8 @@ class MethodProxy:
         for prefix, handler in self._event_listeners:
             if not prefix or event.event_name.startswith(prefix):
                 handler(event)
-    def __call__(self, *args, **kwargs):
+                
+    async def __call__(self, *args, **kwargs):
         """Forward calls to the wrapped method.
         
         Args:
@@ -151,7 +154,7 @@ class MethodProxy:
         )
 
         # Call method
-        result = self._method(*args, **kwargs)
+        result = await self._method(*args, **kwargs)
 
         # Emit result event
         self._emit_event(
@@ -163,6 +166,7 @@ class MethodProxy:
 
     def __repr__(self):
         return f"MethodProxy({self._method.__name__})"
+
 
 class Proxy:
     """A proxy class that wraps an object and delegates attribute access.

@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from typing import AsyncIterator, Dict, List, Optional, Any
 
 from xaibo.core.protocols.llm import LLMProtocol
@@ -84,7 +85,7 @@ class TextBasedToolCallAdapter(LLMProtocol):
                             # Use the raw text as a fallback
                             arguments = {"raw_input": args_text}
                     
-                    return LLMFunctionCall(name=tool_name, arguments=arguments)
+                    return LLMFunctionCall(id=uuid.uuid4().hex, name=tool_name, arguments=arguments)
                 except Exception as e:
                     logger.error(f"Error extracting tool call: {str(e)}")
                     return None
@@ -173,7 +174,7 @@ class TextBasedToolCallAdapter(LLMProtocol):
                 
                 return LLMResponse(
                     content=cleaned_content,
-                    function_call=function_call,
+                    tool_calls=[function_call],
                     usage=response.usage,
                     vendor_specific=response.vendor_specific
                 )

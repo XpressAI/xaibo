@@ -198,6 +198,8 @@ class AgentConfig(BaseModel):
             # Check referenced module for provided protocols
             try:
                 module_class = self._import_module_class(module.module)
+                
+                # Check for explicit provides method
                 if hasattr(module_class, "provides") and callable(getattr(module_class, "provides")):
                     provided_protocols = module_class.provides()
                     for protocol_type in provided_protocols:
@@ -208,10 +210,22 @@ class AgentConfig(BaseModel):
                                 module.provides = []
                             module.provides.append(protocol_name)
                             protocol_providers[protocol_name].append(module.id)
+                
+                # Check for implicit protocol provision through inheritance
+                for base in module_class.__mro__[1:]:  # Skip the class itself                   
+                    if getattr(base, "_is_protocol", False):
+                        protocol_name = base.__name__
+                        if protocol_name == "Protocol":
+                            continue
+                        if protocol_name not in (module.provides or []):
+                            if module.provides is None:
+                                module.provides = []
+                            module.provides.append(protocol_name)
+                            protocol_providers[protocol_name].append(module.id)
+                            
             except (ImportError, AttributeError):
                 # Skip if module can't be imported or doesn't have provides method
                 pass
-                
         return protocol_providers
     
     def _get_module_requirements(self):

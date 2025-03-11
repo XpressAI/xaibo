@@ -40,28 +40,50 @@ class GoogleLLM(LLMProtocol):
         """Convert LLMMessages to Google Gemini API format"""
         contents = []
         
-        for message in messages:
-            if message.role == LLMRole.SYSTEM:
-                # System messages are handled separately in the config
-                continue
-                
-            role = "user" if message.role == LLMRole.USER else "model"
-            
-            if message.role == LLMRole.FUNCTION:
-                # Handle function responses
-                contents.append(types.Part.from_function_response(
-                    name=message.name,
-                    response={"result": message.content}
-                ))
+        for msg in messages:
+            if msg.role == LLMRole.FUNCTION:
+                if msg.tool_calls:
+                    # This is the message that originally called for tool execution
+                    content = types.Content(
+                        role="model",
+                        parts=[]
+                    )
+                    if msg.content and msg.content != '':
+                        content.parts.append(types.Part.from_text(text=msg.content))
+                    for tool_call in msg.tool_calls:
+                        content.parts.append(types.Part.from_function_call(
+                            name=tool_call.name,
+                            args=tool_call.arguments
+                        ))
+                    contents.append(content)
+                elif msg.tool_results:
+                    # This is the message that contains the tool execution results
+                    for result in msg.tool_results:
+                        contents.append(types.Content(
+                            role="function",
+                            parts=[types.Part.from_function_response(
+                                name=result.name,
+                                response={"result": result.content}
+                            )]
+                        ))
+                else:
+                    # This is a malformed message
+                    logger.warning("Malformed function message - missing both tool_calls and tool_results")
             else:
-                # Regular text content
-                contents.append(types.Content(
+                role = "user" if msg.role == LLMRole.USER else "model"
+                if msg.role == LLMRole.SYSTEM:
+                    continue
+                
+                content = types.Content(
                     role=role,
-                    parts=[types.Part.from_text(text=message.content)]
-                ))
+                    parts=[types.Part.from_text(text=msg.content)]
+                )
+                if msg.name:
+                    content.name = msg.name
+                    
+                contents.append(content)
                 
         return contents
-
     def _prepare_config(self, options: Optional[LLMOptions]) -> types.GenerateContentConfig:
         """Prepare configuration for the API request"""
         if not options:
@@ -127,6 +149,7 @@ class GoogleLLM(LLMProtocol):
                 for part in candidate.content.parts:
                     if hasattr(part, "function_call") and part.function_call:
                         function_call = LLMFunctionCall(
+                            id=part.function_call.id or f"call_{hash(part.function_call.name)}",
                             name=part.function_call.name,
                             arguments=part.function_call.args
                         )
@@ -145,7 +168,7 @@ class GoogleLLM(LLMProtocol):
         # Create the response object
         return LLMResponse(
             content=content,
-            function_call=function_call,
+            tool_calls=[function_call] if function_call is not None else None,
             usage=usage,
             vendor_specific={"raw_response": response}
         )

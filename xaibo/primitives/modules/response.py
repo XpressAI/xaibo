@@ -8,7 +8,7 @@ class ResponseHandler(ResponseProtocol):
     def __init__(self, config: dict = None):
         self._response = Response()
 
-    def get_response(self) -> Response:
+    async def get_response(self) -> Response:
         return self._response
 
     async def respond_text(self, response: str) -> None:

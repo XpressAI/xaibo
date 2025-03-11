@@ -1,13 +1,14 @@
 import os
 import json
 import logging
+import uuid
 from typing import List, Optional, AsyncIterator, Dict, Any
 
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
 from xaibo.core.protocols.llm import LLMProtocol
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage
+from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 
 
 logger = logging.getLogger(__name__)
@@ -56,38 +57,96 @@ class OpenAILLM(LLMProtocol):
     
     def _prepare_messages(self, messages: List[LLMMessage]) -> List[Dict[str, Any]]:
         """Convert our messages to OpenAI format"""
-        return [
-            {"role": msg.role.value, "content": msg.content}
-            for msg in messages
-        ]
-    
+        prepared_messages = []
+        
+        for msg in messages:
+            if msg.role == LLMRole.FUNCTION:
+                if msg.tool_calls:
+                    # This is the message that originally called for tool execution
+                    message = {
+                        "role": "assistant",
+                        "content": msg.content,
+                        "tool_calls": [
+                            {
+                                "id": tool_call.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tool_call.name,
+                                    "arguments": json.dumps(tool_call.arguments)
+                                }
+                            }
+                            for tool_call in msg.tool_calls
+                        ]
+                    }
+                    prepared_messages.append(message)
+                elif msg.tool_results:
+                    # This is the message that contains the tool execution results
+                    for result in msg.tool_results:
+                        message = {
+                            "role": "tool",
+                            "tool_call_id": result.id,
+                            "content": result.content
+                        }
+                        prepared_messages.append(message)
+                else:
+                    # This is a malformed message
+                    logger.warning("Malformed function message - missing both tool_calls and tool_results")
+            else:
+                message = {
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    **({"name": msg.name} if msg.name else {})
+                }            
+                
+                prepared_messages.append(message)
+            
+        return prepared_messages
+
     def _prepare_functions(self, options: LLMOptions) -> Optional[List[Dict[str, Any]]]:
         """Prepare function calling if needed"""
         if not options.functions:
             return None
             
+        # Map Python types to JSON Schema types
+        def map_type_to_json_schema(python_type: str) -> str:
+            type_mapping = {
+                "str": "string",
+                "int": "integer",
+                "float": "number",
+                "bool": "boolean",
+                "list": "array",
+                "dict": "object",
+                "None": "null",
+                # Add any other type mappings as needed
+            }
+            return type_mapping.get(python_type, python_type)
+            
         return [
             {
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        param_name: {
-                            "type": param.type,
-                            "description": (param.description or "") + (f" Default: {param.default}" if param.default is not None else ""),
-                            **({} if param.enum is None else {"enum": param.enum})
-                        }
-                        for param_name, param in tool.parameters.items()
-                    },
-                    "required": [
-                        param_name for param_name, param in tool.parameters.items()
-                        if param.required
-                    ]
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            param_name: {
+                                "type": map_type_to_json_schema(param.type),
+                                "description": (param.description or "") + (f" Default: {param.default}" if param.default is not None else ""),
+                                **({} if param.enum is None else {"enum": param.enum})
+                            }
+                            for param_name, param in tool.parameters.items()
+                        },
+                        "required": [
+                            param_name for param_name, param in tool.parameters.items()
+                            if param.required
+                        ]
+                    }
                 }
             }
             for tool in options.functions
         ]
+
     def _prepare_request_kwargs(self, 
                                openai_messages: List[Dict[str, Any]], 
                                functions: Optional[List[Dict[str, Any]]], 
@@ -101,7 +160,7 @@ class OpenAILLM(LLMProtocol):
             "top_p": options.top_p,
             "max_tokens": options.max_tokens,
             "stop": options.stop_sequences,
-            "functions": functions,
+            "tools": functions,
             **self.default_kwargs,
             **options.vendor_specific
         }
@@ -132,14 +191,18 @@ class OpenAILLM(LLMProtocol):
             # Process the response
             message = response.choices[0].message
             
-            # Handle function calls
-            function_call = None
-            if message.function_call:
-                function_call = LLMFunctionCall(
-                    name=message.function_call.name,
-                    arguments=json.loads(message.function_call.arguments)
-                )
-            
+            # Handle tool calls
+            tool_calls = None
+            if message.tool_calls and len(message.tool_calls) > 0:
+                tool_calls = [
+                    LLMFunctionCall(
+                        id=tool_call.id,
+                        name=tool_call.function.name,
+                        arguments=json.loads(tool_call.function.arguments)
+                    )
+                    for tool_call in message.tool_calls
+                ]
+
             # Handle usage statistics
             usage = None
             if response.usage:
@@ -151,7 +214,7 @@ class OpenAILLM(LLMProtocol):
             
             return LLMResponse(
                 content=message.content or "",
-                function_call=function_call,
+                tool_calls=tool_calls,
                 usage=usage,
                 vendor_specific={"id": response.id, "model": response.model}
             )

@@ -1,6 +1,7 @@
 from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol, LLMProtocol, ToolProviderProtocol
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole
+from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionResult
 
+import json
 
 class StressingToolUser(TextMessageHandlerProtocol):
     """
@@ -92,45 +93,62 @@ class StressingToolUser(TextMessageHandlerProtocol):
             
             # Add assistant response to conversation
             assistant_message = LLMMessage(
-                role=LLMRole.ASSISTANT,
-                content=llm_response.content
+                role=LLMRole.FUNCTION if llm_response.tool_calls else LLMRole.ASSISTANT,
+                content=llm_response.content,
+                tool_calls=llm_response.tool_calls
             )
             conversation.append(assistant_message)
             
             # Check if tool was called and we haven't reached max thoughts
-            if thoughts < self.max_thoughts and llm_response.function_call:
-                # Execute the tool
-                tool_name = llm_response.function_call.name
-                tool_args = llm_response.function_call.arguments
+            if thoughts < self.max_thoughts and llm_response.tool_calls and len(llm_response.tool_calls) > 0:
+                # Execute all tools and collect results
+                tool_results = []
                 
-                try:
-                    tool_result = await self.tool_provider.execute_tool(tool_name, tool_args)
+                for tool_call in llm_response.tool_calls:
+                    tool_name = tool_call.name
+                    tool_args = tool_call.arguments
                     
-                    if tool_result.success:
-                        # Add successful tool result to conversation
-                        conversation.append(LLMMessage(
-                            role=LLMRole.FUNCTION,
-                            name=tool_name,
-                            content=str(tool_result.result)
-                        ))
-                    else:
-                        # Tool execution failed
-                        conversation.append(LLMMessage(
-                            role=LLMRole.SYSTEM,
-                            content=f"Error executing tool {tool_name}: {tool_result.error}"
-                        ))
-                        # Increase stress level on failure
+                    try:
+                        tool_result = await self.tool_provider.execute_tool(tool_name, tool_args)
+                        
+                        if tool_result.success:
+                            tool_results.append({
+                                "id": tool_call.id,
+                                "name": tool_name,
+                                "result": json.dumps(tool_result.result, default=repr)
+                            })
+                        else:
+                            # Tool execution failed
+                            tool_results.append({
+                                "id": tool_call.id,
+                                "name": tool_name,
+                                "error": f"Error: {tool_result.error}"
+                            })
+                            stress_level += 0.1
+                    except Exception as e:
+                        # Handle any exceptions during tool execution
+                        tool_results.append({
+                            "id": tool_call.id,
+                            "name": tool_name,
+                            "error": f"Error: {str(e)}"
+                        })
                         stress_level += 0.1
-                except Exception as e:
-                    # Handle any exceptions during tool execution
-                    conversation.append(LLMMessage(
-                        role=LLMRole.SYSTEM,
-                        content=f"Error executing tool {tool_name}: {str(e)}"
-                    ))
-                    stress_level += 0.1
+
+                conversation.append(LLMMessage(
+                    role=LLMRole.FUNCTION,                        
+                    tool_results=[
+                        LLMFunctionResult(
+                            id=tool_result.get("id"),
+                            name=tool_result.get("name"),
+                            content=tool_result.get("result", tool_result.get("error"))
+                        ) for tool_result in tool_results
+                    ]
+
+                ))
+                    
             else:
                 # No tool call or max thoughts reached, end the conversation
                 break
         
         # Send the final response
-        await self.response.respond(conversation[-1].content)
+        await self.response.respond_text(conversation[-1].content)

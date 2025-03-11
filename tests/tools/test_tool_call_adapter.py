@@ -133,9 +133,10 @@ async def test_generate_with_tool_call(mock_llm, sample_tool):
     
     # Verify the response
     assert response.content == "I'll check the weather for you."
-    assert response.function_call is not None
-    assert response.function_call.name == "get_weather"
-    assert response.function_call.arguments["location"] == "San Francisco, CA"
+    assert response.tool_calls is not None
+    assert len(response.tool_calls) == 1
+    assert response.tool_calls[0].name == "get_weather"
+    assert response.tool_calls[0].arguments["location"] == "San Francisco, CA"
     
     # Verify the mock was called with modified messages
     called_messages = mock_llm.generate.call_args[0][0]
@@ -169,7 +170,7 @@ async def test_generate_without_tool_call(mock_llm):
     
     # Verify the response
     assert response.content == "I don't have access to weather information."
-    assert response.function_call is None
+    assert response.tool_calls is None
 
 
 @pytest.mark.asyncio

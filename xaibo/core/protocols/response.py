@@ -7,7 +7,7 @@ from xaibo.core.models.response import Response
 class ResponseProtocol(Protocol):
     """Protocol for sending responses."""
 
-    def get_response(self) -> Response:
+    async def get_response(self) -> Response:
         """Get the current response object.
 
         Returns:
