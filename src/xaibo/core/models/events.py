@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class EventType(str, Enum):
     CALL = "call"
     RESULT = "result"
+    EXCEPTION = "exception"
 
 
 class Event(BaseModel):
@@ -19,3 +20,4 @@ class Event(BaseModel):
     call_id: str
     arguments: dict[str, Any] | None = None
     result: Any | None = None
+    exception: str | None = None

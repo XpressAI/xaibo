@@ -3,6 +3,8 @@ from .config import AgentConfig
 from xaibo.core.models import EventType, Event
 import time
 
+import traceback
+
 class Exchange:
     """Handles module instantiation and dependency injection for agents."""
 
@@ -104,13 +106,14 @@ class MethodProxy:
         self._call_id = 0
         self._agent_id = agent_id
 
-    def _emit_event(self, event_type: EventType, result=None, arguments=None):
+    def _emit_event(self, event_type: EventType, result=None, arguments=None, exception=None):
         """Emit an event to all registered listeners.
         
         Args:
             event_type: Type of event (CALL or RESULT)
             result: Optional result value for RESULT events
             arguments: Optional arguments for CALL events
+            exception: Optional exception for EXCEPTION events
         """
         if len(self._event_listeners) == 0:
             return
@@ -127,13 +130,18 @@ class MethodProxy:
             time=time.time(),
             result=result,
             arguments=arguments,
+            exception=exception,
             call_id=f"{id(self._parent)}-{id(self._method)}-{self._call_id}",
             agent_id=self._agent_id
         )
 
         for prefix, handler in self._event_listeners:
             if not prefix or event.event_name.startswith(prefix):
-                handler(event)
+                try:
+                    handler(event)
+                except:
+                    print("Exception during event handling")
+                    traceback.print_exc()
                 
     async def __call__(self, *args, **kwargs):
         """Forward calls to the wrapped method.
@@ -153,8 +161,17 @@ class MethodProxy:
             arguments={"args": args, "kwargs": kwargs}
         )
 
-        # Call method
-        result = await self._method(*args, **kwargs)
+        try:
+            # Call method
+            result = await self._method(*args, **kwargs)
+        except:
+            self._emit_event(
+                EventType.EXCEPTION,
+                exception=traceback.format_exc()
+            )
+            traceback.print_exc()
+            raise
+
 
         # Emit result event
         self._emit_event(
