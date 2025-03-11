@@ -12,6 +12,7 @@ class DebugEventListener:
             log_level: The logging level to use for event logs (default: logging.DEBUG)
         """
         self.logger = logging.getLogger("xaibo.events")
+        self.logger.setLevel(log_level)
         self.log_level = log_level
     
     def handle_event(self, event: Event) -> None:
@@ -45,5 +46,6 @@ def register_debug_listener(registry, prefix: str = "", agent_id: Optional[str] 
         agent_id: Optional agent ID to filter events for
         log_level: The logging level to use for event logs (default: logging.DEBUG)
     """
+    logging.basicConfig()
     listener = DebugEventListener(log_level=log_level)
     registry.register_event_listener(prefix, listener.handle_event, agent_id)
