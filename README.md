@@ -26,15 +26,15 @@ modules:
 Or create the same agent in code:
 
 ```python
-from xaibo import AgentConfig, Registry
-from xaibo.core.config import ModuleConfig
+from xaibo import AgentConfig, Xaibo
+from xaibo.core import ModuleConfig
 from xaibo_examples.echo import Echo
 
 config = AgentConfig(
     id="echo-agent-minimal",
     modules=[
         ModuleConfig(
-            module=Echo, 
+            module=Echo,
             id="echo",
             config={
                 "prefix": "You said: "
@@ -43,10 +43,10 @@ config = AgentConfig(
     ]
 )
 
-registry = Registry()
-registry.register_agent(config)
+xaibo = Xaibo()
+xaibo.register_agent(config)
 
-agent = registry.get_agent("echo-agent-minimal")
+agent = xaibo.get_agent("echo-agent-minimal")
 response = await agent.handle_text("Hello world")
 # response.text == "You said: Hello world"
 ```

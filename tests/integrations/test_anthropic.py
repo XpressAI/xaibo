@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from xaibo.primitives.modules.llm.anthropic import AnthropicLLM
+from xaibo.primitives.modules.llm import AnthropicLLM
 from xaibo.core.models.tools import Tool, ToolParameter
 from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionCall, LLMFunctionResult
 

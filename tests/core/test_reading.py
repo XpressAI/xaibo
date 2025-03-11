@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from ruamel.yaml import YAML
 from xaibo import AgentConfig

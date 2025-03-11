@@ -1,7 +1,6 @@
 import os
 import json
 import logging
-import uuid
 from typing import List, Optional, AsyncIterator, Dict, Any
 
 from openai import AsyncOpenAI

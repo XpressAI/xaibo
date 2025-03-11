@@ -1,7 +1,7 @@
 import importlib
 import inspect
 import sys
-from typing import Any, Dict, List, Callable, Union, Optional, Iterable
+from typing import Any, Dict, List
 
 import docstring_parser
 

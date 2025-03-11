@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from typing import AsyncIterator, Dict, List, Optional, Any
+from typing import AsyncIterator, List, Optional
 
 from xaibo.core.protocols.llm import LLMProtocol
 from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMRole

@@ -1,5 +1,4 @@
 import pytest
-import os
 from pathlib import Path
 from xaibo import AgentConfig, Registry
 from xaibo.core.protocols import ResponseProtocol
