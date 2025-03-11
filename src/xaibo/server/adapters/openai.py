@@ -6,7 +6,7 @@ from uuid import uuid4
 from quart import Quart, request, abort
 
 from xaibo import Xaibo
-from xaibo.server.adapters.conversation import SimpleConversation
+from xaibo.primitives.modules.conversation.conversation import SimpleConversation
 
 from asyncio import wait_for, Queue, create_task, TimeoutError
 
