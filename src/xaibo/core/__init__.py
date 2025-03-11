@@ -1,4 +1,4 @@
-from .config import AgentConfig, ModuleConfig
+from .config import AgentConfig, ModuleConfig, ExchangeConfig
 from .registry import Registry
 from .exchange import Exchange
 from .agent import Agent

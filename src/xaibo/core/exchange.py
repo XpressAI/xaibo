@@ -12,30 +12,58 @@ class Exchange:
         """Create instances of all modules defined in config."""
         module_instances = {}
         event_listeners = event_listeners or []
-
-        # First pass - instantiate modules that don't have dependencies
-        for module_config in config.modules:
-            if not module_config.uses:
-                module_class = config._import_module_class(module_config.module)
-                module_instances[module_config.id] = Proxy(module_class(
-                    config=module_config.config
-                ), event_listeners=event_listeners, agent_id=config.id)
-
-        # Second pass - instantiate modules with dependencies
-        for module_config in config.modules:
-            if module_config.id not in module_instances and module_config.uses:
-                module_class = config._import_module_class(module_config.module)
-                dependencies = self._get_module_dependencies(config, module_config, module_instances, module_class)
-                dependencies.update(self._get_overrides_by_type(module_class, override_bindings))
-
-                module_instances[module_config.id] = Proxy(module_class(
-                    **dependencies,
-                    config=module_config.config
-                ), event_listeners=event_listeners, agent_id=config.id)
-
+        
+        # Keep track of modules that still need to be instantiated
+        remaining_modules = set(module_config.id for module_config in config.modules)
+        
+        # Continue until all modules are instantiated or no progress is made
+        while remaining_modules:
+            progress_made = False
+            
+            # Try to instantiate any module whose dependencies are satisfied
+            for module_config in config.modules:
+                if module_config.id not in remaining_modules:
+                    continue  # Already instantiated
+                
+                # Check if this module has no dependencies or all dependencies are already instantiated
+                dependencies_satisfied = True
+                required_dependencies = []
+                
+                if module_config.uses:
+                    # Find all dependencies for this module
+                    for exchange in config.exchange:
+                        if exchange.module == module_config.id:
+                            if exchange.provider not in module_instances:
+                                dependencies_satisfied = False
+                                required_dependencies.append(exchange.provider)
+                
+                if not module_config.uses or dependencies_satisfied:
+                    # All dependencies are available, instantiate this module
+                    module_class = config._import_module_class(module_config.module)
+                    
+                    if module_config.uses:
+                        dependencies = self._get_module_dependencies(config, module_config, module_instances, module_class)
+                        dependencies.update(self._get_overrides_by_type(module_class, override_bindings))
+                        
+                        module_instances[module_config.id] = Proxy(module_class(
+                            **dependencies,
+                            config=module_config.config
+                        ), event_listeners=event_listeners, agent_id=config.id)
+                    else:
+                        module_instances[module_config.id] = Proxy(module_class(
+                            config=module_config.config
+                        ), event_listeners=event_listeners, agent_id=config.id)
+                    
+                    remaining_modules.remove(module_config.id)
+                    progress_made = True
+            
+            # If no progress was made in this iteration, we have a circular dependency
+            if not progress_made and remaining_modules:
+                raise ValueError(f"Circular dependency detected among modules: {remaining_modules}")
+        
         module_instances['__entry__'] = self._get_entry_module(config, module_instances)
         return module_instances
-
+    
     def _get_module_dependencies(self, config: AgentConfig, module_config: any, module_instances: dict[str, any], module_class: any) -> dict[str, any]:
         """Get dependencies for a module from exchange config."""
         dependencies = {}

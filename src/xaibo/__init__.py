@@ -1,1 +1,1 @@
-from .core import AgentConfig, ModuleConfig, Registry, Agent, Xaibo
+from .core import AgentConfig, ModuleConfig, ExchangeConfig, Registry, Agent, Xaibo
