@@ -84,6 +84,60 @@ exchange:
     provider: __response__
 ```
 
+## Web Server and API Adapters
+
+Xaibo includes a built-in web server with API adapters for easy integration with existing tools and frameworks.
+
+### Running the Server from CLI
+
+Xaibo provides a convenient command-line interface to start the web server:
+
+    # Start the server with default settings
+    python -m xaibo.server.web
+    
+    # Specify port and host
+    python -m xaibo.server.web --port 3000 --host 127.0.0.1
+    
+    # Load agents from a directory
+    python -m xaibo.server.web --agent-dir ./my_agents
+    
+    # Enable specific adapters (e.g. openai api compatibility, see below)
+    python -m xaibo.server.web --adapter xaibo.server.adapters.OpenAiApiAdapter
+    
+    # Get help with all available options
+    python -m xaibo.server --help
+
+The CLI automatically loads agent configurations from YAML files in the specified directory, making it easy to deploy your agents as a service without writing any code.
+
+
+### OpenAI API Compatibility
+
+The OpenAI API adapter allows you to use Xaibo agents with any client that supports the OpenAI Chat Completions API:
+
+    from xaibo import Xaibo
+    from xaibo.server import XaiboWebServer
+    from xaibo.server.adapters.openai import OpenAiApiAdapter
+    
+    # Initialize Xaibo and register your agents
+    xaibo = Xaibo()
+    xaibo.register_agent(my_agent_config)
+    
+    # Create a web server with the OpenAI adapter
+    server = XaiboWebServer(
+        xaibo=xaibo,
+        adapters=[OpenAiApiAdapter(xaibo)]
+    )
+    
+    # Start the server
+    server.run(host="0.0.0.0", port=8000)
+
+Once running, you can connect to your Xaibo agents using any OpenAI-compatible client by pointing it to your server's endpoint. The adapter exposes standard OpenAI API endpoints:
+
+- `GET /openai/models` - Lists all registered agents as available models
+- `POST /openai/chat/completions` - Handles chat completion requests
+
+This makes it easy to integrate Xaibo with existing tools and UIs that support the OpenAI API.
+
 
 # Contributing
 

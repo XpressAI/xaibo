@@ -15,11 +15,13 @@ def get_class_by_path(path: str) -> Type:
     return clazz
 
 class XaiboWebServer:
-    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str) -> None:
+    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000) -> None:
         self.xaibo = xaibo
         self.app = Quart("XaiboWebServer")
         self.app = cors(self.app, allow_origin="*")
         self.agent_dir = agent_dir
+        self.host = host
+        self.port = port
         self.configs = {}
         self.watcher_task = None
 
@@ -70,7 +72,7 @@ class XaiboWebServer:
                 except asyncio.CancelledError:
                     pass
 
-        self.app.run()
+        self.app.run(host=self.host, port=self.port)
 
 if __name__ == "__main__":
     import argparse
@@ -79,10 +81,14 @@ if __name__ == "__main__":
     parser.add_argument("--agent-dir", dest="agent_dir", default="./agents", action="store")
     parser.add_argument("--adapter", dest="adapters", default=[], action="append",
                         help="Python Package path to an API adapter class (e.g. xaibo.server.adapters.OpenAiApiAdapter)")
+    parser.add_argument("--host", dest="host", default="127.0.0.1", action="store",
+                        help="Host address to bind the server to")
+    parser.add_argument("--port", dest="port", default=8000, type=int, action="store",
+                        help="Port to run the server on")
 
     args = parser.parse_args()
 
     xaibo = Xaibo()
 
-    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir)
+    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir, args.host, args.port)
     server.start()
