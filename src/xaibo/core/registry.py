@@ -69,7 +69,6 @@ class Registry:
         if id not in self.known_agent_configs:
             raise KeyError(f"No agent configuration found for id: {id}")
         config = self.known_agent_configs[id]
-        exchange = Exchange()
         
         # Filter event listeners for this agent
         agent_listeners = [
@@ -80,13 +79,15 @@ class Registry:
         # Add any additional event listeners
         if additional_event_listeners:
             agent_listeners.extend(additional_event_listeners)
-        
-        module_instances = exchange.instantiate_modules(
-            config, 
-            override_bindings,
+
+        exchange = Exchange(
+            config,
+            override_bindings=override_bindings,
             event_listeners=agent_listeners
         )
-        return Agent(id=id, modules=module_instances)
+
+        return Agent(id=id, exchange=exchange)
+    
     def register_event_listener(self, prefix: str, handler: Callable[[Event], None], agent_id: str | None = None) -> None:
         """Register an event listener for module events.
 

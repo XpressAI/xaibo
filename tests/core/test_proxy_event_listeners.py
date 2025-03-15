@@ -18,7 +18,7 @@ async def test_proxy_event_listeners():
         events.append(event)
         
     obj = DummyClass()
-    proxy = Proxy(obj, event_listeners=[("", event_handler)], agent_id="test-agent")
+    proxy = Proxy(obj, event_listeners=[("", event_handler)], agent_id="test-agent", caller_id="test-caller")
     
     # Test method call events
     result = await proxy.test_method("foo", arg2="bar")
@@ -51,7 +51,7 @@ async def test_proxy_event_filtering():
         
     obj = DummyClass()
     # Only listen for test_method events
-    proxy = Proxy(obj, event_listeners=[("test_proxy_event_listeners.DummyClass.test_method", event_handler)], agent_id="test-agent")
+    proxy = Proxy(obj, event_listeners=[("test_proxy_event_listeners.DummyClass.test_method", event_handler)], agent_id="test-agent", caller_id="test-caller")
     
     await proxy.test_method("foo")  # Should generate events
     await proxy.another_method()    # Should not generate events
@@ -75,7 +75,7 @@ async def test_multiple_event_listeners():
     proxy = Proxy(obj, event_listeners=[
         ("test_proxy_event_listeners.DummyClass.test_method", handler1),
         ("test_proxy_event_listeners.DummyClass.another_method", handler2)
-    ], agent_id="test-agent")
+    ], agent_id="test-agent", caller_id="test-caller")
     
     await proxy.test_method("foo")
     await proxy.another_method()

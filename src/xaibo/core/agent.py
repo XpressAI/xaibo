@@ -1,12 +1,13 @@
 from typing import BinaryIO
 
 from xaibo.core.models import Response
+from xaibo.core.exchange import Exchange
 
 
 class Agent:
-    def __init__(self, id: str, modules: dict[str, any]):
+    def __init__(self, id: str, exchange: Exchange):
         self.id = id
-        self.modules = modules
+        self.exchange = exchange
 
     def __str__(self) -> str:
         """Get a string representation of the agent.
@@ -14,8 +15,15 @@ class Agent:
         Returns:
             str: A string describing the agent and its modules
         """
-        module_list = "\n".join(f"  - {module_id}" for module_id in self.modules.keys())
-        return f"Agent '{self.id}' with modules:\n{module_list}"
+        return f"Agent '{self.id}'"
+
+    def _get_entry_module(self):
+        module = self.exchange.get_module("__entry__", caller_id=f"agent:{self.id}")
+        return module
+
+    def _get_response_module(self):
+        module = self.exchange.get_module("__response__", caller_id=f"agent:{self.id}")
+        return module
 
     async def handle_text(self, text: str) -> Response:
         """Handle an incoming text message by delegating to the entry module.
@@ -29,10 +37,11 @@ class Agent:
         Raises:
             AttributeError: If entry module doesn't implement TextMessageHandlerProtocol
         """
-        if not hasattr(self.modules["__entry__"], "handle_text"):
+        entry_module = self._get_entry_module()
+        if not hasattr(entry_module, "handle_text"):
             raise AttributeError("Entry module does not implement TextMessageHandlerProtocol")
-        await self.modules["__entry__"].handle_text(text)
-        return await self.modules["__response__"].get_response()
+        await entry_module.handle_text(text)
+        return await self._get_response_module().get_response()
 
     async def handle_image(self, image: BinaryIO) -> Response:
         """Handle an incoming image by delegating to the entry module.
@@ -46,10 +55,11 @@ class Agent:
         Raises:
             AttributeError: If entry module doesn't implement ImageMessageHandlerProtocol
         """
-        if not hasattr(self.modules["__entry__"], "handle_image"):
+        entry_module = self._get_entry_module()
+        if not hasattr(entry_module, "handle_image"):
             raise AttributeError("Entry module does not implement ImageMessageHandlerProtocol")
-        await self.modules["__entry__"].handle_image(image)
-        return await self.modules["__response__"].get_response()
+        await entry_module.handle_image(image)
+        return await self._get_response_module().get_response()
 
     async def handle_audio(self, audio: BinaryIO) -> Response:
         """Handle incoming audio by delegating to the entry module.
@@ -63,10 +73,11 @@ class Agent:
         Raises:
             AttributeError: If entry module doesn't implement AudioMessageHandlerProtocol
         """
-        if not hasattr(self.modules["__entry__"], "handle_audio"):
+        entry_module = self._get_entry_module()
+        if not hasattr(entry_module, "handle_audio"):
             raise AttributeError("Entry module does not implement AudioMessageHandlerProtocol")
-        await self.modules["__entry__"].handle_audio(audio)
-        return await self.modules["__response__"].get_response()
+        await entry_module.handle_audio(audio)
+        return await self._get_response_module().get_response()
 
     async def handle_video(self, video: BinaryIO) -> Response:
         """Handle incoming video by delegating to the entry module.
@@ -80,7 +91,8 @@ class Agent:
         Raises:
             AttributeError: If entry module doesn't implement VideoMessageHandlerProtocol
         """
-        if not hasattr(self.modules["__entry__"], "handle_video"):
+        entry_module = self._get_entry_module()
+        if not hasattr(entry_module, "handle_video"):
             raise AttributeError("Entry module does not implement VideoMessageHandlerProtocol")
-        await self.modules["__entry__"].handle_video(video)
-        return await self.modules["__response__"].get_response()
+        await entry_module.handle_video(video)
+        return await self._get_response_module().get_response()

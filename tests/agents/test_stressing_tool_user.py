@@ -22,7 +22,7 @@ async def test_stressing_tool_user_instantiation():
     with open(resources_dir / "yaml" / "stressing_tool_user.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
-    
+
     # Create registry and register agent
     xaibo = Xaibo()
     xaibo.register_agent(config)

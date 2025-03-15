@@ -1,5 +1,5 @@
 from typing import Type, Union
-from .config import AgentConfig
+from .config import AgentConfig, ModuleConfig
 from xaibo.core.models import EventType, Event
 import time
 
@@ -8,20 +8,33 @@ import traceback
 class Exchange:
     """Handles module instantiation and dependency injection for agents."""
 
-    def instantiate_modules(self, config: AgentConfig, override_bindings: dict[Union[str, Type], any], event_listeners: list[tuple[str, callable]] = None) -> dict[str, any]:
+    def __init__(self, config: AgentConfig = None, override_bindings: dict[Union[str, Type], any] = None, event_listeners: list[tuple[str, callable]] = None):
+        """Initialize the exchange and optionally instantiate modules.
+        
+        Args:
+            config (AgentConfig, optional): The agent configuration to instantiate modules from. Defaults to None.
+            override_bindings (dict[Union[str, Type], any], optional): Custom bindings to override defaults. Defaults to None.
+            event_listeners (list[tuple[str, callable]], optional): Event listeners to register. Defaults to None.
+        """
+        self.module_instances = {}
+        self.event_listeners = event_listeners or []
+        self.config = config
+        if config:
+            self._instantiate_modules(override_bindings or {})
+
+    def _instantiate_modules(self, override_bindings: dict[Union[str, Type], any]) -> dict[str, any]:
         """Create instances of all modules defined in config."""
-        module_instances = {}
-        event_listeners = event_listeners or []
+        self.module_instances = {}
         
         # Keep track of modules that still need to be instantiated
-        remaining_modules = set(module_config.id for module_config in config.modules)
+        remaining_modules = set(module_config.id for module_config in self.config.modules)
         
         # Continue until all modules are instantiated or no progress is made
         while remaining_modules:
             progress_made = False
             
             # Try to instantiate any module whose dependencies are satisfied
-            for module_config in config.modules:
+            for module_config in self.config.modules:
                 if module_config.id not in remaining_modules:
                     continue  # Already instantiated
                 
@@ -31,28 +44,28 @@ class Exchange:
                 
                 if module_config.uses:
                     # Find all dependencies for this module
-                    for exchange in config.exchange:
+                    for exchange in self.config.exchange:
                         if exchange.module == module_config.id:
-                            if exchange.provider not in module_instances:
+                            if exchange.provider not in self.module_instances:
                                 dependencies_satisfied = False
                                 required_dependencies.append(exchange.provider)
                 
                 if not module_config.uses or dependencies_satisfied:
                     # All dependencies are available, instantiate this module
-                    module_class = config._import_module_class(module_config.module)
+                    module_class = self.config._import_module_class(module_config.module)
                     
                     if module_config.uses:
-                        dependencies = self._get_module_dependencies(config, module_config, module_instances, module_class)
+                        dependencies = self._get_module_dependencies(module_config, module_class)
                         dependencies.update(self._get_overrides_by_type(module_class, override_bindings))
                         
-                        module_instances[module_config.id] = Proxy(module_class(
-                            **dependencies,
+                        self.module_instances[module_config.id] = module_class(
+                            **(self._get_proxied_dependencies(module_config, dependencies)),
                             config=module_config.config
-                        ), event_listeners=event_listeners, agent_id=config.id)
+                        )
                     else:
-                        module_instances[module_config.id] = Proxy(module_class(
+                        self.module_instances[module_config.id] = module_class(
                             config=module_config.config
-                        ), event_listeners=event_listeners, agent_id=config.id)
+                        )
                     
                     remaining_modules.remove(module_config.id)
                     progress_made = True
@@ -61,18 +74,17 @@ class Exchange:
             if not progress_made and remaining_modules:
                 raise ValueError(f"Circular dependency detected among modules: {remaining_modules}")
         
-        module_instances['__entry__'] = self._get_entry_module(config, module_instances)
-        return module_instances
-    
-    def _get_module_dependencies(self, config: AgentConfig, module_config: any, module_instances: dict[str, any], module_class: any) -> dict[str, any]:
+        self.module_instances['__entry__'] = self._get_entry_module(self.module_instances)        
+
+    def _get_module_dependencies(self, module_config: any, module_class: any) -> dict[str, any]:
         """Get dependencies for a module from exchange config."""
         dependencies = {}
-        for exchange in config.exchange:
+        for exchange in self.config.exchange:
             if exchange.module == module_config.id:
                 params = module_class.__init__.__annotations__
                 matching_params = [
                     param for param, type_hint in params.items()
-                    if isinstance(module_instances[exchange.provider], type_hint)
+                    if isinstance(self.module_instances[exchange.provider], type_hint)
                 ]
 
                 if len(matching_params) > 1:
@@ -80,7 +92,7 @@ class Exchange:
                 elif len(matching_params) == 0:
                     raise ValueError(f"No parameter found matching protocol {exchange.protocol} and type of {exchange.provider} in module {module_config.id}")
 
-                dependencies[matching_params[0]] = module_instances[exchange.provider]
+                dependencies[matching_params[0]] = self.module_instances[exchange.provider]
         return dependencies
 
     def _get_overrides_by_type(self, module_class: any, override_bindings: dict[Union[str, Type], any]) -> dict[str, any]:
@@ -91,16 +103,16 @@ class Exchange:
         for param_name, param_type in params.items():
             # Check for direct type match
             if param_type in override_bindings:
-                dependencies[param_name] = Proxy(override_bindings[param_type])
+                dependencies[param_name] = override_bindings[param_type]
             # Check for string type name match
             elif param_type.__name__ in override_bindings:
-                dependencies[param_name] = Proxy(override_bindings[param_type.__name__])
+                dependencies[param_name] = override_bindings[param_type.__name__]
         return dependencies
 
-    def _get_entry_module(self, config: AgentConfig, module_instances: dict[str, any]) -> any:
+    def _get_entry_module(self, module_instances: dict[str, any]) -> any:
         """Get the entry module from exchange config."""
         entry_module = None
-        for exchange in config.exchange:
+        for exchange in self.config.exchange:
             if exchange.module == "__entry__":
                 if entry_module is not None:
                     raise ValueError("Multiple message handlers found")
@@ -111,6 +123,26 @@ class Exchange:
 
         return entry_module
 
+    def _get_proxied_dependencies(self, module_config: ModuleConfig, module_instances: dict[str, any]) -> dict[str, any]:
+        """Get proxied dependencies for module from exchange config."""
+        return {
+            key: Proxy(value, event_listeners=self.event_listeners, agent_id=self.config.id, caller_id=module_config.id)
+            for key, value in module_instances.items()
+        }
+    
+    def get_module(self, module_name: str, caller_id: str):
+        """Get a module in this exchange.
+        
+        Args:
+            module_name (str): The name of the module to retrieve
+            caller_id (str): Id of the module requesting this.
+            
+        Returns:
+            The module instance or None if not found
+        """
+        module = self.module_instances.get(module_name)    
+        if module:
+            return Proxy(module, event_listeners=self.event_listeners, agent_id=self.config.id, caller_id=caller_id)
 
 class MethodProxy:
     """A proxy class that wraps a method and delegates calls.
@@ -119,7 +151,7 @@ class MethodProxy:
     to the parent object to preserve the method's context and emits events to registered listeners.
     """
 
-    def __init__(self, method, parent, event_listeners=None, agent_id=None):
+    def __init__(self, method, parent, event_listeners=None, agent_id=None, caller_id=None):
         """Initialize the method proxy.
         
         Args:
@@ -127,12 +159,14 @@ class MethodProxy:
             parent: The parent object that owns this method
             event_listeners: List of (prefix, handler) tuples for event handling
             agent_id: ID of the agent this method belongs to
+            caller_id: ID of the method caller
         """
         self._method = method
         self._parent = parent
         self._event_listeners = event_listeners or []
         self._call_id = 0
         self._agent_id = agent_id
+        self._caller_id = caller_id
 
     def _emit_event(self, event_type: EventType, result=None, arguments=None, exception=None):
         """Emit an event to all registered listeners.
@@ -160,7 +194,8 @@ class MethodProxy:
             arguments=arguments,
             exception=exception,
             call_id=f"{id(self._parent)}-{id(self._method)}-{self._call_id}",
-            agent_id=self._agent_id
+            agent_id=self._agent_id,
+            caller_id=self._caller_id
         )
 
         for prefix, handler in self._event_listeners:
@@ -221,17 +256,19 @@ class Proxy:
     attributes directly.
     """
 
-    def __init__(self, obj, event_listeners=None, agent_id=None):
+    def __init__(self, obj, event_listeners=None, agent_id=None, caller_id=None):
         """Initialize the proxy with an object to wrap.
         
         Args:
             obj: The object to wrap and proxy
             event_listeners: List of (prefix, handler) tuples for event handling
             agent_id: ID of the agent this proxy belongs to
+            caller_id: ID of the calling module
         """
         self._obj = obj
         self._event_listeners = event_listeners or []
         self._agent_id = agent_id
+        self._caller_id = caller_id
 
     def __getattr__(self, name):
         """Forward attribute access to the wrapped object.
@@ -244,7 +281,7 @@ class Proxy:
         """        
         attr = getattr(self._obj, name)
         if callable(attr):
-            return MethodProxy(attr, self._obj, self._event_listeners, self._agent_id)
+            return MethodProxy(attr, self._obj, self._event_listeners, self._agent_id, self._caller_id)
         return attr
 
     def __repr__(self):

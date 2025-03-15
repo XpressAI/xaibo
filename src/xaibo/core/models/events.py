@@ -18,6 +18,7 @@ class Event(BaseModel):
     method_name: str
     time: float
     call_id: str
+    caller_id: str
     arguments: dict[str, Any] | None = None
     result: Any | None = None
     exception: str | None = None
