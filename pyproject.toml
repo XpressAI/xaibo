@@ -12,12 +12,14 @@ dependencies = [
     "pytest-asyncio>=0.25.3",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 
 [project.optional-dependencies]
 webserver = [
-    "quart>=0.20.0",
-    "quart-cors>=0.8.0",
+    "fastapi[standard]>=0.115.12",
     "watchfiles>=1.0.4",
 ]
 openai = [

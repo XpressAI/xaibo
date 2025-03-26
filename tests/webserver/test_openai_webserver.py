@@ -3,7 +3,8 @@ import logging
 import pytest
 import asyncio
 import json
-from quart import Quart
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from xaibo import Xaibo, AgentConfig, ModuleConfig
 from xaibo.server.adapters.openai import OpenAiApiAdapter
@@ -155,8 +156,8 @@ def xaibo_instance():
 
 @pytest.fixture
 def app(xaibo_instance):
-    """Create a test Quart app with OpenAI adapter"""
-    app = Quart("TestApp")
+    """Create a test FastAPI app with OpenAI adapter"""
+    app = FastAPI()
     adapter = OpenAiApiAdapter(xaibo_instance, streaming_timeout=0.5)
     adapter.adapt(app)
     return app
@@ -165,16 +166,15 @@ def app(xaibo_instance):
 @pytest.fixture
 def client(app):
     """Create a test client"""
-    return app.test_client()
+    return TestClient(app)
 
 
-@pytest.mark.asyncio
-async def test_openai_models_endpoint(client):
+def test_openai_models_endpoint(client):
     """Test the OpenAI models endpoint returns the correct agent list"""
-    response = await client.get("/openai/models")
+    response = client.get("/openai/models")
     assert response.status_code == 200
     
-    data = await response.get_json()
+    data = response.json()
     assert data["object"] == "list"
     
     # Check that our test agents are in the list
@@ -185,8 +185,7 @@ async def test_openai_models_endpoint(client):
     assert "history-agent" in model_ids
 
 
-@pytest.mark.asyncio
-async def test_openai_chat_completion(client):
+def test_openai_chat_completion(client):
     """Test the OpenAI chat completion endpoint with non-streaming response"""
     request_data = {
         "model": "echo-agent",
@@ -195,21 +194,20 @@ async def test_openai_chat_completion(client):
         ]
     }
     
-    response = await client.post(
+    response = client.post(
         "/openai/chat/completions", 
         json=request_data
     )
     assert response.status_code == 200
     
-    data = await response.get_json()
+    data = response.json()
     assert data["object"] == "chat.completion"
     assert len(data["choices"]) == 1
     assert data["choices"][0]["message"]["role"] == "assistant"
     assert data["choices"][0]["message"]["content"] == "You said: Hello world"
 
 
-@pytest.mark.asyncio
-async def test_openai_chat_completion_streaming(client):
+def test_openai_chat_completion_streaming(client):
     """Test the OpenAI chat completion endpoint with streaming response"""
     request_data = {
         "model": "streaming-agent",
@@ -219,20 +217,19 @@ async def test_openai_chat_completion_streaming(client):
         "stream": True
     }
     
-    response = await client.post(
-        "/openai/chat/completions", 
+    with client.stream(
+        "POST",
+        "/openai/chat/completions",
         json=request_data
-    )
-    assert response.status_code == 200
-    assert response.headers["Content-Type"] == "text/event-stream"
-    
-    # Read the streaming response
-    full_response = ""
-    complete_content = ""
+    ) as response:
+        assert response.status_code == 200
+        assert response.headers["Content-Type"] == "text/event-stream; charset=utf-8"
+        
+        # Read the streaming response
+        full_response = ""
+        complete_content = ""
 
-    async for response_bytes in response.response:
-        response_text = str(response_bytes, "utf-8")
-        for line in response_text.splitlines():
+        for line in response.iter_lines():
             if line.startswith("data: "):
                 full_response += line + "\n"
 
@@ -248,8 +245,7 @@ async def test_openai_chat_completion_streaming(client):
     assert "data: [DONE]" in full_response
 
 
-@pytest.mark.asyncio
-async def test_openai_chat_completion_timeout_handling(client):
+def test_openai_chat_completion_timeout_handling(client):
     """Test that the streaming endpoint handles timeouts correctly"""
     request_data = {
         "model": "slow-agent",
@@ -259,18 +255,16 @@ async def test_openai_chat_completion_timeout_handling(client):
         "stream": True
     }
     
-
-    response = await client.post(
+    with client.stream(
+        "POST",
         "/openai/chat/completions",
         json=request_data
-    )
-    assert response.status_code == 200
+    ) as response:
+        assert response.status_code == 200
 
-    # Read the streaming response
-    timeout_chunks = 0
-    async for response_bytes in response.response:
-        response_text = str(response_bytes, "utf-8")
-        for line in response_text.splitlines():
+        # Read the streaming response
+        timeout_chunks = 0
+        for line in response.iter_lines():
             if line == "data: [DONE]":
                 break
 
@@ -287,8 +281,7 @@ async def test_openai_chat_completion_timeout_handling(client):
     assert timeout_chunks >= 2
 
 
-@pytest.mark.asyncio
-async def test_openai_chat_completion_invalid_model(client):
+def test_openai_chat_completion_invalid_model(client):
     """Test the OpenAI chat completion endpoint with an invalid model"""
     request_data = {
         "model": "non-existent-model",
@@ -297,15 +290,14 @@ async def test_openai_chat_completion_invalid_model(client):
         ]
     }
     
-    response = await client.post(
+    response = client.post(
         "/openai/chat/completions", 
         json=request_data
     )
     assert response.status_code == 400  # Bad request
 
 
-@pytest.mark.asyncio
-async def test_openai_chat_completion_with_history(client, caplog):
+def test_openai_chat_completion_with_history(client, caplog):
     """Test the OpenAI chat completion endpoint with conversation history"""
     caplog.set_level(logging.DEBUG)
 
@@ -318,14 +310,14 @@ async def test_openai_chat_completion_with_history(client, caplog):
         ]
     }
     
-    response = await client.post(
+    response = client.post(
         "/openai/chat/completions", 
         json=request_data
     )
 
     assert response.status_code == 200
     
-    data = await response.get_json()
+    data = response.json()
     assert data["choices"][0]["message"]["content"] == "History-aware response to: First message (Message #2 in conversation)"
     
     # Second message with history
@@ -339,18 +331,17 @@ async def test_openai_chat_completion_with_history(client, caplog):
         ]
     }
     
-    response = await client.post(
+    response = client.post(
         "/openai/chat/completions", 
         json=request_data
     )
     assert response.status_code == 200
     
-    data = await response.get_json()
+    data = response.json()
     assert data["choices"][0]["message"]["content"] == "History-aware response to: Second message (Message #4 in conversation)"
 
 
-@pytest.mark.asyncio
-async def test_openai_chat_completion_streaming_with_history(client):
+def test_openai_chat_completion_streaming_with_history(client):
     """Test the OpenAI streaming chat completion with conversation history"""
     request_data = {
         "model": "history-agent",
@@ -363,17 +354,16 @@ async def test_openai_chat_completion_streaming_with_history(client):
         "stream": True
     }
     
-    response = await client.post(
-        "/openai/chat/completions", 
+    with client.stream(
+        "POST",
+        "/openai/chat/completions",
         json=request_data
-    )
-    assert response.status_code == 200
-    
-    # Read the streaming response
-    complete_content = ""
-    async for response_bytes in response.response:
-        response_text = str(response_bytes, "utf-8")
-        for line in response_text.splitlines():
+    ) as response:
+        assert response.status_code == 200
+        
+        # Read the streaming response
+        complete_content = ""
+        for line in response.iter_lines():
             if line.startswith("data: ") and line != "data: [DONE]":
                 data = json.loads(line[6:])  # Remove "data: " prefix
                 if "choices" in data and data["choices"][0]["delta"].get("content"):
@@ -383,8 +373,7 @@ async def test_openai_chat_completion_streaming_with_history(client):
     assert "History-aware response to: Hello world (Message #4 in conversation)" == complete_content
 
 
-@pytest.mark.asyncio
-async def test_openai_chat_completion_with_complex_history(client):
+def test_openai_chat_completion_with_complex_history(client):
     """Test the OpenAI chat completion with a more complex conversation history"""
     request_data = {
         "model": "history-agent",
@@ -398,12 +387,12 @@ async def test_openai_chat_completion_with_complex_history(client):
         ]
     }
     
-    response = await client.post(
+    response = client.post(
         "/openai/chat/completions", 
         json=request_data
     )
     assert response.status_code == 200
     
-    data = await response.get_json()
+    data = response.json()
     # The HistoryAwareEcho agent should report the correct message count
     assert data["choices"][0]["message"]["content"] == "History-aware response to: Final question (Message #6 in conversation)"

@@ -3,7 +3,8 @@ import time
 import logging
 from uuid import uuid4
 
-from quart import Quart, request, abort
+from fastapi import FastAPI, Request, HTTPException, APIRouter
+from fastapi.responses import StreamingResponse, JSONResponse
 
 from xaibo import Xaibo
 from xaibo.primitives.modules.conversation.conversation import SimpleConversation
@@ -17,45 +18,49 @@ class OpenAiApiAdapter:
     def __init__(self, xaibo: Xaibo, streaming_timeout=10):
         self.xaibo = xaibo
         self.streaming_timeout = streaming_timeout
+        self.router = APIRouter()
 
-    def adapt(self, app: Quart):
-        @app.get("/openai/models")
-        async def get_models():
-            return {
-                "object": "list",
-                "data": [
-                    dict(
-                        id=agent,
-                        object="model",
-                        created=0,
-                        owned_by="organization-owner"
-                    ) for agent in self.xaibo.list_agents()
-                ]
-            }
+        # Register routes
+        self.router.add_api_route("/models", self.get_models, methods=["GET"])
+        self.router.add_api_route("/chat/completions", self.completion_request, methods=["POST"])
 
-        @app.post("/openai/chat/completions")
-        async def completion_request():
-            try:
-                async with app.app_context():
-                    data = await request.get_json()
-                    messages = data.get("messages", [])
-                    last_user_message = next((m['content'] for m in reversed(messages) if m['role'] == 'user'), None)
-                    
-                    # Create conversation history from messages
-                    conversation = SimpleConversation.from_openai_messages(messages)
+    def adapt(self, app: FastAPI):
+        app.include_router(self.router, prefix="/openai")
 
-                    is_stream = data.get('stream', False)
-                    conversation_id = uuid4().hex
-                    
-                    if is_stream:
-                        return await self.handle_streaming_request(app, data, last_user_message, conversation_id, conversation)
-                    else:
-                        return await self.handle_non_streaming_request(app, data, last_user_message, conversation_id, conversation)
-            except Exception as e:
-                logger.exception(f"Unexpected error in completion_request: {str(e)}")
-                raise
+    async def get_models(self):
+        return {
+            "object": "list",
+            "data": [
+                dict(
+                    id=agent,
+                    object="model",
+                    created=0,
+                    owned_by="organization-owner"
+                ) for agent in self.xaibo.list_agents()
+            ]
+        }
 
-    async def handle_streaming_request(self, app, data, last_user_message, conversation_id, conversation):
+    async def completion_request(self, request: Request):
+        try:
+            data = await request.json()
+            messages = data.get("messages", [])
+            last_user_message = next((m['content'] for m in reversed(messages) if m['role'] == 'user'), None)
+            
+            # Create conversation history from messages
+            conversation = SimpleConversation.from_openai_messages(messages)
+
+            is_stream = data.get('stream', False)
+            conversation_id = uuid4().hex
+            
+            if is_stream:
+                return await self.handle_streaming_request(data, last_user_message, conversation_id, conversation)
+            else:
+                return await self.handle_non_streaming_request(data, last_user_message, conversation_id, conversation)
+        except Exception as e:
+            logger.exception(f"Unexpected error in completion_request: {str(e)}")
+            raise
+
+    async def handle_streaming_request(self, data, last_user_message, conversation_id, conversation):
         # Create response helper
         def create_chunk_response(delta={}, finish_reason=None):
             return {
@@ -85,7 +90,7 @@ class OpenAiApiAdapter:
                     'ConversationHistoryProtocol': conversation
                 })
             except KeyError:
-                abort(400, "model not found")
+                raise HTTPException(status_code=400, detail="model not found")
             except Exception as e:
                 logger.exception(f"Error getting agent for streaming request: {str(e)}")
                 raise
@@ -122,19 +127,19 @@ class OpenAiApiAdapter:
                     raise
 
         try:
-            return generate_stream(), 200, {'Content-Type': 'text/event-stream'}
+            return StreamingResponse(generate_stream(), media_type='text/event-stream')
         except Exception as e:
             logger.exception(f"Error setting up streaming response: {str(e)}")
             raise
     
-    async def handle_non_streaming_request(self, app, data, last_user_message, conversation_id, conversation):
+    async def handle_non_streaming_request(self, data, last_user_message, conversation_id, conversation):
         try:
             # Regular non-streaming response with conversation history
             agent = self.xaibo.get_agent_with(data['model'], {
                 'ConversationHistoryProtocol': conversation
             })
         except KeyError:
-            abort(400, "model not found")
+            raise HTTPException(status_code=400, detail="model not found")
         except Exception as e:
             logger.exception(f"Error getting agent for non-streaming request: {str(e)}")
             raise

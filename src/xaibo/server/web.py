@@ -1,8 +1,12 @@
-from quart import Quart
-from quart_cors import cors
-from typing import Type
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
+from typing import Type
 import importlib
+import uvicorn
+import asyncio
+from watchfiles import awatch
 
 from xaibo import Xaibo, AgentConfig
 
@@ -16,9 +20,26 @@ def get_class_by_path(path: str) -> Type:
 
 class XaiboWebServer:
     def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000) -> None:
-        self.xaibo = xaibo
-        self.app = Quart("XaiboWebServer")
-        self.app = cors(self.app, allow_origin="*")
+        @asynccontextmanager
+        async def lifespan(app: FastAPI):
+            self.watcher_task = asyncio.create_task(self.watch_config_files())
+            yield
+            self.watcher_task.cancel()
+            try:
+                await self.watcher_task
+            except asyncio.CancelledError:
+                pass
+
+
+        self.xaibo = xaibo        
+        self.app = FastAPI(title="XaiboWebServer", lifespan=lifespan)
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
         self.agent_dir = agent_dir
         self.host = host
         self.port = port
@@ -32,7 +53,7 @@ class XaiboWebServer:
 
         # Initial load of configs
         self._load_configs()
-
+            
     def _load_configs(self) -> None:
         """Load configs and register new/changed agents, unregister removed ones"""
         new_configs = AgentConfig.load_directory(self.agent_dir)
@@ -48,31 +69,15 @@ class XaiboWebServer:
                 
         self.configs = new_configs
 
+    async def watch_config_files(self):
+        try:
+            async for _ in awatch(self.agent_dir):
+                self._load_configs()
+        except asyncio.CancelledError:
+            pass
+
     def start(self) -> None:
-        from watchfiles import awatch
-        import asyncio
-
-        async def watch_config_files():
-            try:
-                async for _ in awatch(self.agent_dir):
-                    self._load_configs()
-            except asyncio.CancelledError:
-                pass
-
-        @self.app.before_serving
-        async def start_file_watcher():
-            self.watcher_task = asyncio.create_task(watch_config_files())
-
-        @self.app.after_serving
-        async def cleanup():
-            if self.watcher_task:
-                self.watcher_task.cancel()
-                try:
-                    await self.watcher_task
-                except asyncio.CancelledError:
-                    pass
-
-        self.app.run(host=self.host, port=self.port)
+        uvicorn.run(self.app, host=self.host, port=self.port)
 
 if __name__ == "__main__":
     import argparse
