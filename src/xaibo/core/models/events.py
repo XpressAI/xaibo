@@ -14,6 +14,7 @@ class Event(BaseModel):
     agent_id: str
     event_name: str
     event_type: EventType
+    module_id: str
     module_class: str
     method_name: str
     time: float

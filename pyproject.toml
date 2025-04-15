@@ -20,6 +20,8 @@ build-backend = "hatchling.build"
 [project.optional-dependencies]
 webserver = [
     "fastapi[standard]>=0.115.12",
+    "strawberry-graphql>=0.262.5",
+    "strawberry-graphql[cli]>=0.262.5",
     "watchfiles>=1.0.4",
 ]
 openai = [

@@ -105,3 +105,14 @@ class Xaibo:
             Agent: A new agent instance with the specified dependency bindings and event listeners
         """
         return self.registry.get_agent_with(agent_id, overrides, additional_event_listeners)
+    
+    def get_agent_config(self, agent_id: str) -> AgentConfig:
+        """Get the configuration for a registered agent.
+
+        Args:
+            agent_id (str): The ID of the agent configuration to retrieve
+
+        Returns:
+            AgentConfig: The configuration for the specified agent
+        """
+        return self.registry.get_agent_config(agent_id)

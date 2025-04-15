@@ -35,6 +35,22 @@ class Registry:
         if agent_id in self.known_agent_configs:
             del self.known_agent_configs[agent_id]
 
+    def get_agent_config(self, agent_id: str) -> AgentConfig:
+        """Get the configuration for a registered agent.
+
+        Args:
+            agent_id (str): The ID of the agent configuration to retrieve
+
+        Returns:
+            AgentConfig: The configuration for the specified agent
+
+        Raises:
+            KeyError: If no agent configuration is found for the given ID
+        """
+        if agent_id not in self.known_agent_configs:
+            raise KeyError(f"No agent configuration found for id: {agent_id}")
+        return self.known_agent_configs[agent_id]
+
     def list_agents(self) -> list[str]:
         """Get a list of IDs for all registered agent configurations.
 

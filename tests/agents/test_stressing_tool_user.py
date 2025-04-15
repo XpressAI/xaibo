@@ -104,6 +104,42 @@ async def test_stressing_tool_user_calendar():
 
 
 @pytest.mark.asyncio
+async def test_stressing_tool_user_time_and_calendar():
+    """Test stressing tool user with time and calendar tool"""
+    # Skip if no API key is available
+    if not os.environ.get("OPENAI_API_KEY"):
+        pytest.skip("OPENAI_API_KEY environment variable not set")
+
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+
+    # Load the stressing tool user config
+    with open(resources_dir / "yaml" / "stressing_tool_user.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+
+    # Create registry and register agent
+    xaibo = Xaibo()
+    xaibo.register_agent(config)
+
+    events = []
+    def collect_events(event):
+        events.append(event)
+
+    # Get agent instance
+    agent = xaibo.get_agent_with("minimal-tool-user", {}, [
+        ("", collect_events)
+    ])
+
+    # Test with a prompt that should trigger the calendar tool
+    response = await agent.handle_text(f"What's on my calendar for today?")
+
+    # Verify response contains calendar information
+    assert isinstance(response, Response)
+    assert "standup" in response.text.lower() or "focus time" in response.text.lower()
+
+@pytest.mark.asyncio
 async def test_stressing_tool_user_error_handling():
     """Test stressing tool user handles tool errors gracefully"""
     # Skip if no API key is available

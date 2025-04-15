@@ -1,0 +1,17 @@
+query AgentConfig($agentId: String!) {
+    agentConfig(agentId: $agentId) {
+        id
+        modules {
+            id
+            module
+            config
+            provides
+            uses
+        }
+        exchange {
+            module
+            protocol
+            provider
+        }
+    }
+}

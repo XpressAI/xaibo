@@ -1,0 +1,33 @@
+type Agent {
+  id: String!
+}
+
+type AgentConfig {
+  id: String!
+  modules: [ModuleConfig!]!
+  exchange: [ExchangeConfig!]!
+}
+
+type ExchangeConfig {
+  module: String!
+  protocol: String!
+  provider: String!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
+"""
+scalar JSON @specifiedBy(url: "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf")
+
+type ModuleConfig {
+  module: String!
+  id: String!
+  provides: [String!]
+  uses: [String!]
+  config: JSON
+}
+
+type Query {
+  listAgents: [Agent!]!
+  agentConfig(agentId: String!): AgentConfig!
+}
