@@ -3,7 +3,9 @@ from typing import AsyncIterator, Dict, List, Optional, Any
 from google import genai
 from google.genai import types
 
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
+import base64
+
+from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 from xaibo.core.protocols.llm import LLMProtocol
 
 
@@ -48,8 +50,10 @@ class GoogleLLM(LLMProtocol):
                         role="model",
                         parts=[]
                     )
-                    if msg.content and msg.content != '':
-                        content.parts.append(types.Part.from_text(text=msg.content))
+                    if msg.content:
+                        for content_item in msg.content:
+                            if content_item.text:
+                                content.parts.append(types.Part.from_text(text=content_item.text))
                     for tool_call in msg.tool_calls:
                         content.parts.append(types.Part.from_function_call(
                             name=tool_call.name,
@@ -74,9 +78,16 @@ class GoogleLLM(LLMProtocol):
                 if msg.role == LLMRole.SYSTEM:
                     continue
                 
+                parts = []
+                for content_item in msg.content:
+                    if content_item.type == LLMMessageContentType.TEXT and content_item.text:
+                        parts.append(types.Part.from_text(text=content_item.text))
+                    elif content_item.type == LLMMessageContentType.IMAGE and content_item.image:
+                        parts.append(self._convert_image(content_item.image))
+                
                 content = types.Content(
                     role=role,
-                    parts=[types.Part.from_text(text=msg.content)]
+                    parts=parts
                 )
                 if msg.name:
                     content.name = msg.name
@@ -84,6 +95,27 @@ class GoogleLLM(LLMProtocol):
                 contents.append(content)
                 
         return contents
+
+    def _convert_image(self, image: str) -> types.Part:
+        """Convert image URL or data URI to Google Part"""
+        if image.startswith('data:'):
+            # Handle data URI
+            # Extract mime type and base64 data from data URI
+            mime_type = image.split(';')[0].split(':')[1]
+            base64_data = image.split(',')[1]            
+            image_bytes = base64.b64decode(base64_data)
+            return types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+        else:
+            # Handle URL - assume image/jpeg if can't determine
+            mime_type = 'image/jpeg'
+            if image.lower().endswith('.png'):
+                mime_type = 'image/png'
+            elif image.lower().endswith('.gif'):
+                mime_type = 'image/gif'
+            elif image.lower().endswith('.webp'):
+                mime_type = 'image/webp'
+            return types.Part.from_uri(file_uri=image, mime_type=mime_type)
+
     def _prepare_config(self, options: Optional[LLMOptions]) -> types.GenerateContentConfig:
         """Prepare configuration for the API request"""
         if not options:
@@ -132,11 +164,17 @@ class GoogleLLM(LLMProtocol):
 
     def _extract_system_instruction(self, messages: List[LLMMessage]) -> Optional[str]:
         """Extract system instructions from messages"""
-        system_messages = [msg.content for msg in messages if msg.role == LLMRole.SYSTEM]
+        system_messages = [
+            content.text 
+            for msg in messages 
+            if msg.role == LLMRole.SYSTEM
+            for content in msg.content
+            if content.type == LLMMessageContentType.TEXT and content.text
+        ]
         if system_messages:
             return "\n".join(system_messages)
         return None
-
+    
     def _process_response(self, response) -> LLMResponse:
         """Process the API response into LLMResponse format"""
         # Extract function call and content if present
@@ -172,6 +210,7 @@ class GoogleLLM(LLMProtocol):
             usage=usage,
             vendor_specific={"raw_response": response}
         )
+    
     async def generate(
         self, 
         messages: List[LLMMessage], 

@@ -1,6 +1,6 @@
 from typing import List, Optional
 from xaibo.core.protocols import ConversationHistoryProtocol
-from xaibo.core.models.llm import LLMMessage, LLMRole
+from xaibo.core.models.llm import LLMMessage, LLMRole, LLMMessageContent, LLMMessageContentType
 
 
 class SimpleConversation(ConversationHistoryProtocol):
@@ -59,7 +59,44 @@ class SimpleConversation(ConversationHistoryProtocol):
         content = openai_msg.get('content', '')
         name = openai_msg.get('name', None)
         
-        return LLMMessage(role=role, content=content, name=name)
+        # Handle image type messages
+        if isinstance(content, list):
+            # OpenAI image messages have content as a list of objects
+            message_contents = []
+            for content_item in content:
+                content_type = content_item.get('type')
+                if content_type == 'image_url':
+                    message_contents.append(
+                        LLMMessageContent(
+                            type=LLMMessageContentType.IMAGE,
+                            image=content_item.get('image_url', {}).get('url', '')
+                        )
+                    )
+                elif content_type == 'text':
+                    message_contents.append(
+                        LLMMessageContent(
+                            type=LLMMessageContentType.TEXT,
+                            text=content_item.get('text', '')
+                        )
+                    )
+            
+            # Use all message contents
+            message_contents = message_contents if message_contents else [LLMMessageContent(
+                type=LLMMessageContentType.TEXT,
+                text=''
+            )]
+        else:
+            # Regular text message
+            message_contents = [LLMMessageContent(
+                type=LLMMessageContentType.TEXT,
+                text=content
+            )]
+        
+        return LLMMessage(
+            role=role,
+            content=message_contents,
+            name=name
+        )
     
     async def get_history(self) -> List[LLMMessage]:
         """

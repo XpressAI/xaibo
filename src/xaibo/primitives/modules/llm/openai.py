@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
 from xaibo.core.protocols.llm import LLMProtocol
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
+from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class OpenAILLM(LLMProtocol):
                     # This is the message that originally called for tool execution
                     message = {
                         "role": "assistant",
-                        "content": msg.content,
+                        "content": "",
                         "tool_calls": [
                             {
                                 "id": tool_call.id,
@@ -91,16 +91,26 @@ class OpenAILLM(LLMProtocol):
                     # This is a malformed message
                     logger.warning("Malformed function message - missing both tool_calls and tool_results")
             else:
+                # Handle text and image content
+                content = None
+                if len(msg.content) == 1 and msg.content[0].type == LLMMessageContentType.TEXT:
+                    content = msg.content[0].text
+                else:
+                    content = [
+                        {"type": "text", "text": c.text} if c.type == LLMMessageContentType.TEXT
+                        else {"type": "image_url", "image_url": {"url": c.image}}
+                        for c in msg.content
+                    ]
+
                 message = {
                     "role": msg.role.value,
-                    "content": msg.content,
+                    "content": content,
                     **({"name": msg.name} if msg.name else {})
-                }            
+                }
                 
                 prepared_messages.append(message)
             
         return prepared_messages
-
     def _prepare_functions(self, options: LLMOptions) -> Optional[List[Dict[str, Any]]]:
         """Prepare function calling if needed"""
         if not options.functions:
@@ -164,10 +174,14 @@ class OpenAILLM(LLMProtocol):
             **options.vendor_specific
         }
         
+        
         # Add stream parameter if streaming
         if stream:
             kwargs["stream"] = True
-            
+
+        # Remove None values
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
         return kwargs
     
     async def generate(
@@ -183,7 +197,7 @@ class OpenAILLM(LLMProtocol):
             openai_messages = self._prepare_messages(messages)
             functions = self._prepare_functions(options)
             kwargs = self._prepare_request_kwargs(openai_messages, functions, options)
-            
+
             # Make the API call
             response: ChatCompletion = await self.client.chat.completions.create(**kwargs)
             

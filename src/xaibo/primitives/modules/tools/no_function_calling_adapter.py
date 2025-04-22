@@ -114,20 +114,14 @@ class TextBasedToolCallAdapter(LLMProtocol):
         for message in messages:
             if message.role == LLMRole.SYSTEM:
                 # Append tools prompt to existing system message
-                modified_messages.append(LLMMessage(
-                    role=LLMRole.SYSTEM,
-                    content=f"{message.content}\n\n{tools_prompt}"
-                ))
+                modified_messages.append(LLMMessage.system(f"{message.content}\n\n{tools_prompt}"))
                 system_message_found = True
             else:
                 modified_messages.append(message)
         
         # Add a new system message if none exists
         if not system_message_found:
-            modified_messages.insert(0, LLMMessage(
-                role=LLMRole.SYSTEM,
-                content=tools_prompt
-            ))
+            modified_messages.insert(0, LLMMessage.system(tools_prompt))
         
         return modified_messages
     

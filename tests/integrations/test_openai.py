@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
+
 import pytest
 
 from xaibo.primitives.modules.llm.openai import OpenAILLM
 from xaibo.core.models.tools import Tool, ToolParameter
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionCall, LLMFunctionResult
+from xaibo.core.models.llm import LLMMessage, LLMMessageContent, LLMMessageContentType, LLMOptions, LLMRole, LLMFunctionCall, LLMFunctionResult
 
 
 @pytest.mark.asyncio
@@ -20,7 +22,7 @@ async def test_openai_generate():
     
     # Create a simple message
     messages = [
-        LLMMessage(role=LLMRole.USER, content="Say exactly 'hello world'")
+        LLMMessage.user("Say exactly 'hello world'")
     ]
     
     # Generate a response
@@ -50,8 +52,8 @@ async def test_openai_generate_with_options():
     
     # Create a simple message
     messages = [
-        LLMMessage(role=LLMRole.SYSTEM, content="You are a helpful assistant that speaks like a pirate."),
-        LLMMessage(role=LLMRole.USER, content="Introduce yourself briefly.")
+        LLMMessage.system("You are a helpful assistant that speaks like a pirate."),
+        LLMMessage.user("Introduce yourself briefly.")
     ]
     
     # Create options
@@ -102,7 +104,7 @@ async def test_openai_function_calling():
     
     # Create a message that should trigger function calling
     messages = [
-        LLMMessage(role=LLMRole.USER, content="What's the weather like in San Francisco?")
+        LLMMessage.user("What's the weather like in San Francisco?")
     ]
     
     # Create options with the function
@@ -147,27 +149,16 @@ async def test_openai_tool_response():
     
     # Create conversation with function call and result
     messages = [
-        LLMMessage(role=LLMRole.USER, content="What's the weather like in San Francisco?"),
-        LLMMessage(
-            role=LLMRole.FUNCTION,
-            content="",
-            tool_calls=[
-                LLMFunctionCall(
-                    id="call_1",
-                    name="get_weather",
-                    arguments={"location": "San Francisco, CA"}
-                )
-            ]
+        LLMMessage.user("What's the weather like in San Francisco?"),
+        LLMMessage.function(
+            id="call_1",
+            name="get_weather",
+            arguments={"location": "San Francisco, CA"}
         ),
-        LLMMessage(
-            role=LLMRole.FUNCTION,
-            tool_results=[
-                LLMFunctionResult(
-                    id="call_1",
-                    name="get_weather",
-                    content="72°F and sunny"
-                )
-            ]
+        LLMMessage.function_result(
+            id="call_1",
+            name="get_weather",
+            content="72°F and sunny"
         )
     ]
     
@@ -193,7 +184,7 @@ async def test_openai_streaming():
     
     # Create a simple message
     messages = [
-        LLMMessage(role=LLMRole.USER, content="Count from 1 to 5")
+        LLMMessage.user("Count from 1 to 5")
     ]
     
     # Generate a streaming response
@@ -211,3 +202,41 @@ async def test_openai_streaming():
     assert "3" in combined
     assert "4" in combined
     assert "5" in combined
+
+
+
+@pytest.mark.asyncio
+async def test_openai_image_content():
+    """Test OpenAI's ability to understand image content"""
+    # Skip if no API key is available
+    if not os.environ.get("OPENAI_API_KEY"):
+        pytest.skip("OPENAI_API_KEY environment variable not set")
+    
+    # Initialize the LLM
+    llm = OpenAILLM({
+        "model": "gpt-4o"
+    })
+
+    test_dir = Path(__file__).parent
+    image_path = test_dir.parent / "resources" / "images" / "hello-xaibo.png"
+
+    image_message = LLMMessage.user_image(str(image_path))
+
+    # Create a message with image content
+    messages = [
+        LLMMessage(
+            role=LLMRole.USER,
+            content=[
+                LLMMessageContent(type=LLMMessageContentType.TEXT, text="What text appears in this image?"),
+                image_message.content[0]
+            ]
+        )
+    ]
+    
+    # Generate a response
+    response = await llm.generate(messages)
+    
+    # Verify the response mentions the text from the image
+    assert response.content is not None
+    assert "Hello Xaibo" in response.content
+

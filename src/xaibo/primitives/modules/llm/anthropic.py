@@ -5,7 +5,7 @@ from typing import List, Optional, AsyncIterator, Dict, Any
 from anthropic import AsyncAnthropic
 
 from xaibo.core.protocols.llm import LLMProtocol
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
+from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,9 @@ class AnthropicLLM(LLMProtocol):
         for msg in messages:
             if msg.role == LLMRole.SYSTEM:
                 # System messages are handled separately in Anthropic
-                system_message = msg.content
+                # Combine all text content entries
+                system_texts = [c.text for c in msg.content if c.type == LLMMessageContentType.TEXT]
+                system_message = " ".join(system_texts) if system_texts else None
                 continue
                 
             if msg.role == LLMRole.FUNCTION:
@@ -70,10 +72,13 @@ class AnthropicLLM(LLMProtocol):
                         "content": []                        
                     }
                     if msg.content:
-                        message["content"].append({
-                            "type": "text",
-                            "text": msg.content
-                        })
+                        # Add all text content entries
+                        for content in msg.content:
+                            if content.type == LLMMessageContentType.TEXT:
+                                message["content"].append({
+                                    "type": "text",
+                                    "text": content.text
+                                })
                     for tool_call in msg.tool_calls:
                         message["content"].append({
                             "type": "tool_use",
@@ -99,14 +104,44 @@ class AnthropicLLM(LLMProtocol):
                     # This is a malformed message
                     logger.warning("Malformed function message - missing both tool_calls and tool_results")
             else:
+                # Handle text and image content
                 message = {
                     "role": "assistant" if msg.role == LLMRole.ASSISTANT else "user",
-                    "content": msg.content,
+                    "content": [
+                        {"type": "text", "text": c.text} if c.type == LLMMessageContentType.TEXT
+                        else self._prepare_image_content(c.image)
+                        for c in msg.content
+                    ],
                     **({"name": msg.name} if msg.name else {})
                 }
                 anthropic_messages.append(message)
-            
         return anthropic_messages, system_message
+    
+    def _prepare_image_content(self, image_path: str) -> Dict[str, Any]:
+        """Helper method to prepare image content for Anthropic API"""
+        if image_path.startswith("data:"):
+            # Handle base64 encoded images
+            # Extract media type and data from data URL
+            _, rest = image_path.split(":", 1)
+            media_type, base64_data = rest.split(";base64,", 1)
+            return {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": media_type,
+                    "data": base64_data
+                }
+            }
+        else:
+            # Handle URL images
+            return {
+                "type": "image",
+                "source": {
+                    "type": "url",
+                    "url": image_path
+                }
+            }
+    
     def _prepare_tools(self, options: LLMOptions) -> Optional[List[Dict[str, Any]]]:
         """Prepare tool calling if needed"""
         if not options.functions:
@@ -183,7 +218,7 @@ class AnthropicLLM(LLMProtocol):
             anthropic_messages, system_message = self._prepare_messages(messages)
             tools = self._prepare_tools(options)
             kwargs = self._prepare_request_kwargs(anthropic_messages, system_message, tools, options)
-            
+
             # Make the API call
             response = await self.client.messages.create(**kwargs)
             

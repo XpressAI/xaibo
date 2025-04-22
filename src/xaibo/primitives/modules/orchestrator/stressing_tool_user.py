@@ -1,5 +1,5 @@
 from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol, LLMProtocol, ToolProviderProtocol
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionResult
+from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionResult, LLMMessageContentType, LLMMessageContent
 
 import json
 
@@ -62,10 +62,10 @@ class StressingToolUser(TextMessageHandlerProtocol):
         # Initialize conversation with system prompt
         conversation = []
         if self.system_prompt:
-            conversation.append(LLMMessage(role=LLMRole.SYSTEM, content=self.system_prompt))
+            conversation.append(LLMMessage.system(self.system_prompt))
         
         # Add user message
-        conversation.append(LLMMessage(role=LLMRole.USER, content=text))
+        conversation.append(LLMMessage.user(text))
         
         # Get available tools
         tools = await self.tool_provider.list_tools()
@@ -78,10 +78,7 @@ class StressingToolUser(TextMessageHandlerProtocol):
             
             # If max thoughts reached, disable tools
             if thoughts == self.max_thoughts:
-                conversation.append(LLMMessage(
-                    role=LLMRole.SYSTEM, 
-                    content="Maximum tool usage reached. Tools Unavailable"
-                ))
+                conversation.append(LLMMessage.system("Maximum tool usage reached. Tools Unavailable"))
             
             # Generate response with current stress level
             options = LLMOptions(
@@ -94,7 +91,10 @@ class StressingToolUser(TextMessageHandlerProtocol):
             # Add assistant response to conversation
             assistant_message = LLMMessage(
                 role=LLMRole.FUNCTION if llm_response.tool_calls else LLMRole.ASSISTANT,
-                content=llm_response.content,
+                content=[LLMMessageContent(
+                    type=LLMMessageContentType.TEXT,
+                    text=llm_response.content
+                )],
                 tool_calls=llm_response.tool_calls
             )
             conversation.append(assistant_message)
@@ -151,4 +151,4 @@ class StressingToolUser(TextMessageHandlerProtocol):
                 break
         
         # Send the final response
-        await self.response.respond_text(conversation[-1].content)
+        await self.response.respond_text(conversation[-1].content[0].text)

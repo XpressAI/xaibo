@@ -87,27 +87,27 @@ def test_modify_messages_with_tools(mock_llm, sample_tool):
     
     # Test with existing system message
     messages = [
-        LLMMessage(role=LLMRole.SYSTEM, content="You are a helpful assistant."),
-        LLMMessage(role=LLMRole.USER, content="What's the weather like?")
+        LLMMessage.system("You are a helpful assistant."),
+        LLMMessage.user("What's the weather like?")
     ]
     
     modified = adapter._modify_messages_with_tools(messages, [sample_tool])
     
     assert len(modified) == 2
     assert modified[0].role == LLMRole.SYSTEM
-    assert "You are a helpful assistant." in modified[0].content
-    assert "get_weather:" in modified[0].content
+    assert "You are a helpful assistant." in modified[0].content[0].text
+    assert "get_weather:" in modified[0].content[0].text
     
     # Test without system message
     messages = [
-        LLMMessage(role=LLMRole.USER, content="What's the weather like?")
+        LLMMessage.user("What's the weather like?")
     ]
     
     modified = adapter._modify_messages_with_tools(messages, [sample_tool])
     
     assert len(modified) == 2
     assert modified[0].role == LLMRole.SYSTEM
-    assert "get_weather:" in modified[0].content
+    assert "get_weather:" in modified[0].content[0].text
     assert modified[1].role == LLMRole.USER
 
 
@@ -125,7 +125,7 @@ async def test_generate_with_tool_call(mock_llm, sample_tool):
     
     # Generate response
     messages = [
-        LLMMessage(role=LLMRole.USER, content="What's the weather like in San Francisco?")
+        LLMMessage.user("What's the weather like in San Francisco?")
     ]
     
     options = LLMOptions(functions=[sample_tool])
@@ -142,7 +142,7 @@ async def test_generate_with_tool_call(mock_llm, sample_tool):
     called_messages = mock_llm.generate.call_args[0][0]
     assert len(called_messages) == 2
     assert called_messages[0].role == LLMRole.SYSTEM
-    assert "get_weather:" in called_messages[0].content
+    assert "get_weather:" in called_messages[0].content[0].text
     
     # Verify that functions were not passed to the underlying LLM
     called_options = mock_llm.generate.call_args[0][1]
@@ -163,7 +163,7 @@ async def test_generate_without_tool_call(mock_llm):
     
     # Generate response
     messages = [
-        LLMMessage(role=LLMRole.USER, content="What's the weather like in San Francisco?")
+        LLMMessage.user("What's the weather like in San Francisco?")
     ]
     
     response = await adapter.generate(messages)
@@ -188,7 +188,7 @@ async def test_generate_stream(mock_llm, sample_tool):
     
     # Generate streaming response
     messages = [
-        LLMMessage(role=LLMRole.USER, content="What's the weather like in San Francisco?")
+        LLMMessage.user("What's the weather like in San Francisco?")
     ]
     
     options = LLMOptions(functions=[sample_tool])
@@ -205,7 +205,7 @@ async def test_generate_stream(mock_llm, sample_tool):
     called_messages = mock_llm.generate_stream.call_args[0][0]
     assert len(called_messages) == 2
     assert called_messages[0].role == LLMRole.SYSTEM
-    assert "get_weather:" in called_messages[0].content
+    assert "get_weather:" in called_messages[0].content[0].text
     
     # Verify that functions were not passed to the underlying LLM
     called_options = mock_llm.generate_stream.call_args[0][1]
