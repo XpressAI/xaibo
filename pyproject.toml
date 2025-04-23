@@ -33,6 +33,9 @@ anthropic = [
 google = [
     "google-genai>=1.5.0",
 ]
+bedrock = [
+    "boto3>=1.37.38",
+]
 
 [dependency-groups]
 dev = [
