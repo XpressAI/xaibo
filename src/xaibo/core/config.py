@@ -30,8 +30,9 @@ class ModuleConfig(BaseModel):
 
 class ExchangeConfig(BaseModel):
     module: str
+    field_name: Optional[str] = None
     protocol: Union[str, Type]  # Can be string name or actual protocol class
-    provider: str
+    provider: Union[str, list[str]]
 
     def __init__(self, **data):
         # Convert protocol class to string if needed

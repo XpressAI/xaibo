@@ -1,9 +1,99 @@
+from collections import defaultdict
 from typing import Type, Union
+from typing_extensions import get_origin
 from .config import AgentConfig, ModuleConfig
 from xaibo.core.models import EventType, Event
 import time
 
 import traceback
+
+
+class ExchangeRedone:
+    """Handles module instantiation and dependency injection for agents."""
+
+    def __init__(self, config: AgentConfig = None, override_bindings: dict[Union[str, Type], any] = None,
+                 event_listeners: list[tuple[str, callable]] = None):
+        """Initialize the exchange and optionally instantiate modules.
+
+        Args:
+            config (AgentConfig, optional): The agent configuration to instantiate modules from. Defaults to None.
+            override_bindings (dict[Union[str, Type], any], optional): Custom bindings to override defaults. Defaults to None.
+            event_listeners (list[tuple[str, callable]], optional): Event listeners to register. Defaults to None.
+        """
+        self.module_instances = {}
+        self.overrides = {}
+        self.event_listeners = event_listeners or []
+        self.config = config
+        if config:
+            self._instantiate_modules(override_bindings or {})
+
+    def _instantiate_modules(self, override_bindings: dict[Union[str, Type], any]) -> None:
+        """Create instances of all modules defined in config."""
+        module_mapping = {
+            module.id: module
+            for module in self.config.modules
+        }
+        dependency_mapping = {
+            module.id: self._get_module_dependencies(module)
+            for module in self.config.modules
+        }
+
+        module_order = [module.id for module in self.config.modules]
+        # presort modules based on dependencies
+        module_order.sort(key=lambda x: len(dependency_mapping[x]))
+
+        # sort such that dependencies are met first
+        i = 0
+        while i < len(module_order):
+            current_module_id = module_order[i]
+            cur_dependencies = dependency_mapping[current_module_id]
+            if len(cur_dependencies) > 0:
+                highest_dependency_idx = max(module_order.index(m)  for m in cur_dependencies)
+                if highest_dependency_idx > i:
+                    module_order[i], module_order[highest_dependency_idx] = module_order[highest_dependency_idx], module_order[i]
+                    continue
+            i = i + 1
+
+        for module_id in module_order:
+            module_config = module_mapping[module_id]
+            dependencies = dependency_mapping[module_id]
+
+            #get module class
+            module_class = self.config._import_module_class(module_config.module)
+
+            # 
+
+
+
+
+    def _get_module_dependencies(self, module_config: ModuleConfig) -> dict[str, list[str]]:
+        """Get dependencies for a module from exchange config.
+        """
+        module_class = self.config._import_module_class(module_config.module)
+
+        dependencies = {
+            param: [] for param, _ in module_class.__init__.__annotations__
+        }
+
+        types = defaultdict(list)
+        for param, type_hint in module_class.__init__.__annotations__:
+            types[type_hint].append(param)
+
+        relevant_exchange_configs = [e for e in self.config.exchange if e.module == module_config.id]
+        for exchange_config in relevant_exchange_configs:
+            if exchange_config.field_name is not None:
+                param_list = [dependencies[exchange_config.field_name]]
+            else:
+                param_list = types[exchange_config.protocol]
+            for param in param_list:
+                if isinstance(exchange_config.provider, list):
+                    dependencies[param].extend(exchange_config.provider)
+                else:
+                    dependencies[param].append(exchange_config.provider)
+        return dependencies
+
+
+
 
 class Exchange:
     """Handles module instantiation and dependency injection for agents."""
@@ -79,7 +169,7 @@ class Exchange:
                     
                     remaining_modules.remove(module_config.id)
                     progress_made = True
-            
+
             # If no progress was made in this iteration, we have a circular dependency
             if not progress_made and remaining_modules:
                 raise ValueError(f"Circular dependency detected among modules: {remaining_modules}")
@@ -87,7 +177,18 @@ class Exchange:
         self.module_instances['__entry__'] = self._get_entry_module(self.module_instances)        
     
     def _get_module_dependencies(self, module_config: any, module_class: any) -> dict[str, any]:
-        """Get dependencies for a module from exchange config."""
+        """Get dependencies for a module from exchange config.
+        
+        Args:
+            module_config (any): The module configuration containing ID and dependency info
+            module_class (any): The module class to get dependencies for
+            
+        Returns:
+            dict[str, any]: Dictionary mapping parameter names to module instances
+            
+        Raises:
+            ValueError: If multiple parameters match a protocol or no matching parameter is found
+        """
         dependencies = {}
         for exchange in self.config.exchange:
             if exchange.module == module_config.id:
