@@ -1,7 +1,7 @@
 from typing import Callable, Union, Type
 
 from .agent import Agent
-from .config import AgentConfig
+from .config import AgentConfig, ConfigOverrides
 from .exchange import Exchange
 from xaibo.core.models import Event
 
@@ -68,14 +68,14 @@ class Registry:
         Returns:
             Agent: A new agent instance
         """
-        return self.get_agent_with(id, {})
+        return self.get_agent_with(id, None)
     
-    def get_agent_with(self, id: str, override_bindings: dict[Union[str, Type], any], additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
+    def get_agent_with(self, id: str, override_config: ConfigOverrides, additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
         """Get an agent instance with custom bindings.
 
         Args:
             id (str): The ID of the agent configuration to use
-            override_bindings (dict[Union[str, Type], any]): Custom bindings to override defaults
+            override_config (ConfigOverrides): Custom bindings to override defaults
             additional_event_listeners (list[tuple[str, callable]], optional): Additional event listeners to register.
                 Each tuple contains (prefix, handler). Defaults to None.
 
@@ -98,7 +98,7 @@ class Registry:
 
         exchange = Exchange(
             config,
-            override_bindings=override_bindings,
+            override_config=override_config,
             event_listeners=agent_listeners
         )
 

@@ -6,7 +6,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import StreamingResponse, JSONResponse
 
-from xaibo import Xaibo
+from xaibo import Xaibo, ConfigOverrides, ExchangeConfig
 from xaibo.primitives.modules.conversation.conversation import SimpleConversation
 
 from asyncio import wait_for, Queue, create_task, TimeoutError
@@ -83,12 +83,21 @@ class OpenAiApiAdapter:
                     response = create_chunk_response({"content": text})
                     await queue.put(f"data: {json.dumps(response)}\n\n")
 
+                async def get_response(self):
+                    return None
+
             try:
                 # Get agent with streaming response handler and conversation history
-                agent = self.xaibo.get_agent_with(data['model'], {
-                    'ResponseProtocol': StreamingResponse(),
-                    'ConversationHistoryProtocol': conversation
-                })
+                agent = self.xaibo.get_agent_with(data['model'], ConfigOverrides(
+                    instances={
+                        '__conversation_history__': conversation,
+                        '__response__': StreamingResponse()
+                    },
+                    exchange=[ExchangeConfig(
+                        protocol='ConversationHistoryProtocol',
+                        provider='__conversation_history__'
+                    )]
+                ))
             except KeyError:
                 raise HTTPException(status_code=400, detail="model not found")
             except Exception as e:
@@ -135,9 +144,15 @@ class OpenAiApiAdapter:
     async def handle_non_streaming_request(self, data, last_user_message, conversation_id, conversation):
         try:
             # Regular non-streaming response with conversation history
-            agent = self.xaibo.get_agent_with(data['model'], {
-                'ConversationHistoryProtocol': conversation
-            })
+            agent = self.xaibo.get_agent_with(data['model'], ConfigOverrides(
+                instances={
+                    '__conversation_history__': conversation
+                },
+                exchange=[ExchangeConfig(
+                    protocol='ConversationHistoryProtocol',
+                    provider='__conversation_history__'
+                )]
+            ))
         except KeyError:
             raise HTTPException(status_code=400, detail="model not found")
         except Exception as e:

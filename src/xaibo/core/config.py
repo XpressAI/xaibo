@@ -29,7 +29,7 @@ class ModuleConfig(BaseModel):
 
 
 class ExchangeConfig(BaseModel):
-    module: str
+    module: Optional[str] = None # only optional when used with Config Overrides
     field_name: Optional[str] = None
     protocol: Union[str, Type]  # Can be string name or actual protocol class
     provider: Union[str, list[str]]
@@ -41,6 +41,11 @@ class ExchangeConfig(BaseModel):
             data['protocol'] = protocol_class.__name__
 
         super().__init__(**data)
+
+
+class ConfigOverrides(BaseModel):
+    instances: Dict[str, object] = {}
+    exchange: List[ExchangeConfig] = []
 
 
 class AgentConfig(BaseModel):

@@ -4,7 +4,7 @@ import os
 from .models import Event
 from .registry import Registry
 from .agent import Agent
-from .config import AgentConfig
+from .config import AgentConfig, ConfigOverrides
 
 
 class Xaibo:
@@ -87,7 +87,7 @@ class Xaibo:
         """
         return self.registry.get_agent(agent_id)
 
-    def get_agent_with(self, agent_id: str, overrides: dict[Union[str|type], any], additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
+    def get_agent_with(self, agent_id: str, override_config: ConfigOverrides, additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
         """Create and return an agent instance with custom dependency bindings.
 
         This method allows more control over agent instantiation by specifying custom
@@ -97,14 +97,14 @@ class Xaibo:
 
         Args:
             agent_id (str): The ID of the agent configuration to use
-            overrides (dict[Union[str, Type], any]): Custom bindings to override defaults
+            override_config (ConfigOverrides): Custom bindings to override defaults
             additional_event_listeners (list[tuple[str, callable]], optional): Additional event listeners to register.
                 Each tuple contains (prefix, handler). Defaults to None.
 
         Returns:
             Agent: A new agent instance with the specified dependency bindings and event listeners
         """
-        return self.registry.get_agent_with(agent_id, overrides, additional_event_listeners)
+        return self.registry.get_agent_with(agent_id, override_config, additional_event_listeners)
     
     def get_agent_config(self, agent_id: str) -> AgentConfig:
         """Get the configuration for a registered agent.

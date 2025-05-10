@@ -1,85 +1,116 @@
 from collections import defaultdict
 from typing import Type, Union
 from typing_extensions import get_origin
-from .config import AgentConfig, ModuleConfig
-from xaibo.core.models import EventType, Event
+from .config import AgentConfig, ModuleConfig, ConfigOverrides
+from .models import EventType, Event
 import time
 
 import traceback
 
 
-class ExchangeRedone:
+class Exchange:
     """Handles module instantiation and dependency injection for agents."""
 
-    def __init__(self, config: AgentConfig = None, override_bindings: dict[Union[str, Type], any] = None,
+    def __init__(self, config: AgentConfig = None, override_config: ConfigOverrides = None,
                  event_listeners: list[tuple[str, callable]] = None):
         """Initialize the exchange and optionally instantiate modules.
 
         Args:
             config (AgentConfig, optional): The agent configuration to instantiate modules from. Defaults to None.
-            override_bindings (dict[Union[str, Type], any], optional): Custom bindings to override defaults. Defaults to None.
+            override_config (ConfigOverrides, optional): Custom bindings to override defaults. Defaults to None.
             event_listeners (list[tuple[str, callable]], optional): Event listeners to register. Defaults to None.
         """
         self.module_instances = {}
-        self.overrides = {}
+        self.overrides = override_config
         self.event_listeners = event_listeners or []
         self.config = config
-        if config:
-            self._instantiate_modules(override_bindings or {})
 
-    def _instantiate_modules(self, override_bindings: dict[Union[str, Type], any]) -> None:
+        if config:
+            if self.overrides:
+                self.module_instances.update(self.overrides.instances)
+                self.config.exchange = [ex for ex in self.config.exchange]
+                for ex in self.overrides.exchange:
+                    conflicts = [cx for cx in self.config.exchange if cx.module == ex.module and cx.protocol == ex.protocol and cx.field_name == ex.field_name]
+                    for conflict in conflicts:
+                        self.config.exchange.remove(conflict)
+                    self.config.exchange.append(ex)
+            self._instantiate_modules()
+
+    def _instantiate_modules(self) -> None:
         """Create instances of all modules defined in config."""
+        # make it easy to access a module by id
         module_mapping = {
             module.id: module
             for module in self.config.modules
         }
+
+        # figure out what the module really depends on
         dependency_mapping = {
             module.id: self._get_module_dependencies(module)
             for module in self.config.modules
         }
+        # modules that have already been instantiated don't depend on anything
+        for module_id in self.module_instances:
+            dependency_mapping[module_id] = {}
 
-        module_order = [module.id for module in self.config.modules]
-        # presort modules based on dependencies
+        # Collect all known module ids
+        module_order = [module.id for module in self.config.modules] + [module_id for module_id in self.module_instances]
+
+        # presort modules based on their dependency count
         module_order.sort(key=lambda x: len(dependency_mapping[x]))
 
-        # sort such that dependencies are met first
+        # sort modules such that dependencies will be instantiated before their dependents
         i = 0
         while i < len(module_order):
             current_module_id = module_order[i]
             cur_dependencies = dependency_mapping[current_module_id]
             if len(cur_dependencies) > 0:
-                highest_dependency_idx = max(module_order.index(m)  for m in cur_dependencies)
+                highest_dependency_idx = max(max(module_order.index(m) for m in ml)  for ml in cur_dependencies.values())
                 if highest_dependency_idx > i:
                     module_order[i], module_order[highest_dependency_idx] = module_order[highest_dependency_idx], module_order[i]
                     continue
             i = i + 1
 
+        # instantiate modules in correct order
         for module_id in module_order:
+            if module_id in self.module_instances:
+                # skip already instantiated modules (e.g. from overrides or other lifecycles)
+                continue
+
             module_config = module_mapping[module_id]
             dependencies = dependency_mapping[module_id]
 
-            #get module class
             module_class = self.config._import_module_class(module_config.module)
 
-            # 
+            init_parameters = {}
+            for (param, param_type) in self._get_module_parameters(module_class):
+                dependency_ids = dependencies[param]
+                # ensure that list type parameters are handled off as a list
+                if get_origin(param_type) is list:
+                    init_parameters[param] = [self.get_module(did, module_id, raise_on_not_found=True) for did in dependency_ids]
+                # ... and others are singleton lists that are unpacked
+                else:
+                    if len(dependency_ids) != 1:
+                        raise ValueError(f"Expected to find exactly one dependency resolution for module `{module_id}` parameter `{param}`, but found {len(dependency_ids)} `{repr(dependency_ids)}`")
+                    init_parameters[param] = self.get_module(dependency_ids[0], module_id, raise_on_not_found=True)
 
+            self.module_instances[module_id] = module_class(**init_parameters, config=module_config.config)
 
-
+        self.module_instances['__entry__'] = self._get_entry_module(self.module_instances)
 
     def _get_module_dependencies(self, module_config: ModuleConfig) -> dict[str, list[str]]:
         """Get dependencies for a module from exchange config.
         """
         module_class = self.config._import_module_class(module_config.module)
 
-        dependencies = {
-            param: [] for param, _ in module_class.__init__.__annotations__
-        }
-
         types = defaultdict(list)
-        for param, type_hint in module_class.__init__.__annotations__:
-            types[type_hint].append(param)
+        dependencies = {}
+        for param, type_hint in self._get_module_parameters(module_class):
+            types[type_hint.__name__].append(param)
+            dependencies[param] = []
 
-        relevant_exchange_configs = [e for e in self.config.exchange if e.module == module_config.id]
+        # When an override exchange does not provide a module, it is meant for all modules
+        relevant_exchange_configs = [e for e in self.config.exchange if e.module == module_config.id or e.module is None]
         for exchange_config in relevant_exchange_configs:
             if exchange_config.field_name is not None:
                 param_list = [dependencies[exchange_config.field_name]]
@@ -92,10 +123,48 @@ class ExchangeRedone:
                     dependencies[param].append(exchange_config.provider)
         return dependencies
 
+    def _get_module_parameters(self, module_class):
+        """Get the injectable parameters for the given module class."""
+        return ((param, param_type) for (param, param_type) in module_class.__init__.__annotations__.items() if param != 'config')
+
+    def _get_entry_module(self, module_instances: dict[str, any]) -> any:
+        """Get the entry module from exchange config."""
+        entry_module = None
+        for exchange in self.config.exchange:
+            if exchange.module == "__entry__":
+                if entry_module is not None:
+                    raise ValueError("Multiple message handlers found")
+                entry_module = module_instances[exchange.provider]
+
+        if entry_module is None:
+            raise ValueError("No message handler found in exchange config")
+        return entry_module
+
+    def get_module(self, module_id: str, caller_id: str, raise_on_not_found: bool = False):
+        """Get a module in this exchange.
+
+        Args:
+            module_id (str): The name of the module to retrieve
+            caller_id (str): Id of the module requesting this.
+            raise_on_not_found (bool): Raise an exception if module was not found instead of returning None
+
+        Returns:
+            The module instance or None if not found
+        """
+        module = self.module_instances.get(module_id)
+        if module:
+            return Proxy(module,
+                         event_listeners=self.event_listeners,
+                         agent_id=self.config.id,
+                         caller_id=caller_id,
+                         module_id=module_id)
+        else:
+            if raise_on_not_found:
+                raise ValueError(f"Requested module {module_id} could not be found!")
+            return None
 
 
-
-class Exchange:
+class ExchangeOld:
     """Handles module instantiation and dependency injection for agents."""
 
     def __init__(self, config: AgentConfig = None, override_bindings: dict[Union[str, Type], any] = None, event_listeners: list[tuple[str, callable]] = None):
