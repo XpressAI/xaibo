@@ -1,7 +1,7 @@
-from typing import Callable, Union, Type
+from typing import Callable, Union, Type, Optional
 
 from .agent import Agent
-from .config import AgentConfig, ConfigOverrides
+from .config import AgentConfig, ConfigOverrides, Scope, ExchangeConfig
 from .exchange import Exchange
 from xaibo.core.models import Event
 
@@ -17,6 +17,15 @@ class Registry:
         """Initialize a new Registry instance with an empty configuration dictionary."""
         self.known_agent_configs: dict[str, AgentConfig] = dict()
         self.event_listeners: list[tuple[str, str | None, callable]] = []
+        self.server_module_instances: dict[str, object] = dict()
+        self.agent_module_instances: dict[str, dict[str, object]] = dict()
+
+    def register_server_module(self, id:str, module: object):
+        self.server_module_instances[id] = module
+
+    def unregister_server_module(self, id):
+        if id in self.server_module_instances:
+            del self.server_module_instances[id]
 
     def register_agent(self, agent_config: AgentConfig) -> None:
         """Register a new agent configuration.
@@ -25,6 +34,13 @@ class Registry:
             agent_config (AgentConfig): The configuration to register
         """
         self.known_agent_configs[agent_config.id] = agent_config
+        self.agent_module_instances[agent_config.id] = dict()
+        agent_lifecycle_modules = [m.id for m in agent_config.modules if m.scope == Scope.Agent]
+        if len(agent_lifecycle_modules) > 0:
+            exchange = Exchange(agent_config, specific_modules=agent_lifecycle_modules)
+            for module_id in agent_lifecycle_modules:
+                self.agent_module_instances[agent_config.id][module_id] = exchange.module_instances[module_id]
+
 
     def unregister_agent(self, agent_id: str) -> None:
         """Unregister an agent configuration.
@@ -34,6 +50,7 @@ class Registry:
         """
         if agent_id in self.known_agent_configs:
             del self.known_agent_configs[agent_id]
+            del self.agent_module_instances[agent_id]
 
     def get_agent_config(self, agent_id: str) -> AgentConfig:
         """Get the configuration for a registered agent.
@@ -70,7 +87,7 @@ class Registry:
         """
         return self.get_agent_with(id, None)
     
-    def get_agent_with(self, id: str, override_config: ConfigOverrides, additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
+    def get_agent_with(self, id: str, override_config: Optional[ConfigOverrides], additional_event_listeners: list[tuple[str, callable]] = None) -> Agent:
         """Get an agent instance with custom bindings.
 
         Args:
@@ -96,9 +113,27 @@ class Registry:
         if additional_event_listeners:
             agent_listeners.extend(additional_event_listeners)
 
+        if override_config is None:
+            override_config = ConfigOverrides()
+
         exchange = Exchange(
             config,
-            override_config=override_config,
+            override_config=ConfigOverrides(
+                instances=dict(
+                    list(override_config.instances.items()) +
+                    list(self.agent_module_instances[id].items()) +
+                    list(self.server_module_instances.items())
+                ),
+                exchange=(
+                    override_config.exchange +
+                    [
+                        ExchangeConfig(
+                            protocol=module.__class__,
+                            provider=id
+                        ) for (id, module) in  self.server_module_instances.items()
+                    ]
+                )
+            ),
             event_listeners=agent_listeners
         )
 

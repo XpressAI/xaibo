@@ -1,7 +1,8 @@
+from itertools import chain
 from collections import defaultdict
 from typing import Type, Union
 from typing_extensions import get_origin
-from .config import AgentConfig, ModuleConfig, ConfigOverrides
+from .config import AgentConfig, ModuleConfig, ConfigOverrides, ExchangeConfig
 from .models import EventType, Event
 import time
 
@@ -11,32 +12,42 @@ import traceback
 class Exchange:
     """Handles module instantiation and dependency injection for agents."""
 
-    def __init__(self, config: AgentConfig = None, override_config: ConfigOverrides = None,
-                 event_listeners: list[tuple[str, callable]] = None):
+    def __init__(self,
+                 config: AgentConfig = None,
+                 override_config: ConfigOverrides = None,
+                 event_listeners: list[tuple[str, callable]] = None,
+                 specific_modules: list[str] = None):
         """Initialize the exchange and optionally instantiate modules.
 
         Args:
             config (AgentConfig, optional): The agent configuration to instantiate modules from. Defaults to None.
             override_config (ConfigOverrides, optional): Custom bindings to override defaults. Defaults to None.
             event_listeners (list[tuple[str, callable]], optional): Event listeners to register. Defaults to None.
+            specific_modules (list[str], optional): List of specific module ids that should be instantiated. Defaults to None.
         """
-        self.module_instances = {}
+        self.module_instances: dict[str, object] = {
+            '__exchange__': self
+        }
         self.overrides = override_config
         self.event_listeners = event_listeners or []
         self.config = config
 
         if config:
+            self.config.exchange = [ex for ex in self.config.exchange]
+            self.config.exchange.append(ExchangeConfig(
+                protocol=Exchange,
+                provider='__exchange__'
+            ))
             if self.overrides:
                 self.module_instances.update(self.overrides.instances)
-                self.config.exchange = [ex for ex in self.config.exchange]
                 for ex in self.overrides.exchange:
                     conflicts = [cx for cx in self.config.exchange if cx.module == ex.module and cx.protocol == ex.protocol and cx.field_name == ex.field_name]
                     for conflict in conflicts:
                         self.config.exchange.remove(conflict)
                     self.config.exchange.append(ex)
-            self._instantiate_modules()
+            self._instantiate_modules(specific_modules)
 
-    def _instantiate_modules(self) -> None:
+    def _instantiate_modules(self, specific_modules: list[str]) -> None:
         """Create instances of all modules defined in config."""
         # make it easy to access a module by id
         module_mapping = {
@@ -53,8 +64,17 @@ class Exchange:
         for module_id in self.module_instances:
             dependency_mapping[module_id] = {}
 
-        # Collect all known module ids
-        module_order = [module.id for module in self.config.modules] + [module_id for module_id in self.module_instances]
+        if specific_modules is None:
+            # Collect all known module ids
+            module_order = [module.id for module in self.config.modules] + [module_id for module_id in self.module_instances]
+        else:
+            # only instantiate those specific modules and their dependencies
+            module_order = set(module_id for module_id in specific_modules)
+            for module_id in specific_modules:
+                cur_deps = dependency_mapping[module_id]
+                for deps in cur_deps.values():
+                    module_order.update(deps)
+            module_order = list(module_order)
 
         # presort modules based on their dependency count
         module_order.sort(key=lambda x: len(dependency_mapping[x]))
@@ -63,9 +83,9 @@ class Exchange:
         i = 0
         while i < len(module_order):
             current_module_id = module_order[i]
-            cur_dependencies = dependency_mapping[current_module_id]
+            cur_dependencies = set(chain(*dependency_mapping[current_module_id].values()))
             if len(cur_dependencies) > 0:
-                highest_dependency_idx = max(max(module_order.index(m) for m in ml)  for ml in cur_dependencies.values())
+                highest_dependency_idx = max(module_order.index(m) for m in cur_dependencies)
                 if highest_dependency_idx > i:
                     module_order[i], module_order[highest_dependency_idx] = module_order[highest_dependency_idx], module_order[i]
                     continue
@@ -96,7 +116,8 @@ class Exchange:
 
             self.module_instances[module_id] = module_class(**init_parameters, config=module_config.config)
 
-        self.module_instances['__entry__'] = self._get_entry_module(self.module_instances)
+        if specific_modules is None:
+            self.module_instances['__entry__'] = self._get_entry_module(self.module_instances)
 
     def _get_module_dependencies(self, module_config: ModuleConfig) -> dict[str, list[str]]:
         """Get dependencies for a module from exchange config.

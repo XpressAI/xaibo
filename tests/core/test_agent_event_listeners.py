@@ -136,7 +136,7 @@ async def test_additional_event_listeners():
     
     # Get agent with additional event listener
     additional_listeners = [("", additional_handler)]
-    agent = registry.get_agent_with("echo-agent-minimal", {}, additional_listeners)
+    agent = registry.get_agent_with("echo-agent-minimal", None, additional_listeners)
     
     # Handle message
     await agent.handle_text("Hello world")
@@ -178,7 +178,7 @@ async def test_additional_event_listeners_with_prefix():
         ("xaibo_examples.echo", echo_handler),
     ]
     
-    agent = registry.get_agent_with("echo-agent-minimal", {}, additional_listeners)
+    agent = registry.get_agent_with("echo-agent-minimal", None, additional_listeners)
     
     # Handle message
     await agent.handle_text("Hello world")

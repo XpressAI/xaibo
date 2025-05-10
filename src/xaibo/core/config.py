@@ -1,12 +1,17 @@
+from enum import Enum
 from typing import Dict, List, Optional, Type, Union
 from pydantic import BaseModel, Field
 from pydantic_yaml import parse_yaml_raw_as, to_yaml_str
 from collections import defaultdict
 
+class Scope(Enum):
+    Instance = 'instance'
+    Agent = 'agent'
 
 class ModuleConfig(BaseModel):
     module: Union[str, Type]  # Can be string path or actual class
     id: str
+    scope: Scope = Scope.Instance
     provides: Optional[List[Union[str, Type]]] = None  # Can be string protocol names or actual protocol classes
     uses: Optional[List[Union[str, Type]]] = None  # Can be string protocol names or actual protocol classes
     config: Optional[Dict] = None

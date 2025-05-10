@@ -24,6 +24,14 @@ class Xaibo:
             from xaibo.primitives.event_listeners.debug_event_listener import register_debug_listener
             register_debug_listener(self.registry)
 
+        self.register_server_module('__xaibo__', self)
+
+    def register_server_module(self, id:str, module: object):
+        self.registry.register_server_module(id, module)
+
+    def unregister_server_module(self, id):
+        self.registry.unregister_server_module(id)
+
     def register_agent(self, agent_config: AgentConfig) -> None:
         """Register a new agent configuration.
 
