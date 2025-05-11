@@ -128,7 +128,7 @@ async def test_stressing_tool_user_time_and_calendar():
         events.append(event)
 
     # Get agent instance
-    agent = xaibo.get_agent_with("minimal-tool-user", {}, [
+    agent = xaibo.get_agent_with("minimal-tool-user", None, [
         ("", collect_events)
     ])
 

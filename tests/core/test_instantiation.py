@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from xaibo import AgentConfig, Registry, ConfigOverrides, ModuleConfig, ExchangeConfig
+from xaibo.core import Exchange
 
 from xaibo.core.models import Response, EventType
 
@@ -189,3 +190,82 @@ async def test_instantiate_with_debug_listener():
     handle_text_calls = [e for e in call_events if e.method_name == "handle_text"]
     assert len(handle_text_calls) > 0
     assert handle_text_calls[0].arguments["args"][0] == "Hello world"
+
+
+
+# Create a simple dependency module
+class DependencyModuleWithId:
+    def __init__(self, config=None):
+        self.id = config.get("id", "default")
+        
+    async def get_id(self):
+        return self.id
+
+# Create a simple module that requires a list of dependencies
+class ListDependencyModule:
+    def __init__(self, dependencies: list[DependencyModuleWithId], config=None):
+        self.dependencies = dependencies
+        
+    async def get_dependencies(self):
+        return self.dependencies
+
+@pytest.mark.asyncio
+async def test_list_type_dependency():
+    """Test instantiating a module with a list type dependency"""
+    
+    # Create configuration with multiple dependencies
+    config = AgentConfig(
+        id="list-dependency-test",
+        modules=[
+            ModuleConfig(
+                id="list_module",
+                module="tests.core.test_instantiation.ListDependencyModule"
+            ),
+            ModuleConfig(
+                id="dep1",
+                module="tests.core.test_instantiation.DependencyModuleWithId",
+                config={"id": "dep1"}
+            ),
+            ModuleConfig(
+                id="dep2",
+                module="tests.core.test_instantiation.DependencyModuleWithId",
+                config={"id": "dep2"}
+            ),
+            ModuleConfig(
+                id="dep3",
+                module="tests.core.test_instantiation.DependencyModuleWithId",
+                config={"id": "dep3"}
+            )
+        ],
+        exchange=[
+            # Configure the list_module to use multiple dependencies
+            ExchangeConfig(
+                module="list_module",
+                protocol="list",
+                field_name="dependencies",
+                provider=["dep1", "dep2", "dep3"]
+            ),
+            # Set the entry module
+            ExchangeConfig(
+                module="__entry__",
+                protocol="ListDependencyModule",
+                provider="list_module"
+            )
+        ]
+    )
+    
+    # Create exchange with the config
+    exchange = Exchange(config=config)
+    
+    # Get the module and test the list dependency injection
+    module = exchange.get_module("list_module", "test")
+    dependencies = await module.get_dependencies()
+    
+    # Verify we have all three dependencies
+    assert len(dependencies) == 3
+    
+    # Verify each dependency has the correct ID
+    dependency_ids = [await dep.get_id() for dep in dependencies]
+    assert "dep1" in dependency_ids
+    assert "dep2" in dependency_ids
+    assert "dep3" in dependency_ids
