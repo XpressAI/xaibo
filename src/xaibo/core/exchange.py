@@ -134,7 +134,7 @@ class Exchange:
         relevant_exchange_configs = [e for e in self.config.exchange if e.module == module_config.id or e.module is None]
         for exchange_config in relevant_exchange_configs:
             if exchange_config.field_name is not None:
-                param_list = [dependencies[exchange_config.field_name]]
+                param_list = [exchange_config.field_name]
             else:
                 param_list = types[exchange_config.protocol]
             for param in param_list:

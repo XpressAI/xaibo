@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
-from xaibo import AgentConfig, Registry, ConfigOverrides
+from xaibo import AgentConfig, Registry, ConfigOverrides, ModuleConfig, ExchangeConfig
 
-from xaibo.core.models import Response
+from xaibo.core.models import Response, EventType
 
 
 @pytest.mark.asyncio
@@ -88,3 +88,104 @@ async def test_instantiate_with_overrides():
     
     # Verify echo response
     assert mock_response.last_response == "You said: " + test_message
+
+# Create a dependency module
+class DependencyModule:
+    def __init__(self, config=None):
+        pass
+
+    async def do_something(self):
+        return "dependency called"
+
+# Create a module that requires a specific field name
+class ModuleWithNamedDependency:
+    def __init__(self, specific_dependency: DependencyModule, config=None):
+        self.dependency = specific_dependency
+
+    async def get_dependency(self):
+        return self.dependency
+
+@pytest.mark.asyncio
+async def test_instantiate_with_field_name_exchange():
+    """Test instantiating an agent with field_name in ExchangeConfig"""
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+    
+    # Add modules to config
+    config.modules.append(ModuleConfig(
+        module="tests.core.test_instantiation.ModuleWithNamedDependency",
+        id="named_dependency_module"
+    ))
+    
+    config.modules.append(ModuleConfig(
+        module="tests.core.test_instantiation.DependencyModule",
+        id="dependency_module"
+    ))
+    
+    # Add exchange config with field_name
+    config.exchange.append(ExchangeConfig(
+        module="named_dependency_module",
+        field_name="specific_dependency",
+        protocol="DependencyModule",
+        provider="dependency_module"
+    ))
+    
+    # Register and get agent
+    registry = Registry()
+    registry.register_agent(config)
+    agent = registry.get_agent("echo-agent-minimal")
+    
+    # Get the module and test the dependency injection
+    module = agent.exchange.get_module("named_dependency_module", "test")
+    dependency_result = await module.get_dependency()
+    dependency_method_result = await dependency_result.do_something()
+    
+    assert dependency_method_result == "dependency called"
+
+@pytest.mark.asyncio
+async def test_instantiate_with_debug_listener():
+    """Test instantiating an agent with a debug event listener"""
+    # Find the resources directory relative to this test file
+    test_dir = Path(__file__).parent
+    resources_dir = test_dir.parent / "resources"
+    
+    with open(resources_dir / "yaml" / "echo.yaml") as f:
+        content = f.read()
+        config = AgentConfig.from_yaml(content)
+    
+    # Create a registry with debug listener
+    registry = Registry()
+    
+    # Create a simple event collector
+    collected_events = []
+    def collect_event(event):
+        collected_events.append(event)
+    
+    # Register the agent with event listener
+    registry.register_agent(config)
+    
+    # Get agent instance
+    agent = registry.get_agent_with("echo-agent-minimal", None, additional_event_listeners=[("", collect_event)])
+    
+    # Test text handling
+    response = await agent.handle_text("Hello world")
+    
+    # Verify events were collected
+    assert len(collected_events) > 0
+    
+    # Verify we have both CALL and RESULT events
+    call_events = [e for e in collected_events if e.event_type == EventType.CALL]
+    result_events = [e for e in collected_events if e.event_type == EventType.RESULT]
+    
+    assert len(call_events) > 0
+    assert len(result_events) > 0
+    
+    # Verify we captured the handle_text call
+    handle_text_calls = [e for e in call_events if e.method_name == "handle_text"]
+    assert len(handle_text_calls) > 0
+    assert handle_text_calls[0].arguments["args"][0] == "Hello world"
