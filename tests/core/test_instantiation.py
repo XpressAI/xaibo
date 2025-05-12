@@ -269,3 +269,114 @@ async def test_list_type_dependency():
     assert "dep1" in dependency_ids
     assert "dep2" in dependency_ids
     assert "dep3" in dependency_ids
+
+@pytest.mark.asyncio
+async def test_list_dependency_with_repeated_config():
+    """Test that list dependencies work with repeated config for the same protocol."""
+    # Create a config with list dependencies but no field_name
+    config = AgentConfig(
+        id='test_agent',
+        modules=[
+            ModuleConfig(
+                id="list_module",
+                module="tests.core.test_instantiation.ListDependencyModule"
+            ),
+            ModuleConfig(
+                id="dep1",
+                module="tests.core.test_instantiation.DependencyModuleWithId",
+                config={"id": "dep1"}
+            ),
+            ModuleConfig(
+                id="dep2",
+                module="tests.core.test_instantiation.DependencyModuleWithId",
+                config={"id": "dep2"}
+            )
+        ],
+        exchange=[
+            # Configure the list_module to use multiple dependencies without field_name
+            ExchangeConfig(
+                module="list_module",
+                protocol="DependencyModuleWithId",
+                provider="dep1"
+            ),
+            ExchangeConfig(
+                module="list_module",
+                protocol="DependencyModuleWithId",
+                provider="dep2"
+            ),
+            # Set the entry module
+            ExchangeConfig(
+                module="__entry__",
+                protocol="ListDependencyModule",
+                provider="list_module"
+            )
+        ]
+    )
+    
+    # Create exchange with the config
+    exchange = Exchange(config=config)
+    
+    # Get the module and test the list dependency injection
+    module = exchange.get_module("list_module", "test")
+    dependencies = await module.get_dependencies()
+    
+    # Verify we have both dependencies
+    assert len(dependencies) == 2
+    
+    # Verify each dependency has the correct ID
+    dependency_ids = [await dep.get_id() for dep in dependencies]
+    assert "dep1" in dependency_ids
+    assert "dep2" in dependency_ids
+
+@pytest.mark.asyncio
+async def test_list_dependency_without_field_name():
+    """Test that list dependencies work without specifying a field_name."""
+    # Create a config with list dependencies but no field_name
+    config = AgentConfig(
+        id='test_agent',
+        modules=[
+            ModuleConfig(
+                id="list_module",
+                module="tests.core.test_instantiation.ListDependencyModule"
+            ),
+            ModuleConfig(
+                id="dep1",
+                module="tests.core.test_instantiation.DependencyModuleWithId",
+                config={"id": "dep1"}
+            ),
+            ModuleConfig(
+                id="dep2",
+                module="tests.core.test_instantiation.DependencyModuleWithId",
+                config={"id": "dep2"}
+            )
+        ],
+        exchange=[
+            # Configure the list_module to use multiple dependencies without field_name
+            ExchangeConfig(
+                module="list_module",
+                protocol="DependencyModuleWithId",
+                provider=["dep1", "dep2"]
+            ),
+            # Set the entry module
+            ExchangeConfig(
+                module="__entry__",
+                protocol="ListDependencyModule",
+                provider="list_module"
+            )
+        ]
+    )
+
+    # Create exchange with the config
+    exchange = Exchange(config=config)
+
+    # Get the module and test the list dependency injection
+    module = exchange.get_module("list_module", "test")
+    dependencies = await module.get_dependencies()
+
+    # Verify we have both dependencies
+    assert len(dependencies) == 2
+
+    # Verify each dependency has the correct ID
+    dependency_ids = [await dep.get_id() for dep in dependencies]
+    assert "dep1" in dependency_ids
+    assert "dep2" in dependency_ids

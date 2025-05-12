@@ -1,7 +1,7 @@
 from itertools import chain
 from collections import defaultdict
 from typing import Type, Union
-from typing_extensions import get_origin
+from typing_extensions import get_origin, get_args
 from .config import AgentConfig, ModuleConfig, ConfigOverrides, ExchangeConfig
 from .models import EventType, Event
 import time
@@ -127,7 +127,12 @@ class Exchange:
         types = defaultdict(list)
         dependencies = {}
         for param, type_hint in self._get_module_parameters(module_class):
-            types[type_hint.__name__].append(param)
+            args = get_args(type_hint)
+            if len(args) == 0:
+                types[type_hint.__name__].append(param)
+            else:
+                types[args[0].__name__].append(param)
+
             dependencies[param] = []
 
         # When an override exchange does not provide a module, it is meant for all modules
