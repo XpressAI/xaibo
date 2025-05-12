@@ -3,8 +3,6 @@ import json
 import logging
 from typing import List, Optional, AsyncIterator, Dict, Any
 
-import boto3
-from botocore.config import Config
 import base64
 
 from xaibo.core.protocols.llm import LLMProtocol
@@ -33,6 +31,9 @@ class BedrockLLM(LLMProtocol):
                 - timeout: Timeout for API requests in seconds. Default is 60.0.
                 - Any additional keys will be passed as arguments to the API.
         """
+        import boto3
+        from botocore.config import Config
+
         config = config or {}
         
         # Configure AWS client
@@ -128,32 +129,34 @@ class BedrockLLM(LLMProtocol):
                 
             elif msg.role == LLMRole.FUNCTION:
                 if msg.tool_results:
+                    content = []
                     for result in msg.tool_results:
-                        content = [{
+                        content.append({
                             "toolResult": {
                                 "toolUseId": result.id,
                                 "content": [{"text": result.content}],
                                 "status": "success"
                             }
-                        }]
-                        bedrock_messages.append({
-                            "role": "user",
-                            "content": content
                         })
+                    bedrock_messages.append({
+                        "role": "user",
+                        "content": content
+                    })
                 elif msg.tool_calls:
+                    content = []
                     # Handle function calls in function role messages
                     for tool_call in msg.tool_calls:
-                        content = [{
+                        content.append({
                             "toolUse": {
                                 "toolUseId": tool_call.id,
                                 "name": tool_call.name,
                                 "input": tool_call.arguments
                             }
-                        }]
-                        bedrock_messages.append({
-                            "role": "assistant",
-                            "content": content
                         })
+                    bedrock_messages.append({
+                        "role": "assistant",
+                        "content": content
+                    })
         
         # Prepare tools if provided
         if options.functions:

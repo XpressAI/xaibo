@@ -1,4 +1,5 @@
-from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol, LLMProtocol, ToolProviderProtocol
+from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol, LLMProtocol, ToolProviderProtocol, \
+    ConversationHistoryProtocol
 from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionResult, LLMMessageContentType, LLMMessageContent
 
 import json
@@ -26,6 +27,7 @@ class StressingToolUser(TextMessageHandlerProtocol):
                  response: ResponseProtocol,
                  llm: LLMProtocol,
                  tool_provider: ToolProviderProtocol,
+                 history: ConversationHistoryProtocol,
                  config: dict = None):
         """
         Initialize the StressingToolUser.
@@ -34,6 +36,7 @@ class StressingToolUser(TextMessageHandlerProtocol):
             response: Protocol for sending responses back to the user
             llm: Protocol for generating text using a language model
             tool_provider: Protocol for accessing and executing tools
+            history: A conversation History for some context
             config: Configuration dictionary with optional parameters:
                    - system_prompt: Initial system prompt for the conversation
                    - max_thoughts: Maximum number of tool usage iterations
@@ -44,6 +47,7 @@ class StressingToolUser(TextMessageHandlerProtocol):
         self.response: ResponseProtocol = response
         self.llm: LLMProtocol = llm
         self.tool_provider: ToolProviderProtocol = tool_provider
+        self.history = history
 
     async def handle_text(self, text: str) -> None:
         """
@@ -60,9 +64,9 @@ class StressingToolUser(TextMessageHandlerProtocol):
             text: The user's input text message
         """
         # Initialize conversation with system prompt
-        conversation = []
+        conversation = [m for m in await self.history.get_history()]
         if self.system_prompt:
-            conversation.append(LLMMessage.system(self.system_prompt))
+            conversation.insert(0, LLMMessage.system(self.system_prompt))
         
         # Add user message
         conversation.append(LLMMessage.user(text))

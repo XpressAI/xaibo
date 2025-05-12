@@ -112,7 +112,11 @@ class PythonToolProvider(ToolProviderProtocol):
                 description=param_docs.get(param.name, ""),
                 required=param.default == inspect.Parameter.empty
             )
-        
+            if parameters[param.name].type == 'str':
+                parameters[param.name].type = 'string'
+            elif parameters[param.name].type == 'int':
+                parameters[param.name].type = 'integer'
+
         return Tool(
             name=self._get_tool_name(fn),
             description=docstr.short_description or "",

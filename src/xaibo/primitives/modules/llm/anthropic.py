@@ -2,7 +2,6 @@ import os
 import logging
 from typing import List, Optional, AsyncIterator, Dict, Any
 
-from anthropic import AsyncAnthropic
 
 from xaibo.core.protocols.llm import LLMProtocol
 from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
@@ -28,6 +27,8 @@ class AnthropicLLM(LLMProtocol):
                 - timeout: Timeout for API requests in seconds. Default is 60.0.
                 - Any additional keys will be passed as arguments to the API.
         """
+        from anthropic import AsyncAnthropic
+
         config = config or {}
         
         self.api_key = config.get('api_key') or os.environ.get("ANTHROPIC_API_KEY")
