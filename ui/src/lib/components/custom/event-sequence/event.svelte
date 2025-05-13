@@ -49,21 +49,37 @@
     });
 
     function getNodeGradient(node: NodeType) {
-		if (node.isEntry) return { from: 'from-green-300', to: 'to-green-400' }; // Green for entry
-		if (node.id === '__response__') return { from: 'from-blue-300', to: 'to-blue-400' }; // Blue for response
-		if (node.module.includes('LLM')) return { from: 'from-orange-300', to: 'to-orange-400' }; // Orange for LLM
-		if (node.module.includes('Tool')) return { from: 'from-purple-300', to: 'to-purple-400' }; // Purple for tools
-		if (node.module.includes('orchestrator')) return { from: 'from-red-300', to: 'to-red-400' }; // Red for orchestrator
-		return { from: 'from-slate-300', to: 'to-slate-400' }; // Default gray
+        const colors = [
+            {from: 'from-green-300', to: 'to-green-400' },
+            {from: 'from-blue-300', to: 'to-blue-400' },
+            {from: 'from-orange-300', to: 'to-orange-400' },
+            {from: 'from-purple-300', to: 'to-purple-400' },
+            {from: 'from-red-300', to: 'to-red-400' },
+            {from: 'from-slate-300', to: 'to-slate-400'}
+        ];
+
+        let hash = node.module.length;
+        for (let i = 0; i < node.module.length; i++) {
+            hash += node.module.charCodeAt(i);
+        }
+        return colors[hash % colors.length];
 	}
 
     function getNodeGradientNoResponse(node: NodeType) {
-		if (node.isEntry) return { from: 'from-green-600', to: 'to-green-50' }; // Green for entry
-		if (node.id === '__response__') return { from: 'from-blue-600', to: 'to-blue-50' }; // Blue for response
-		if (node.module.includes('LLM')) return { from: 'from-orange-600', to: 'to-orange-50' }; // Orange for LLM
-		if (node.module.includes('Tool')) return { from: 'from-purple-600', to: 'to-purple-50' }; // Purple for tools
-		if (node.module.includes('orchestrator')) return { from: 'from-red-600', to: 'to-red-50' }; // Red for orchestrator
-		return { from: 'from-slate-600', to: 'to-slate-50' }; // Default gray
+        const colors = [
+            {from: 'from-green-600', to: 'to-green-50' },
+            {from: 'from-blue-600', to: 'to-blue-50' },
+            {from: 'from-orange-600', to: 'to-orange-50' },
+            {from: 'from-purple-600', to: 'to-purple-50' },
+            {from: 'from-red-600', to: 'to-red-50' },
+            {from: 'from-slate-600', to: 'to-slate-50'}
+        ];
+
+        let hash = node.module.length;
+        for (let i = 0; i < node.module.length; i++) {
+            hash += node.module.charCodeAt(i);
+        }
+        return colors[hash % colors.length];
 	}
 </script>
 

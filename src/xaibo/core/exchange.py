@@ -1,6 +1,6 @@
 from itertools import chain
 from collections import defaultdict
-from typing import Type, Union
+from typing import Type, Union, Any
 from typing_extensions import get_origin, get_args
 from .config import AgentConfig, ModuleConfig, ConfigOverrides, ExchangeConfig
 from .models import EventType, Event
@@ -116,9 +116,6 @@ class Exchange:
 
             self.module_instances[module_id] = module_class(**init_parameters, config=module_config.config)
 
-        if specific_modules is None:
-            self.module_instances['__entry__'] = self._get_entry_module(self.module_instances)
-
     def _get_module_dependencies(self, module_config: ModuleConfig) -> dict[str, list[str]]:
         """Get dependencies for a module from exchange config.
         """
@@ -153,18 +150,12 @@ class Exchange:
         """Get the injectable parameters for the given module class."""
         return ((param, param_type) for (param, param_type) in module_class.__init__.__annotations__.items() if param != 'config')
 
-    def _get_entry_module(self, module_instances: dict[str, any]) -> any:
+    def _get_entry_module_id(self) -> Any:
         """Get the entry module from exchange config."""
-        entry_module = None
         for exchange in self.config.exchange:
             if exchange.module == "__entry__":
-                if entry_module is not None:
-                    raise ValueError("Multiple message handlers found")
-                entry_module = module_instances[exchange.provider]
-
-        if entry_module is None:
-            raise ValueError("No message handler found in exchange config")
-        return entry_module
+                return exchange.provider
+        raise ValueError("No message handler found in exchange config")
 
     def get_module(self, module_id: str, caller_id: str, raise_on_not_found: bool = False):
         """Get a module in this exchange.
@@ -177,7 +168,10 @@ class Exchange:
         Returns:
             The module instance or None if not found
         """
+        if module_id == '__entry__':
+            module_id = self._get_entry_module_id()
         module = self.module_instances.get(module_id)
+
         if module:
             return Proxy(module,
                          event_listeners=self.event_listeners,

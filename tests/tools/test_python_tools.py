@@ -112,7 +112,7 @@ async def test_direct_function_tools():
     assert add_tool.description == "Add two numbers together"
     assert "a" in add_tool.parameters
     assert add_tool.parameters["a"].required is True
-    assert add_tool.parameters["a"].type == "int"
+    assert add_tool.parameters["a"].type == "integer"
     
     greet_tool = next(t for t in tools if t.name.endswith("-greet"))
     assert greet_tool.description == "Generate a greeting"

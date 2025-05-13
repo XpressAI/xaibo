@@ -1,11 +1,17 @@
+from os import PathLike
+
 import strawberry
 from fastapi import FastAPI, APIRouter
 from strawberry.fastapi import GraphQLRouter, BaseContext
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from strawberry.scalars import JSON
 
 from xaibo import Xaibo
+from xaibo.core import models
+import json
+from pathlib import Path
+
 
 class UiContext(BaseContext):
     def __init__(self, xaibo: Xaibo):
@@ -27,14 +33,35 @@ class ModuleConfig:
 @strawberry.type
 class ExchangeConfig:
     module: str
+    field_name: Optional[str] = None
     protocol: str
-    provider: str
+    provider: JSON
 
 @strawberry.type
 class AgentConfig:
     id: str
     modules: List[ModuleConfig]
     exchange: List[ExchangeConfig]
+
+@strawberry.type
+class Event:
+    agent_id: str
+    event_name: str
+    event_type: str
+    module_id: str
+    module_class: str
+    method_name: str
+    time: float
+    call_id: str
+    caller_id: str
+    arguments: Optional[JSON]
+    result: Optional[JSON]
+    exception: Optional[str]
+
+@strawberry.type
+class DebugTrace:
+    agent_id: str
+    events: List[Event]
 
 
 @strawberry.type
@@ -52,6 +79,15 @@ class Query:
             modules=[ModuleConfig(id=m.id, module=m.module, provides=m.provides, uses=m.uses, config=m.config) for m in cfg.modules],
             exchange=[ExchangeConfig(module=e.module, protocol=e.protocol, provider=e.provider) for e in cfg.exchange]
         )
+
+    @strawberry.field
+    async def debug_log(self, agent_id: str) -> DebugTrace:
+        target_path = Path("./debug") / f"{agent_id}.jsonl"
+        events = []
+        if target_path.exists():
+            lines = target_path.read_text().splitlines()
+            events = [Event(**json.loads(line)) for line in lines]
+        return DebugTrace(agent_id=agent_id, events=events)
 
 schema = strawberry.Schema(
     query=Query            
@@ -74,3 +110,28 @@ class UiApiAdapter:
 
     def get_context(self) -> UiContext:
         return UiContext(self.xaibo)
+
+class UIDebugTraceEventListener:
+    """Event listener that logs all events for debugging purposes."""
+
+    def __init__(self, output_directory: Path):
+        """Initialize the debug event listener.
+
+        Args:
+            log_level: The logging level to use for event logs (default: logging.DEBUG)
+        """
+        self.output_directory = output_directory
+
+    def handle_event(self, event: models.Event) -> None:
+        """Handle an event by logging it.
+
+        Args:
+            event: The event to log
+        """
+        if not self.output_directory.exists():
+            self.output_directory.mkdir(parents=True)
+
+        target_file = self.output_directory / f"{event.agent_id}.jsonl"
+        with target_file.open("a") as f:
+            f.write(json.dumps(event.model_dump(), default=repr))
+            f.write("\n")

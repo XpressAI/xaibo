@@ -1,6 +1,5 @@
 <script lang="ts">
     import {untrack} from 'svelte';
-    import type {NodeType} from './agent-config/types';
     import type {CallGroup, Event} from './event-sequence/types';
     import {EventType} from './event-sequence/types';
     import Node from './agent-config/node.svelte';
@@ -16,11 +15,15 @@
     import {Button} from "$lib/components/ui/button";
 
 
-    let {config = $bindable(), events = $bindable([]), quantum = 2} = $props<{
-        config: any;
+    let {events = $bindable([])} = $props<{
         events: Event[];
-        quantum: number
     }>();
+
+    interface NodeType {
+        id: string;
+        module: string;
+        isEntry: boolean;
+    }
 
     // State variables
     let nodes = $state<NodeType[]>([]);
@@ -29,7 +32,7 @@
 
     // Process config when it changes
     $effect(() => {
-        if (config) {
+        if (events) {
             untrack(() => processConfig());
         }
         if (events.length > 0) {
@@ -39,18 +42,19 @@
 
     // Configuration processing
     function processConfig() {
-        // Create nodes from modules
-        nodes = config.modules.map((module: any) => ({
-            id: module.id,
-            module: module.module,
-            provides: (module.provides || []).map((it: string) => ({protocol: it, ref: null})),
-            uses: (module.uses || []).map((it: string) => ({protocol: it})),
-            config: module.config,
-            level: 0
-        }));
+        // Create nodes from modules in event log
+        nodesById = {};
+        events.forEach(event => {
+            nodesById[event.module_id] = {
+                id: event.module_id,
+                module: event.module_class,
+                isEntry: event.module_id == '__entry__'
+            }
+        })
+        nodes = Object.values(nodesById)
 
         // Add entry node if referenced in exchanges
-        addEntryNodeIfNeeded();
+        //addEntryNodeIfNeeded();
 
         // Sort nodes based on first appearance in events
         if (events.length > 0) {
@@ -74,14 +78,10 @@
                 return indexA - indexB;
             });
         }
-
-        nodes.forEach(node => {
-            nodesById[node.id] = node;
-        })
     }
 
     function addEntryNodeIfNeeded() {
-        const hasEntryNode = config.exchange.some(
+        const hasEntryNode = !!nodesById['__entry__'] || config.exchange.some(
             (ex: any) => ex.module === '__entry__' || ex.provider === '__entry__'
         );
 
@@ -95,7 +95,7 @@
                 .map((ex: any) => ({protocol: ex.protocol as string, ref: null}));
 
             nodes.push({
-                id: `agent:${config.id}`,
+                id: `__entry__`,
                 module: 'Entry Point',
                 provides: entryProvides,
                 uses: entryUses,
@@ -114,11 +114,11 @@
         let openGroups: Map<string, CallGroup> = new Map();
         let callstack = [] as CallGroup[];
         // Add an additional event group that spans the entire sequence for the __entry__ module
-        if (events.length > 0) {
+        /*if (events.length > 0) {
             const entryGroup: CallGroup = {
                 call: {
                     ...events[0],  // Copy properties from first event
-                    module_id: `agent:${config.id}`,
+                    module_id: `__entry__`,
                     module_class: "Entry Point",
                     call_id: "__entry__",
                     event_type: EventType.CALL
@@ -132,7 +132,7 @@
             callstack.push(entryGroup);
             groups.push(entryGroup);
 
-        }
+        }*/
 
         for (let i = 0; i < events.length; i++) {
             let event = events[i];
@@ -206,12 +206,13 @@
     let eventListBBs = $derived(eventGroups.map(group => new BoundingBox(group.boxRef)))
 
     function getNodeColor(node: NodeType) {
-        if (node.isEntry) return 'bg-green-500'; // Green for entry
-        if (node.id === '__response__') return 'bg-blue-500'; // Blue for response
-        if (node.module.includes('LLM')) return 'bg-orange-500'; // Orange for LLM
-        if (node.module.includes('Tool')) return 'bg-purple-500'; // Purple for tools
-        if (node.module.includes('orchestrator')) return 'bg-red-500'; // Red for orchestrator
-        return 'bg-slate-500'; // Default gray
+        const colors = ['bg-green-500', 'bg-blue-500', 'bg-orange-500', 'bg-purple-500', 'bg-red-500', 'bg-slate-500'];
+
+        let hash = node.module.length;
+        for (let i = 0; i < node.module.length; i++) {
+            hash += node.module.charCodeAt(i);
+        }
+        return colors[hash % colors.length];
     }
 
     function getParentChain(group: CallGroup): NodeType[] {
@@ -282,6 +283,7 @@
                         </div>
                     </div>
                 {/each}
+                <div class="h-4 bg-white"></div>
             </div>
             {#if selectedEventIdx !== undefined}
                 {@const selectedEvent = eventGroups[selectedEventIdx]}

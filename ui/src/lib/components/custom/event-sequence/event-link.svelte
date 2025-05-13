@@ -89,7 +89,7 @@
             // For call events (top of the box)
             const result: Coordinates = {
                 call: {
-                    startX: isCallerLeftOfModule ? callerLifelineRight + eventBoxRect.width / 2: callerLifelineLeft,
+                    startX: isCallerLeftOfModule ? callerLifelineRight + eventBoxRect.width / 2: callerLifelineLeft - eventBoxRect.width / 2,
                     startY: eventBoxTop,
                     endX: isCallerLeftOfModule ? eventBoxLeft : eventBoxRight,
                     endY: eventBoxTop,
@@ -105,7 +105,7 @@
                 result.response = {
                     startX: isCallerLeftOfModule ? eventBoxLeft : eventBoxRight,
                     startY: eventBoxBottom,
-                    endX: isCallerLeftOfModule ? callerLifelineRight + eventBoxRect.width/2 : callerLifelineLeft,
+                    endX: isCallerLeftOfModule ? callerLifelineRight + eventBoxRect.width/2 : callerLifelineLeft - eventBoxRect.width/2,
                     endY: eventBoxBottom,
                     midX: isCallerLeftOfModule ? 
                         (callerLifelineRight + eventBoxRect.width + eventBoxLeft) / 2 : 

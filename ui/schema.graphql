@@ -8,10 +8,31 @@ type AgentConfig {
   exchange: [ExchangeConfig!]!
 }
 
+type DebugTrace {
+  agentId: String!
+  events: [Event!]!
+}
+
+type Event {
+  agentId: String!
+  eventName: String!
+  eventType: String!
+  moduleId: String!
+  moduleClass: String!
+  methodName: String!
+  time: Float!
+  callId: String!
+  callerId: String!
+  arguments: JSON
+  result: JSON
+  exception: String
+}
+
 type ExchangeConfig {
   module: String!
+  fieldName: String
   protocol: String!
-  provider: String!
+  provider: JSON!
 }
 
 """
@@ -30,4 +51,5 @@ type ModuleConfig {
 type Query {
   listAgents: [Agent!]!
   agentConfig(agentId: String!): AgentConfig!
+  debugLog(agentId: String!): DebugTrace!
 }

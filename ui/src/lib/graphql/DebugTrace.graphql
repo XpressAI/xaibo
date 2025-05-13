@@ -1,0 +1,20 @@
+query DebugTrace($agentId: String!){
+    debugLog(agentId: $agentId) {
+        agentId
+        events {
+            agent_id: agentId
+            event_name: eventName
+            event_type: eventType
+            module_id: moduleId
+            module_class: moduleClass
+            method_name: methodName
+            time
+            call_id: callId
+            caller_id: callerId
+            arguments
+            result
+            exception
+
+        }
+    }
+}

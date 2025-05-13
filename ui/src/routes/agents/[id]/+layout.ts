@@ -1,5 +1,5 @@
 import type { LayoutLoad } from './$types';
-import { load_AgentConfig } from '$houdini'
+import { loadAll, load_AgentConfig, load_DebugTrace } from '$houdini'
 
 export const load: LayoutLoad = async (event) => {
 	let { parent, params } = event;
@@ -9,8 +9,13 @@ export const load: LayoutLoad = async (event) => {
 			name: params.id,
 			href: `/agents/${params.id}`
 		}),
-		...(await load_AgentConfig({event, variables: {
-			agentId: params.id,
-			}}))
+		...(await loadAll(
+			load_AgentConfig({event, variables: {
+					agentId: params.id,
+				}}),
+			load_DebugTrace({event, variables: {
+					agentId: params.id,
+				}})
+		))
 	};
 };

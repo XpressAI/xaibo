@@ -33,21 +33,30 @@
 	}
 
 	function getNodeColor(node: NodeType) {
-		if (node.isEntry) return 'bg-green-500'; // Green for entry
-		if (node.id === '__response__') return 'bg-blue-500'; // Blue for response
-		if (node.module.includes('LLM')) return 'bg-orange-500'; // Orange for LLM
-		if (node.module.includes('Tool')) return 'bg-purple-500'; // Purple for tools
-		if (node.module.includes('orchestrator')) return 'bg-red-500'; // Red for orchestrator
-		return 'bg-slate-500'; // Default gray
+		const colors = ['bg-green-500', 'bg-blue-500', 'bg-orange-500', 'bg-purple-500', 'bg-red-500', 'bg-slate-500'];
+
+		let hash = node.module.length;
+		for (let i = 0; i < node.module.length; i++) {
+			hash += node.module.charCodeAt(i);
+		}
+		return colors[hash % colors.length];
 	}
 
 	function getNodeGradient(node: NodeType) {
-		if (node.isEntry) return { from: 'from-green-600', to: 'to-green-400' }; // Green for entry
-		if (node.id === '__response__') return { from: 'from-blue-600', to: 'to-blue-400' }; // Blue for response
-		if (node.module.includes('LLM')) return { from: 'from-orange-600', to: 'to-orange-400' }; // Orange for LLM
-		if (node.module.includes('Tool')) return { from: 'from-purple-600', to: 'to-purple-400' }; // Purple for tools
-		if (node.module.includes('orchestrator')) return { from: 'from-red-600', to: 'to-red-400' }; // Red for orchestrator
-		return { from: 'from-slate-600', to: 'to-slate-400' }; // Default gray
+		const colors = [
+			{from: 'from-green-600', to: 'to-green-400' },
+			{from: 'from-blue-600', to: 'to-blue-400' },
+			{from: 'from-orange-600', to: 'to-orange-400' },
+			{from: 'from-purple-600', to: 'to-purple-400' },
+			{from: 'from-red-600', to: 'to-red-400' },
+			{from: 'from-slate-600', to: 'to-slate-400'}
+		];
+
+		let hash = node.module.length;
+		for (let i = 0; i < node.module.length; i++) {
+			hash += node.module.charCodeAt(i);
+		}
+		return colors[hash % colors.length];
 	}
 
 	function getNodeLabel(node: NodeType) {

@@ -26,7 +26,7 @@
 						title: x.id,
 						url: `/agents/${x.id}`,
 						subItems: [
-							{
+							/*{
 								title: 'Configuration',
 								url: `/agents/${x.id}/config`,
 							},
@@ -45,12 +45,12 @@
 							{
 								title: 'Budget',
 								url: `/agents/${x.id}/budget`
-							}
+							}*/
 						]
 					}
 				))
 			},
-			{
+			/*{
 				title: 'Prompt Templates',
 				url: '/templates',
 				isActive: false,
@@ -68,7 +68,7 @@
 						url: '/templeates/3',
 					}
 				]
-			}
+			}*/
 		]
 	});
 </script>
@@ -108,9 +108,9 @@
 									</a>
 								{/snippet}
 							</Sidebar.MenuButton>
-							<Button variant="ghost" title="Add" href="/agents/create">
+							<!--<Button variant="ghost" title="Add" href="/agents/create">
 								<PlusSquare />
-							</Button>
+							</Button>-->
 						</div>
 						{#if groupItem.items?.length}
 							<Sidebar.MenuSub>

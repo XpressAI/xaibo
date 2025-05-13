@@ -9,6 +9,7 @@ import asyncio
 from watchfiles import awatch
 
 from xaibo import Xaibo, AgentConfig
+from pathlib import Path
 
 def get_class_by_path(path: str) -> Type:
     parts = path.split('.')
@@ -19,7 +20,7 @@ def get_class_by_path(path: str) -> Type:
     return clazz
 
 class XaiboWebServer:
-    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000) -> None:
+    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000, debug: bool = False) -> None:
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             self.watcher_task = asyncio.create_task(self.watch_config_files())
@@ -45,6 +46,12 @@ class XaiboWebServer:
         self.port = port
         self.configs = {}
         self.watcher_task = None
+
+        if debug:
+            from xaibo.server.adapters.ui import UIDebugTraceEventListener
+            adapters.append("xaibo.server.adapters.UiApiAdapter")
+            self.xaibo.register_event_listener("", UIDebugTraceEventListener(Path("./debug")).handle_event)
+
 
         for adapter in adapters:
             clazz = get_class_by_path(adapter)
@@ -90,10 +97,12 @@ if __name__ == "__main__":
                         help="Host address to bind the server to")
     parser.add_argument("--port", dest="port", default=8000, type=int, action="store",
                         help="Port to run the server on")
+    parser.add_argument("--debug-ui", dest="debug", default=False, type=bool, action="store",
+                        help="Enable writing debug traces and start web ui")
 
     args = parser.parse_args()
 
     xaibo = Xaibo()
 
-    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir, args.host, args.port)
+    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir, args.host, args.port, args.debug)
     server.start()
