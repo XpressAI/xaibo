@@ -8,11 +8,14 @@
     import AlertCircle from '@lucide/svelte/icons/alert-circle';
     import CheckCircle from '@lucide/svelte/icons/check-circle';
     import X from '@lucide/svelte/icons/x';
+    import Maximize_2 from '@lucide/svelte/icons/maximize-2';
     import EventNode from './event-sequence/event.svelte';
     import EventLink from './event-sequence/event-link.svelte';
     import {BoundingBox} from "$lib/components/reactivity";
     import * as Breadcrumb from '$lib/components/ui/breadcrumb';
     import {Button} from "$lib/components/ui/button";
+    import { JSONEditor } from 'svelte-jsoneditor'
+    import * as Dialog from "$lib/components/ui/dialog";
 
 
     let {events = $bindable([])} = $props<{
@@ -236,6 +239,9 @@
     }
 
     let selectedEventIdx = $state<number | undefined>(undefined);
+
+    let fullScreenDetails: any = $state(null);
+    $inspect(fullScreenDetails);
 </script>
 
 <div class="w-full h-full flex flex-col">
@@ -246,221 +252,238 @@
             No events to display
         </div>
     {:else}
-        <div class="w-full h-full grid grid-cols-[auto_1fr]">
-            <div class="flex flex-col gap-0 border-r border-gray-200 dark:border-gray-700 pr-2">
-                <div class="h-24 bg-white"></div>
-                {#each eventGroups as group, i (i)}
-                    {@const node = nodesById[group.call.module_id]}
-                    {@const parentChain = getParentChain(group)}
-                    {@const endEvent = (group.response || group.exception)}
-                    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-                    <div class="flex gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors items-center"
-                         bind:this={group.boxRef}
-                         class:bg-muted={selectedEventIdx === i}
-                         onclick={() => selectedEventIdx = i}
-                    >
-                        <div class="flex flex-col flex-1 py-2 pl-2">
-                            <div class="text-sm font-medium">{group.call.method_name}</div>
-                            <div class="truncate text-xs text-gray-600 dark:text-gray-300 flex justify-between gap-2">
-                                {node.module.split('.').findLast(it => true)}
-                                <div class="text-gray-400 dark:text-gray-500">
-                                    {#if endEvent}
-                                        {((endEvent.time - group.call.time) * 1000).toFixed(2)}ms
-                                    {/if}
-                                </div>
-                            </div>
-                        </div>
-                        {#if group.exception}
-                            <div class="text-red-500 self-center" title="Exception occurred">
-                                <AlertCircle size={16}/>
-                            </div>
-                        {/if}
-                        <div class="flex h-full -mt-2 -mb-2">
-                            {#each parentChain as node}
-                                {@const color = getNodeColor(node)}
-                                <div class={color} style="width: 5px"></div>
-                            {/each}
-                        </div>
-                    </div>
-                {/each}
-                <div class="h-4 bg-white"></div>
-            </div>
-            {#if selectedEventIdx !== undefined}
-                {@const selectedEvent = eventGroups[selectedEventIdx]}
-                {@const parentChain = getParentCallChain(selectedEvent)}
-                <ScrollArea class="w-full h-full p-4 @container" orientation="both">
-                    <div class="flex flex-col gap-4">
-                        <div class="flex flex-col">
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-lg font-semibold">
-                                    {selectedEvent.call.module_class}.{selectedEvent.call.method_name}
-                                </h3>
-                                <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onclick={() => selectedEventIdx = undefined}
-                                        class="h-8 w-8"
-                                        title="Close details"
-                                >
-                                    <X size={16}/>
-                                </Button>
-                            </div>
-                            <div class="mb-2">
-                                <Breadcrumb.Root>
-                                    <Breadcrumb.List>
-                                        {#each parentChain.toReversed() as group, i}
-                                            {#if i < parentChain.length - 1}
-                                                <Breadcrumb.Item>
-                                                    <Breadcrumb.Link class="text-xs cursor-pointer"
-                                                                     onclick={() => selectedEventIdx = eventGroups.findIndex(g => g.call.call_id === group.call.call_id)}>
-                                                        {group.call.module_class}.{group.call.method_name}
-                                                    </Breadcrumb.Link>
-                                                </Breadcrumb.Item>
-                                                <Breadcrumb.Separator/>
-                                            {:else}
-                                                <Breadcrumb.Item>
-                                                    <Breadcrumb.Page class="text-xs cursor-pointer"
-                                                                     onclick={() => selectedEventIdx = eventGroups.findIndex(g => g.call.call_id === group.call.call_id)}>
-                                                        {group.call.module_class}.{group.call.method_name}
-                                                    </Breadcrumb.Page>
-                                                </Breadcrumb.Item>
-                                            {/if}
-                                        {/each}
-                                    </Breadcrumb.List>
-                                </Breadcrumb.Root>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                {#if selectedEvent.exception}
-                                    <div class="flex items-center gap-1 text-red-500">
-                                        <AlertCircle size={16}/>
-                                        <span>Exception</span>
-                                    </div>
-                                {:else if selectedEvent.response}
-                                    <div class="flex items-center gap-1 text-green-500">
-                                        <CheckCircle size={16}/>
-                                        <span>Success</span>
-                                    </div>
-                                {/if}
-                                {#if selectedEvent.response || selectedEvent.exception}
-                                    <div class="text-sm text-gray-500">
-                                        {((selectedEvent.response?.time || selectedEvent.exception?.time || 0) - selectedEvent.call.time) * 1000}
-                                        ms
-                                    </div>
-                                {/if}
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 @md:grid-cols-2 gap-4">
-                            <div class="flex flex-col gap-2">
-                                <h4 class="font-medium">Call Details</h4>
-                                <div class="flex-1 border rounded-md p-3 bg-gray-50 dark:bg-gray-800 overflow-auto">
-                                    <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-                                        <span class="text-sm font-medium">Module:</span>
-                                        <span class="text-sm">{nodesById[selectedEvent.call.module_id]?.module.split('.').findLast(it => true)}
-                                            ({selectedEvent.call.module_id})</span>
-
-                                        <span class="text-sm font-medium">Caller:</span>
-                                        <span class="text-sm">{(nodesById[selectedEvent.call.caller_id]?.module || selectedEvent.call.caller_id).split('.').findLast(it => true)}
-                                            ({selectedEvent.call.caller_id})</span>
-
-                                        <span class="text-sm font-medium">Time:</span>
-                                        <span class="text-sm">{new Date(selectedEvent.call.time * 1000).toISOString()}</span>
-
-                                        <span class="text-sm font-medium">Call ID:</span>
-                                        <span class="text-sm truncate">{selectedEvent.call.call_id}</span>
+        <div class="overflow-hidden">
+            <div class="h-full overflow-auto {selectedEventIdx !== undefined? 'block w-fit' :'grid w-full grid-cols-[auto_1fr]'} relative">
+                <div class="flex flex-col gap-0 border-r border-gray-200 dark:border-gray-700 pr-2">
+                    <div class="h-24 bg-white"></div>
+                    {#each eventGroups as group, i (i)}
+                        {@const node = nodesById[group.call.module_id]}
+                        {@const parentChain = getParentChain(group)}
+                        {@const endEvent = (group.response || group.exception)}
+                        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                        <div class="flex gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors items-center"
+                             bind:this={group.boxRef}
+                             class:bg-muted={selectedEventIdx === i}
+                             onclick={() => selectedEventIdx = i}
+                        >
+                            <div class="flex flex-col flex-1 py-2 pl-2">
+                                <div class="text-sm font-medium">{group.call.method_name}</div>
+                                <div class="truncate text-xs text-gray-600 dark:text-gray-300 flex justify-between gap-2">
+                                    {node.module.split('.').findLast(it => true)}
+                                    <div class="text-gray-400 dark:text-gray-500">
+                                        {#if endEvent}
+                                            {((endEvent.time - group.call.time) * 1000).toFixed(2)}ms
+                                        {/if}
                                     </div>
                                 </div>
                             </div>
-
-                            {#if selectedEvent.call.arguments}
-                                <div class="flex flex-col gap-2">
-                                    <h4 class="font-medium">Arguments</h4>
-                                    <div class="flex-1 border rounded-md p-3 bg-gray-50 dark:bg-gray-800 overflow-auto max-h-40">
-                                        <pre class="text-xs whitespace-pre-wrap">{JSON.stringify(selectedEvent.call.arguments, null, 2)}</pre>
-                                    </div>
+                            {#if group.exception}
+                                <div class="text-red-500 self-center" title="Exception occurred">
+                                    <AlertCircle size={16}/>
                                 </div>
                             {/if}
-                        </div>
-
-                        {#if selectedEvent.response || selectedEvent.exception}
-                            <div class="grid grid-cols-1 gap-4">
-                                {#if selectedEvent.response}
-                                    <div class="flex flex-col gap-2">
-                                        <h4 class="font-medium">Response</h4>
-                                        <div class="border rounded-md p-3 bg-gray-50 dark:bg-gray-800 overflow-auto max-h-60">
-                                            <pre class="text-xs whitespace-pre-wrap">{JSON.stringify(selectedEvent.response.result, null, 2)}</pre>
-                                        </div>
-                                    </div>
-                                {:else if selectedEvent.exception}
-                                    <div class="flex flex-col gap-2">
-                                        <h4 class="font-medium text-red-500">Exception</h4>
-                                        <div class="border border-red-200 rounded-md p-3 bg-red-50 dark:bg-red-900/20 overflow-auto max-h-60">
-                                            <pre class="text-xs whitespace-pre-wrap text-red-600 dark:text-red-400">{selectedEvent.exception.exception}</pre>
-                                        </div>
-                                    </div>
-                                {/if}
+                            <div class="flex h-full -mt-2 -mb-2">
+                                {#each parentChain as node}
+                                    {@const color = getNodeColor(node)}
+                                    <div class={color} style="width: 5px; height: 52px"></div>
+                                {/each}
                             </div>
-                        {/if}
-                    </div>
-                </ScrollArea>
-            {:else}
-                <ScrollArea class="pb-2" orientation="horizontal">
-                    <div class="relative">
-                        <div class="flex flex-1" bind:this={container}>
-                            {#each nodes as node, i (i)}
-                                <div class="flex flex-col items-center gap-2">
-                                    <div class="sticky top-0 bg-white dark:bg-gray-800 z-[100]">
-                                        <Node node={nodes[i]} displayPorts={false}/>
-                                    </div>
-                                    <div bind:this={lifelineRefs[node.id]} class="bg-gray-300 dark:bg-gray-600 w-px"
-                                         style="height: {eventListBBs[eventGroups.length - 1].current.y - containerBB.current.y}px"></div>
-                                </div>
-                            {/each}
                         </div>
-                        <svg class="absolute inset-0" width="100%" height="100%">
-                            <defs>
-                                <marker id="arrowhead-call" markerWidth="6" markerHeight="4" refX="5" refY="2"
-                                        orient="auto">
-                                    <polygon points="0 0, 6 2, 0 4" class="fill-gray-500 dark:fill-gray-400"/>
-                                </marker>
-                                <marker id="arrowhead-response-exception" markerWidth="6" markerHeight="4" refX="5"
-                                        refY="2" orient="auto">
-                                    <polygon points="0 0, 6 2, 0 4" class="fill-red-400 dark:fill-red-600"/>
-                                </marker>
-                                <marker id="arrowhead-response-result" markerWidth="6" markerHeight="4" refX="5"
-                                        refY="2" orient="auto">
-                                    <polygon points="0 0, 6 2, 0 4" class="fill-gray-500 dark:fill-gray-400"/>
-                                </marker>
-                            </defs>
-                            {#each eventGroups as eventGroup, i (i)}
-                                {#if i > 0}
-                                    <EventLink {eventGroup}
-                                               rects={{
+                    {/each}
+                    <div class="h-4 bg-white"></div>
+                </div>
+                {#if selectedEventIdx === undefined}
+                    <ScrollArea class="pb-2" orientation="horizontal">
+                        <div class="relative">
+                            <div class="flex flex-1" bind:this={container}>
+                                {#each nodes as node, i (i)}
+                                    <div class="flex flex-col items-center gap-2">
+                                        <div class="sticky top-0 bg-white dark:bg-gray-800 z-[100]">
+                                            <Node node={nodes[i]} displayPorts={false}/>
+                                        </div>
+                                        <div bind:this={lifelineRefs[node.id]} class="bg-gray-300 dark:bg-gray-600 w-px"
+                                             style="height: {eventListBBs[eventGroups.length - 1].current.y - containerBB.current.y}px"></div>
+                                    </div>
+                                {/each}
+                            </div>
+                            <svg class="absolute inset-0" width="100%" height="100%">
+                                <defs>
+                                    <marker id="arrowhead-call" markerWidth="6" markerHeight="4" refX="5" refY="2"
+                                            orient="auto">
+                                        <polygon points="0 0, 6 2, 0 4" class="fill-gray-500 dark:fill-gray-400"/>
+                                    </marker>
+                                    <marker id="arrowhead-response-exception" markerWidth="6" markerHeight="4" refX="5"
+                                            refY="2" orient="auto">
+                                        <polygon points="0 0, 6 2, 0 4" class="fill-red-400 dark:fill-red-600"/>
+                                    </marker>
+                                    <marker id="arrowhead-response-result" markerWidth="6" markerHeight="4" refX="5"
+                                            refY="2" orient="auto">
+                                        <polygon points="0 0, 6 2, 0 4" class="fill-gray-500 dark:fill-gray-400"/>
+                                    </marker>
+                                </defs>
+                                {#each eventGroups as eventGroup, i (i)}
+                                    {#if i > 0}
+                                        <EventLink {eventGroup}
+                                                   rects={{
 													   containerRect: containerBB.current,
 													   lifelineRect: lifelineBBs[eventGroup.call.caller_id]?.current,
 													   eventBoxRect: eventBoxBBs[i].current,
 												   }}
-                                    />
-                                {/if}
-                            {/each}
-                        </svg>
-                        <div class="absolute inset-0 z-[99]">
-                            {#each eventGroups as group, i (i)}
-                                <EventNode bind:eventGroup={eventGroups[i]}
-                                           module={nodes.find(it => it.id === group.call.module_id)}
-                                           onclick={() => selectedEventIdx = eventGroups.indexOf(group)}
-                                           rects={{
+                                        />
+                                    {/if}
+                                {/each}
+                            </svg>
+                            <div class="absolute inset-0 z-[99]">
+                                {#each eventGroups as group, i (i)}
+                                    <EventNode bind:eventGroup={eventGroups[i]}
+                                               module={nodes.find(it => it.id === group.call.module_id)}
+                                               onclick={() => selectedEventIdx = eventGroups.indexOf(group)}
+                                               rects={{
 														containerRect: containerBB.current,
 														lifelineRect: lifelineBBs[group.call.module_id]?.current,
 														boxRect: eventListBBs[i].current,
 												  }}
-                                />
-                            {/each}
+                                    />
+                                {/each}
+                            </div>
+                        </div>
+                    </ScrollArea>
+                {/if}
+            </div>
+        </div>
+    {#if selectedEventIdx !== undefined}
+        {@const selectedEvent = eventGroups[selectedEventIdx]}
+        {@const parentChain = getParentCallChain(selectedEvent)}
+        <div class="p-4 @container absolute top-0 bottom-0 left-72 right-16" >
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">
+                            {selectedEvent.call.module_class}.{selectedEvent.call.method_name}
+                        </h3>
+                        <Button
+                                variant="ghost"
+                                size="icon"
+                                onclick={() => selectedEventIdx = undefined}
+                                class="h-8 w-8"
+                                title="Close details"
+                        >
+                            <X size={16}/>
+                        </Button>
+                    </div>
+                    <div class="mb-2">
+                        <Breadcrumb.Root>
+                            <Breadcrumb.List>
+                                {#each parentChain.toReversed() as group, i}
+                                    {#if i < parentChain.length - 1}
+                                        <Breadcrumb.Item>
+                                            <Breadcrumb.Link class="text-xs cursor-pointer"
+                                                             onclick={() => selectedEventIdx = eventGroups.findIndex(g => g.call.call_id === group.call.call_id)}>
+                                                {group.call.module_class}.{group.call.method_name}
+                                            </Breadcrumb.Link>
+                                        </Breadcrumb.Item>
+                                        <Breadcrumb.Separator/>
+                                    {:else}
+                                        <Breadcrumb.Item>
+                                            <Breadcrumb.Page class="text-xs cursor-pointer"
+                                                             onclick={() => selectedEventIdx = eventGroups.findIndex(g => g.call.call_id === group.call.call_id)}>
+                                                {group.call.module_class}.{group.call.method_name}
+                                            </Breadcrumb.Page>
+                                        </Breadcrumb.Item>
+                                    {/if}
+                                {/each}
+                            </Breadcrumb.List>
+                        </Breadcrumb.Root>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {#if selectedEvent.exception}
+                            <div class="flex items-center gap-1 text-red-500">
+                                <AlertCircle size={16}/>
+                                <span>Exception</span>
+                            </div>
+                        {:else if selectedEvent.response}
+                            <div class="flex items-center gap-1 text-green-500">
+                                <CheckCircle size={16}/>
+                                <span>Success</span>
+                            </div>
+                        {/if}
+                        {#if selectedEvent.response || selectedEvent.exception}
+                            <div class="text-sm text-gray-500">
+                                {((selectedEvent.response?.time || selectedEvent.exception?.time || 0) - selectedEvent.call.time) * 1000}
+                                ms
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 @md:grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-2">
+                        <h4 class="font-medium">Call Details</h4>
+                        <div class="flex-1 border rounded-md p-3 bg-gray-50 dark:bg-gray-800 overflow-auto">
+                            <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+                                <span class="text-sm font-medium">Module:</span>
+                                <span class="text-sm">{nodesById[selectedEvent.call.module_id]?.module.split('.').findLast(it => true)}
+                                    ({selectedEvent.call.module_id})</span>
+
+                                <span class="text-sm font-medium">Caller:</span>
+                                <span class="text-sm">{(nodesById[selectedEvent.call.caller_id]?.module || selectedEvent.call.caller_id).split('.').findLast(it => true)}
+                                    ({selectedEvent.call.caller_id})</span>
+
+                                <span class="text-sm font-medium">Time:</span>
+                                <span class="text-sm">{new Date(selectedEvent.call.time * 1000).toISOString()}</span>
+
+                                <span class="text-sm font-medium">Call ID:</span>
+                                <span class="text-sm truncate">{selectedEvent.call.call_id}</span>
+                            </div>
                         </div>
                     </div>
-                </ScrollArea>
 
-            {/if}
+                    {#if selectedEvent.call.arguments}
+                        <div class="flex flex-col gap-2">
+                            <div class="flex gap-2 items-center">
+                                <h4 class="font-medium">Arguments</h4>
+                                <Button onclick={() => fullScreenDetails = selectedEvent.call.arguments} variant="ghost" size="icon">
+                                    <Maximize_2 />
+                                </Button>
+                            </div>
+                            <div class="flex-1 overflow-auto max-h-[30vh]">
+                                <JSONEditor content={{text: undefined, json: selectedEvent.call.arguments}} readOnly navigationBar={false}/>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
+
+                {#if selectedEvent.response || selectedEvent.exception}
+                    <div class="grid grid-cols-1 gap-4">
+                        {#if selectedEvent.response}
+                            <div class="flex flex-col gap-2">
+                                <div class="flex gap-2 items-center">
+                                    <h4 class="font-medium">Response</h4>
+                                    <Button onclick={() => fullScreenDetails = selectedEvent.response.result} variant="ghost" size="icon">
+                                        <Maximize_2 />
+                                    </Button>
+                                </div>
+                                <div class="overflow-auto max-h-[45vh]">
+                                    <JSONEditor content={{text: undefined, json: selectedEvent.response.result}} readOnly navigationBar={false}/>
+                                </div>
+                            </div>
+                        {:else if selectedEvent.exception}
+                            <div class="flex flex-col gap-2">
+                                <h4 class="font-medium text-red-500">Exception</h4>
+                                <div class="border border-red-200 rounded-md p-3 bg-red-50 dark:bg-red-900/20 overflow-auto max-h-[45vh]">
+                                    <pre class="text-xs whitespace-pre-wrap text-red-600 dark:text-red-400">{selectedEvent.exception.exception}</pre>
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
+            </div>
         </div>
+        {/if}
     {/if}
 </div>
+    <Dialog.Root open={!!fullScreenDetails} onOpenChange={() => fullScreenDetails = null}>
+        <Dialog.Content onOpenAutoFocus={(e) => e.preventDefault()} class="max-w-[95wv] w-[95vw] h-[95vh] p-8">
+                <JSONEditor content={{text: undefined, json: fullScreenDetails}} readOnly navigationBar={false}/>
+        </Dialog.Content>
+    </Dialog.Root>
