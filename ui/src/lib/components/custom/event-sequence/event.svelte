@@ -50,12 +50,12 @@
 
     function getNodeGradient(node: NodeType) {
         const colors = [
-            {from: 'from-green-300', to: 'to-green-400' },
-            {from: 'from-blue-300', to: 'to-blue-400' },
-            {from: 'from-orange-300', to: 'to-orange-400' },
-            {from: 'from-purple-300', to: 'to-purple-400' },
-            {from: 'from-red-300', to: 'to-red-400' },
-            {from: 'from-slate-300', to: 'to-slate-400'}
+            {from: 'from-green-400', to: 'to-green-300' },
+            {from: 'from-blue-400', to: 'to-blue-300' },
+            {from: 'from-orange-400', to: 'to-orange-300' },
+            {from: 'from-purple-400', to: 'to-purple-300' },
+            {from: 'from-red-400', to: 'to-red-300' },
+            {from: 'from-slate-400', to: 'to-slate-300'}
         ];
 
         let hash = node.module.length;
