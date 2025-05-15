@@ -47,6 +47,15 @@ class Exchange:
                     self.config.exchange.append(ex)
             self._instantiate_modules(specific_modules)
 
+    def get_entry_point_ids(self):
+        for exchange in self.config.exchange:
+            if exchange.module == "__entry__":
+                if isinstance(exchange.provider, list):
+                    return exchange.provider
+                else:
+                    return [exchange.provider]
+        return []
+
     def _instantiate_modules(self, specific_modules: list[str]) -> None:
         """Create instances of all modules defined in config."""
         # make it easy to access a module by id

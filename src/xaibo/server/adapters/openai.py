@@ -28,6 +28,16 @@ class OpenAiApiAdapter:
         app.include_router(self.router, prefix="/openai")
 
     async def get_models(self):
+        ids = []
+        for agent in self.xaibo.list_agents():
+            config = self.xaibo.get_agent_config(agent)
+            for exchange in config.exchange:
+                if exchange.module == '__entry__':
+                    if isinstance(exchange.provider, list):
+                        for module_id in exchange.provider:
+                            ids.append(f"{agent}/{module_id}")
+                    else:
+                        ids.append(f"{agent}")
         return {
             "object": "list",
             "data": [
@@ -36,7 +46,7 @@ class OpenAiApiAdapter:
                     object="model",
                     created=0,
                     owned_by="organization-owner"
-                ) for agent in self.xaibo.list_agents()
+                ) for agent in ids
             ]
         }
 
@@ -86,9 +96,15 @@ class OpenAiApiAdapter:
                 async def get_response(self):
                     return None
 
+            agent_id = data['model']
+            if '/' in agent_id:
+                (id, entry_point) = agent_id.split('/')
+            else:
+                (id, entry_point) = (agent_id, '__entry__')
+
             try:
                 # Get agent with streaming response handler and conversation history
-                agent = self.xaibo.get_agent_with(data['model'], ConfigOverrides(
+                agent = self.xaibo.get_agent_with(id, ConfigOverrides(
                     instances={
                         '__conversation_history__': conversation,
                         '__response__': StreamingResponse()
@@ -105,7 +121,7 @@ class OpenAiApiAdapter:
                 raise
 
             # Start agent in background task
-            agent_task = create_task(agent.handle_text(last_user_message))
+            agent_task = create_task(agent.handle_text(last_user_message, entry_point=entry_point))
             
             # Send initial empty chunk to flush headers
             yield f"data: {json.dumps(create_chunk_response({'content': ''}))}\n\n"
@@ -142,9 +158,14 @@ class OpenAiApiAdapter:
             raise
     
     async def handle_non_streaming_request(self, data, last_user_message, conversation_id, conversation):
+        agent_id = data['model']
+        if '/' in agent_id:
+            (id, entry_point) = agent_id.split('/')
+        else:
+            (id, entry_point) = (agent_id, '__entry__')
         try:
             # Regular non-streaming response with conversation history
-            agent = self.xaibo.get_agent_with(data['model'], ConfigOverrides(
+            agent = self.xaibo.get_agent_with(id, ConfigOverrides(
                 instances={
                     '__conversation_history__': conversation
                 },
@@ -160,7 +181,7 @@ class OpenAiApiAdapter:
             raise
             
         try:
-            response = await agent.handle_text(last_user_message)
+            response = await agent.handle_text(last_user_message, entry_point=entry_point)
             
             return {
                 'id': f"chatcmpl-{conversation_id}",
