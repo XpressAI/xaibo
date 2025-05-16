@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from src.xaibo.primitives.modules.memory.token_chunker import TokenChunker
+from xaibo.primitives.modules.memory.token_chunker import TokenChunker
 
 
 def test_init_with_default_config():

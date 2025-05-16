@@ -4,7 +4,8 @@ import uuid
 from typing import AsyncIterator, List, Optional
 
 from xaibo.core.protocols.llm import LLMProtocol
-from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMRole
+from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMResponse, LLMFunctionCall, LLMRole, LLMMessageContent, \
+    LLMMessageContentType
 from xaibo.core.models.tools import Tool
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,8 @@ class TextBasedToolCallAdapter(LLMProtocol):
                     prompt += f"  - {param_name}{required}: {param.description}\n"
                 prompt += "\n"
         
-        prompt += "\nTo use a tool, write TOOL: followed by the tool name and JSON arguments on a single line.\n"
+        prompt += ("\nTo use a tool, write TOOL: followed by the tool name and JSON arguments on a single line. "
+                   "Whenever you say 'I will now...' , you must follow that up with the appropriate TOOL: invocation.\n")
         prompt += "Example: TOOL: get_weather {\"location\": \"San Francisco, CA\"}\n"
         
         return prompt
@@ -114,7 +116,9 @@ class TextBasedToolCallAdapter(LLMProtocol):
         for message in messages:
             if message.role == LLMRole.SYSTEM:
                 # Append tools prompt to existing system message
-                modified_messages.append(LLMMessage.system(f"{message.content}\n\n{tools_prompt}"))
+                modified_messages.append(
+                    LLMMessage(role=LLMRole.SYSTEM, content=message.content + [LLMMessageContent(type=LLMMessageContentType.TEXT, text=tools_prompt)], name=message.name)
+                )
                 system_message_found = True
             else:
                 modified_messages.append(message)

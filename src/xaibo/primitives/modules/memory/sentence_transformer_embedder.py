@@ -29,7 +29,7 @@ class SentenceTransformerEmbedder(EmbeddingProtocol):
         self.model = SentenceTransformer(self.model_name, **model_kwargs)
         self.is_clip_model = "clip" in self.model_name.lower()
 
-    def text_to_embedding(self, text: str) -> np.ndarray:
+    async def text_to_embedding(self, text: str) -> np.ndarray:
         """
         Convert text into vector embedding using the SentenceTransformer model.
         
@@ -46,7 +46,7 @@ class SentenceTransformerEmbedder(EmbeddingProtocol):
         
         return self.model.encode(text, convert_to_numpy=True)
     
-    def image_to_embedding(self, image_data: bytes) -> np.ndarray:
+    async def image_to_embedding(self, image_data: bytes) -> np.ndarray:
         """
         Convert image data into vector embedding using CLIP model.
         
@@ -70,7 +70,7 @@ class SentenceTransformerEmbedder(EmbeddingProtocol):
         # Encode the image
         return self.model.encode(image, convert_to_numpy=True)
     
-    def audio_to_embedding(self, audio_data: bytes) -> np.ndarray:
+    async def audio_to_embedding(self, audio_data: bytes) -> np.ndarray:
         """
         Convert audio data into vector embedding.
         

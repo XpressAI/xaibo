@@ -32,7 +32,7 @@ class ModuleConfig:
 
 @strawberry.type
 class ExchangeConfig:
-    module: str
+    module: Optional[str] = None
     field_name: Optional[str] = None
     protocol: str
     provider: JSON

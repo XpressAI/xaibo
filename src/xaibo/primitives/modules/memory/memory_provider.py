@@ -12,7 +12,7 @@ class MemoryToolProvider(ToolProviderProtocol):
     Implements ToolProviderProtocol to provide memory-related tools.
     """
 
-    def __init__(self, memory_provider: MemoryProtocol):
+    def __init__(self, memory_provider: MemoryProtocol, config: Optional[Dict[str, Any]] = None):
         """
         Initialize the memory tool provider with a memory provider.
         

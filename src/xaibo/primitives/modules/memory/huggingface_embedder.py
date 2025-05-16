@@ -107,7 +107,7 @@ class HuggingFaceEmbedder(EmbeddingProtocol):
             else:
                 return torch.mean(token_embeddings, dim=1)
 
-    def text_to_embedding(self, text: str) -> np.ndarray:
+    async def text_to_embedding(self, text: str) -> np.ndarray:
         """
         Convert text into vector embedding using the Hugging Face model.
         
@@ -159,7 +159,7 @@ class HuggingFaceEmbedder(EmbeddingProtocol):
             # Handle tokenization or model errors
             raise ValueError(f"Failed to generate text embedding: {str(e)}")
     
-    def image_to_embedding(self, image_data: bytes) -> np.ndarray:
+    async def image_to_embedding(self, image_data: bytes) -> np.ndarray:
         """
         Convert image data into vector embedding using the Hugging Face model.
         
@@ -202,7 +202,7 @@ class HuggingFaceEmbedder(EmbeddingProtocol):
             # Convert to numpy and return
             return pooled_embedding.cpu().numpy().flatten()
     
-    def audio_to_embedding(self, audio_data: bytes) -> np.ndarray:
+    async def audio_to_embedding(self, audio_data: bytes) -> np.ndarray:
         """
         Convert audio data into vector embedding using the Hugging Face model.
         

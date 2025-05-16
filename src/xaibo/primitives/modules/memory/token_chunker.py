@@ -9,7 +9,7 @@ class TokenChunker(ChunkingProtocol):
     Implements the ChunkingProtocol.
     """
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict = None):
         """
         Initialize the TokenChunker with configuration parameters.
         
@@ -19,6 +19,7 @@ class TokenChunker(ChunkingProtocol):
                 - window_overlap: Number of tokens to overlap between chunks (default: 50)
                 - encoding_name: Name of the tiktoken encoding to use (default: "cl100k_base")
         """
+        config = config or {}
         self.window_size = config.get("window_size", 512)
         self.window_overlap = config.get("window_overlap", 50)
         self.encoding_name = config.get("encoding_name", "cl100k_base")

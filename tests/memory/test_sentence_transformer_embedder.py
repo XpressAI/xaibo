@@ -31,7 +31,7 @@ async def test_init_with_config():
         "model_kwargs": {"device": "cpu"}
     }
     embedder = SentenceTransformerEmbedder(config)
-    
+
     assert embedder.model_name == "paraphrase-MiniLM-L6-v2"
     assert embedder.is_clip_model is False
 
@@ -39,23 +39,23 @@ async def test_init_with_config():
 @pytest.mark.asyncio
 async def test_init_default_config():
     embedder = SentenceTransformerEmbedder({})
-    
+
     assert embedder.model_name == "all-MiniLM-L6-v2"
     assert embedder.is_clip_model is False
 
 
 @pytest.mark.asyncio
 async def test_text_to_embedding(embedder):
-    result = embedder.text_to_embedding("This is a test sentence.")
-    
+    result = await embedder.text_to_embedding("This is a test sentence.")
+
     assert isinstance(result, np.ndarray)
     assert result.shape[0] > 0  # Should have a non-empty embedding
 
 
 @pytest.mark.asyncio
 async def test_text_to_embedding_empty_text(embedder):
-    result = embedder.text_to_embedding("   ")
-    
+    result = await embedder.text_to_embedding("   ")
+
     assert isinstance(result, np.ndarray)
     assert result.shape[0] > 0  # Should have correct dimensionality
     assert np.all(result == 0)  # All zeros for empty text
@@ -63,21 +63,21 @@ async def test_text_to_embedding_empty_text(embedder):
 
 @pytest.mark.asyncio
 async def test_text_to_embedding_different_texts(embedder):
-    embedding1 = embedder.text_to_embedding("Hello world")
-    embedding2 = embedder.text_to_embedding("Completely different text")
-    
+    embedding1 = await embedder.text_to_embedding("Hello world")
+    embedding2 = await embedder.text_to_embedding("Completely different text")
+
     # Different texts should have different embeddings
     assert not np.array_equal(embedding1, embedding2)
 
 
 @pytest.mark.asyncio
 async def test_text_to_embedding_similar_texts(embedder):
-    embedding1 = embedder.text_to_embedding("The cat sat on the mat")
-    embedding2 = embedder.text_to_embedding("A cat is sitting on a mat")
-    
+    embedding1 = await embedder.text_to_embedding("The cat sat on the mat")
+    embedding2 = await embedder.text_to_embedding("A cat is sitting on a mat")
+
     # Calculate cosine similarity
     similarity = np.dot(embedding1, embedding2) / (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
-    
+
     # Similar texts should have relatively high similarity
     assert similarity > 0.7
 
@@ -85,7 +85,7 @@ async def test_text_to_embedding_similar_texts(embedder):
 @pytest.mark.asyncio
 async def test_image_to_embedding_non_clip_model(embedder):
     with pytest.raises(NotImplementedError, match="Image embedding requires a CLIP model"):
-        embedder.image_to_embedding(b"fake_image_data")
+        await embedder.image_to_embedding(b"fake_image_data")
 
 
 @pytest.mark.asyncio
@@ -95,9 +95,9 @@ async def test_image_to_embedding_clip_model(clip_embedder):
     img_byte_arr = io.BytesIO()
     image.save(img_byte_arr, format='PNG')
     img_byte_data = img_byte_arr.getvalue()
-    
-    result = clip_embedder.image_to_embedding(img_byte_data)
-    
+
+    result = await clip_embedder.image_to_embedding(img_byte_data)
+
     assert isinstance(result, np.ndarray)
     assert result.shape[0] > 0  # Should have a non-empty embedding
 
@@ -105,4 +105,4 @@ async def test_image_to_embedding_clip_model(clip_embedder):
 @pytest.mark.asyncio
 async def test_audio_to_embedding(embedder):
     with pytest.raises(NotImplementedError, match="Audio embedding not implemented"):
-        embedder.audio_to_embedding(b"fake_audio_data")
+        await embedder.audio_to_embedding(b"fake_audio_data")

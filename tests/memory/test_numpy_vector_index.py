@@ -4,7 +4,7 @@ import numpy as np
 import os
 import shutil
 import tempfile
-from src.xaibo.primitives.modules.memory.numpy_vector_index import NumpyVectorIndex
+from xaibo.primitives.modules.memory.numpy_vector_index import NumpyVectorIndex
 from xaibo.core.protocols.memory import VectorSearchResult
 
 
