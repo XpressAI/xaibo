@@ -35,6 +35,9 @@ class NumpyVectorIndex(VectorIndexProtocol):
                 self.attributes = pickle.load(f)
         else:
             self.attributes = []
+        
+        # Track vector dimension
+        self.vector_dimension = None
     
     def _save_attributes(self):
         """Save attributes to disk using pickle"""
@@ -55,12 +58,22 @@ class NumpyVectorIndex(VectorIndexProtocol):
         Args:
             vectors: List of vector embeddings to add to index
             attributes: Optional list of attribute dictionaries, one per vector
+            
+        Raises:
+            ValueError: If vectors have inconsistent dimensions
         """
         if attributes is None:
             attributes = [{} for _ in vectors]
         
         if len(vectors) != len(attributes):
             raise ValueError("Number of vectors and attributes must match")
+        
+        # Check vector dimensions
+        for vector in vectors:
+            if self.vector_dimension is None:
+                self.vector_dimension = vector.shape[0]
+            elif vector.shape[0] != self.vector_dimension:
+                raise ValueError(f"Vector dimension mismatch. Expected {self.vector_dimension}, got {vector.shape[0]}")
         
         # Get current index count
         start_idx = len(self.attributes)
@@ -95,9 +108,16 @@ class NumpyVectorIndex(VectorIndexProtocol):
             
         Returns:
             List of VectorSearchResult objects containing search results with similarity scores and attributes
+            
+        Raises:
+            ValueError: If query vector dimension doesn't match the index vectors
         """
         if not self.attributes:
             return []
+        
+        # Check query vector dimension
+        if self.vector_dimension is not None and query_vector.shape[0] != self.vector_dimension:
+            raise ValueError(f"Query vector dimension mismatch. Expected {self.vector_dimension}, got {query_vector.shape[0]}")
         
         # Normalize query vector
         query_vector = self._normalize_vector(query_vector)

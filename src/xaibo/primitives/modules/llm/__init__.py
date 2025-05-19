@@ -4,3 +4,4 @@ from .google import GoogleLLM
 from .relay import RelayLLM
 from .mock import MockLLM
 from .bedrock import BedrockLLM
+from .combinator import LLMCombinator

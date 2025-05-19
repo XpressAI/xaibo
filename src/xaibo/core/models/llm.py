@@ -124,3 +124,35 @@ class LLMResponse(BaseModel):
     tool_calls: Optional[List[LLMFunctionCall]] = None
     usage: Optional[LLMUsage] = None
     vendor_specific: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+    @classmethod
+    def merge(cls, *responses: 'LLMResponse') -> 'LLMResponse':
+        """Merge multiple LLM responses into a single response"""
+        merged_content = "\n".join(r.content for r in responses)
+        merged_tool_calls = []
+        merged_usage = None
+        merged_vendor_specific = {}
+
+        for response in responses:
+            if response.tool_calls:
+                merged_tool_calls.extend(response.tool_calls)
+            if response.usage:
+                if not merged_usage:
+                    merged_usage = LLMUsage(
+                        prompt_tokens=response.usage.prompt_tokens,
+                        completion_tokens=response.usage.completion_tokens,
+                        total_tokens=response.usage.total_tokens
+                    )
+                else:
+                    merged_usage.prompt_tokens += response.usage.prompt_tokens
+                    merged_usage.completion_tokens += response.usage.completion_tokens
+                    merged_usage.total_tokens += response.usage.total_tokens
+            if response.vendor_specific:
+                merged_vendor_specific.update(response.vendor_specific)
+
+        return cls(
+            content=merged_content,
+            tool_calls=merged_tool_calls if merged_tool_calls else None,
+            usage=merged_usage,
+            vendor_specific=merged_vendor_specific
+        )

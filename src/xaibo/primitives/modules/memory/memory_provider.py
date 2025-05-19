@@ -36,7 +36,7 @@ class MemoryToolProvider(ToolProviderProtocol):
                     ),
                     "attributes": ToolParameter(
                         type="object",
-                        description="Optional metadata attributes for the memory",
+                        description="Optional metadata attributes for the memory. Useful for adding information about the source of the memory, etc.",
                         required=False
                     )
                 }
@@ -101,7 +101,7 @@ class MemoryToolProvider(ToolProviderProtocol):
                     ),
                     "attributes": ToolParameter(
                         type="object",
-                        description="Optional new metadata attributes",
+                        description="Optional new metadata attributes. Useful for adding information about the source of the memory, etc.",
                         required=False
                     )
                 }

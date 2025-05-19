@@ -6,8 +6,6 @@
     let {data} = $props();
     let {AgentConfig, DebugTrace} = $derived(data);
     let {debugLog} = $derived($DebugTrace.data)
-
-    $inspect(debugLog)
 </script>
 
 <PageHeader title={page.params.id} />

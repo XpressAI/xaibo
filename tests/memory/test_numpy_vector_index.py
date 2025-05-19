@@ -147,3 +147,66 @@ async def test_zero_vector_normalization(vector_index):
     
     # The similarity should be 0.0
     assert results[0].similarity_score == 0.0
+
+@pytest.mark.asyncio
+async def test_large_vector_collection(vector_index):
+    """Test handling of a larger collection of vectors."""
+    # Create a larger set of vectors
+    num_vectors = 100
+    dimension = 3
+    vectors = [np.random.rand(dimension) for _ in range(num_vectors)]
+    attributes = [{"name": f"vector{i}"} for i in range(num_vectors)]
+    
+    await vector_index.add_vectors(vectors, attributes)
+    
+    # Verify the index size
+    assert len(vector_index.attributes) == num_vectors
+    
+    # Search with a random query vector
+    query_vector = np.random.rand(dimension)
+    results = await vector_index.search(query_vector, k=10)
+    
+    assert len(results) == 10
+    assert all(isinstance(result, VectorSearchResult) for result in results)
+    assert all(0 <= result.similarity_score <= 1.0 for result in results)
+    assert all(result.similarity_score >= next_result.similarity_score 
+               for result, next_result in zip(results, results[1:]))
+
+
+@pytest.mark.asyncio
+async def test_duplicate_vectors(vector_index):
+    """Test handling of duplicate vectors."""
+    # Add the same vector multiple times
+    vector = np.array([0.5, 0.5, 0.5]) / np.linalg.norm([0.5, 0.5, 0.5])
+    vectors = [vector, vector.copy(), vector.copy()]
+    attributes = [
+        {"name": "original"},
+        {"name": "duplicate1"},
+        {"name": "duplicate2"}
+    ]
+    
+    await vector_index.add_vectors(vectors, attributes)
+    
+    # Search with the same vector
+    results = await vector_index.search(vector, k=3)
+    
+    # All should have perfect similarity scores
+    assert len(results) == 3
+    assert all((result.similarity_score - 1.0) < 1e-8 for result in results)
+    assert {result.attributes["name"] for result in results} == {"original", "duplicate1", "duplicate2"}
+
+
+@pytest.mark.asyncio
+async def test_vector_dimension_mismatch(vector_index):
+    """Test error handling when vector dimensions don't match."""
+    # Add a vector with the correct dimension
+    await vector_index.add_vectors([np.array([1.0, 0.0, 0.0])])
+    
+    # Try to search with a vector of different dimension
+    query_vector = np.array([1.0, 0.0])
+    with pytest.raises(ValueError):
+        await vector_index.search(query_vector)
+    
+    # Try to add vectors with different dimensions
+    with pytest.raises(ValueError):
+        await vector_index.add_vectors([np.array([1.0, 0.0])])
