@@ -177,7 +177,7 @@ async def test_large_vector_collection(vector_index):
 async def test_duplicate_vectors(vector_index):
     """Test handling of duplicate vectors."""
     # Add the same vector multiple times
-    vector = np.array([0.5, 0.5, 0.5]) / np.linalg.norm([0.5, 0.5, 0.5])
+    vector = np.array([0.5, 0.5, 0.5])
     vectors = [vector, vector.copy(), vector.copy()]
     attributes = [
         {"name": "original"},
