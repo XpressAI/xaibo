@@ -1,9 +1,13 @@
 from os import PathLike
 
 import strawberry
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse
 from strawberry.fastapi import GraphQLRouter, BaseContext
 from typing import List, Optional, Dict, Union
+from dotenv import load_dotenv
+
 
 from strawberry.scalars import JSON
 
@@ -11,6 +15,7 @@ from xaibo import Xaibo
 from xaibo.core import models
 import json
 from pathlib import Path
+from importlib.resources import files
 
 
 class UiContext(BaseContext):
@@ -105,8 +110,21 @@ class UiApiAdapter:
 
         self.router.include_router(graphql_router, prefix="/graphql")
 
+        self.static_path = files("xaibo.server.adapters") / "ui" / "static" / "build"
+
     def adapt(self, app: FastAPI):
+        load_dotenv()
+
         app.include_router(self.router, prefix="/api/ui")
+        app.mount("/", StaticFiles(directory=str(self.static_path), html=True), name="ui-static-files")
+        @app.middleware("http")
+        async def spa_fallback_middleware(request: Request, call_next):
+            response = await call_next(request)
+            if response.status_code == 404 and "text/html" in request.headers.get("accept", ""):
+                # Return SPA index.html for unhandled routes
+                return FileResponse(self.static_path / "index.html")
+            return response
+
 
     def get_context(self) -> UiContext:
         return UiContext(self.xaibo)

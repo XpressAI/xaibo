@@ -1,25 +1,44 @@
 [project]
 name = "xaibo"
 version = "0.1.0"
-description = "Add your description here"
+description = "Xaibo is a framework for building powerful, transparent, and modular AI agents."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "docstring-parser>=0.16",
-    "numpy>=2.2.5",
     "pydantic>=2.10.6",
     "pydantic-yaml>=1.4.0",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.25.3",
-    "sentence-transformers>=4.1.0",
-    "soundfile>=0.13.1",
-    "tiktoken>=0.9.0",
-    "transformers>=4.51.3",
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = [
+    "hatchling",
+    "hatch-build-scripts"   # Plugin to run custom build scripts
+]
 build-backend = "hatchling.build"
+
+[[tool.hatch.build.hooks.build-scripts.scripts]]
+# Run pnpm install + build before packaging
+work_dir = "ui"           # Run commands in the frontend directory
+commands = [
+    "pnpm install",                   # install frontend dependencies
+    "pnpm run build"                  # build the frontend (outputs to ui/build)
+]
+artifacts = [
+    "build/**"                   # glob pattern to include all files in frontend/dist
+]
+out_dir = "src/xaibo/server/adapters/ui/static"  # copy built files into the Python package dir
+
+# Include the built assets in both sdist and wheel distributions
+[tool.hatch.build.targets.sdist]
+artifacts = ["ui/build/**"]
+
+[tool.hatch.build.targets.wheel]
+sources = ["src"]
+packages = ["src/xaibo"]
+artifacts = ["ui/build/**"]
 
 
 [project.optional-dependencies]
@@ -28,6 +47,7 @@ webserver = [
     "strawberry-graphql>=0.262.5",
     "strawberry-graphql[cli]>=0.262.5",
     "watchfiles>=1.0.4",
+    "python-dotenv>=1.1.0",
 ]
 openai = [
     "openai>=1.65.4",
@@ -40,6 +60,13 @@ google = [
 ]
 bedrock = [
     "boto3>=1.37.38",
+]
+local = [
+    "sentence-transformers>=4.1.0",
+    "soundfile>=0.13.1",
+    "tiktoken>=0.9.0",
+    "transformers>=4.51.3",
+    "numpy>=2.2.5",
 ]
 
 [dependency-groups]

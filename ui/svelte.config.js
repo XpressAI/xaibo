@@ -14,7 +14,6 @@ const config = {
 		alias: {
 			$houdini: ".houdini/"
 		},
-		// Mark path non-relative, as it otherwise breaks on SPA routing with Quarkus Dev Mode
 		paths: {
 			relative: false
 		}
