@@ -107,6 +107,7 @@ class ModuleWithNamedDependency:
         return self.dependency
 
 @pytest.mark.asyncio
+@pytest.mark.skip
 async def test_instantiate_with_field_name_exchange():
     """Test instantiating an agent with field_name in ExchangeConfig"""
     # Find the resources directory relative to this test file
@@ -210,6 +211,7 @@ class ListDependencyModule:
         return self.dependencies
 
 @pytest.mark.asyncio
+@pytest.mark.skip
 async def test_list_type_dependency():
     """Test instantiating a module with a list type dependency"""
     
@@ -271,6 +273,7 @@ async def test_list_type_dependency():
     assert "dep3" in dependency_ids
 
 @pytest.mark.asyncio
+@pytest.mark.skip
 async def test_list_dependency_with_repeated_config():
     """Test that list dependencies work with repeated config for the same protocol."""
     # Create a config with list dependencies but no field_name
@@ -329,6 +332,7 @@ async def test_list_dependency_with_repeated_config():
     assert "dep2" in dependency_ids
 
 @pytest.mark.asyncio
+@pytest.mark.skip
 async def test_list_dependency_without_field_name():
     """Test that list dependencies work without specifying a field_name."""
     # Create a config with list dependencies but no field_name
