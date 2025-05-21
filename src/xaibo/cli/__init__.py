@@ -48,7 +48,7 @@ def init(args, extra_args=[]):
     curdir = Path(os.getcwd())
     project_dir = curdir / project_name
     universal_run(f"uv init {project_name}", cwd=curdir)
-    #universal_run(f"uv add xaibo xaibo[{modules}] pytest", cwd=project_dir)
+    universal_run(f"uv add xaibo xaibo[{modules}] pytest", cwd=project_dir)
 
     (project_dir / "agents").mkdir()
     (project_dir / "modules").mkdir()
