@@ -162,6 +162,7 @@ def dev(args, extra_args=[]):
     Start a Xaibo development session
     :return:
     """
+    sys.path.append(os.getcwd())
     xaibo = Xaibo()
 
     server = XaiboWebServer(xaibo, ['xaibo.server.adapters.OpenAiApiAdapter'],'./agents', '127.0.0.1', 9001, True)
@@ -173,6 +174,8 @@ def serve(args, extra_args=[]):
     Run Xaibo server with just the OpenAI API
     :return:
     """
+    sys.path.append(os.getcwd())
+
     xaibo = Xaibo()
 
     server = XaiboWebServer(xaibo, ['xaibo.server.adapters.OpenAiApiAdapter'],'./agents', '0.0.0.0', 9001, False)
