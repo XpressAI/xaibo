@@ -36,7 +36,7 @@ jobs:
       
       - name: Run tests
         run: |
-          pytest tests/
+          uv run pytest
 
   build-and-publish:
     needs: test
