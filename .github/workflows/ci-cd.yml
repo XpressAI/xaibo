@@ -20,12 +20,12 @@ jobs:
           python-version: '3.10'
       
       - name: Set up uv
-        uses: astral-sh/setup-uv-action@v1
+        uses: astral-sh/setup-uv@v6
         with:
           uv-version: latest
       
       - name: Set up pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: latest
       
@@ -33,9 +33,6 @@ jobs:
         run: |
           # Install all dependency groups needed for tests
           uv pip install -e ".[dev,webserver,openai,anthropic,google,bedrock,local]" --all-extras
-          
-          # Install UI dependencies if needed for tests
-          cd ui && pnpm install && cd ..
       
       - name: Run tests
         run: |
@@ -44,7 +41,12 @@ jobs:
   build-and-publish:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'created'
+    if: ${{ github.event_name == 'release' && github.event.action == 'created' }}
+    environment:
+      name: pypi
+      url: https://pypi.org/p/<your-pypi-project-name>
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       
@@ -54,12 +56,12 @@ jobs:
           python-version: '3.10'
       
       - name: Set up uv
-        uses: astral-sh/setup-uv-action@v1
+        uses: astral-sh/setup-uv@v6
         with:
           uv-version: latest
       
       - name: Set up pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: latest
       
