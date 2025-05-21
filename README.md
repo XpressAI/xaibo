@@ -12,139 +12,176 @@ Xaibo uses a protocol-driven architecture that allows components to interact thr
 
 ## Quick Start
 
-Create a simple echo agent in YAML:
+```bash
+# Install uv if you don't have it
+pip install uv
 
-```yaml
-id: echo-agent-minimal
-modules:
-  - module: xaibo_examples.echo.Echo
-    id: echo
-    config:
-        prefix: "You said: "
+# Initialize a new Xaibo project
+uvx xaibo init my_project
+
+# Start the development server
+cd my_project
+uv run xaibo dev
+```
+This sets up a recommended project structure with an example agent and starts a server with a debug UI and OpenAI-compatible API.
+
+### Project Structure
+
+When you run `uvx xaibo init my_project`, Xaibo creates the following structure:
+
+```
+my_project/
+├── agents/
+│   └── example.yml    # Example agent configuration
+├── modules/
+│   └── __init__.py
+├── tools/
+│   ├── __init__.py
+│   └── example.py     # Example tool implementation
+├── tests/
+│   └── test_example.py
+└── .env               # Environment variables
 ```
 
-Or create the same agent in code:
+
+#### Example Agent
+
+The initialization creates an example agent with a simple tool:
+
+```yaml
+# agents/example.yml
+id: example
+description: An example agent that uses tools
+modules:
+  - module: xaibo.primitives.modules.llm.OpenAILLM
+    id: llm
+    config:
+      model: gpt-3.5-turbo
+  - id: python-tools
+    module: xaibo.primitives.modules.tools.PythonToolProvider
+    config:
+      tool_packages: [tools.example]
+  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+    id: orchestrator
+    config:
+      max_thoughts: 10
+      system_prompt: |
+        You are a helpful assistant with access to a variety of tools.
+```
+
+
+#### Example Tool
 
 ```python
-from xaibo import AgentConfig, Xaibo
-from xaibo.core import ModuleConfig
-from xaibo_examples.echo import Echo
+# tools/example.py
+from datetime import datetime, timezone
+from xaibo.primitives.modules.tools.python_tool_provider import tool
 
-config = AgentConfig(
-    id="echo-agent-minimal",
-    modules=[
-        ModuleConfig(
-            module=Echo,
-            id="echo",
-            config={
-                "prefix": "You said: "
-            }
-        )
-    ]
-)
-
-xaibo = Xaibo()
-xaibo.register_agent(config)
-
-agent = xaibo.get_agent("echo-agent-minimal")
-response = await agent.handle_text("Hello world")
-# response.text == "You said: Hello world"
+@tool
+def current_time():
+    'Gets the current time in UTC'
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 ```
 
 ## Key Features
 
-- **Protocol-Based Architecture**: Components interact through well-defined protocol interfaces
-- **Flexible Configuration**: Configure agents using YAML or code-first approach
-- **Event System**: Built-in event system for monitoring and debugging agent behavior
-- **Dependency Injection**: Easily mock dependencies for testing or swap implementations
-- **Minimal Boilerplate**: Sensible defaults with automatic wiring of components
+### Protocol-Based Architecture
 
-## Advanced Usage
+Components communicate through well-defined protocol interfaces, creating clear boundaries:
 
-For more complex agents, you can explicitly define protocols and wire up components:
+- **Clean Separation**: Modules interact only through protocols, not implementation details
+- **Easy Testing**: Mock any component by providing an alternative that implements the same protocol
+- **Flexible Composition**: Mix and match components as long as they fulfill required protocols
 
-```yaml
-id: echo-agent
-modules:
-  - module: xaibo_examples.echo.Echo
-    id: echo
-    provides: [TextMessageHandlerProtocol]
-    uses: [ResponseProtocol]
-    config:
-        prefix: "You said: "
-  - module: xaibo.primitives.modules.ResponseHandler
-    id: __response__
-    provides: [ResponseProtocol]
-exchange:
-  - module: __entry__
-    protocol: TextMessageHandlerProtocol
-    provider: echo
-  - module: echo
-    protocol: ResponseProtocol
-    provider: __response__
+### Dependency Injection
+
+Components explicitly declare what they need:
+
+- **Easy Swapping**: Change implementations without rewriting core logic (e.g., switch memory from SQLite to cloud)
+- **Superior Testing**: Inject predictable mocks instead of real LLMs for deterministic tests
+- **Clear Boundaries**: Explicit dependencies create better architecture
+
+### Transparent Proxies
+
+Every component is wrapped with a "two-way mirror" that:
+
+- **Observes Every Call**: Parameters, timing, exceptions are all captured
+- **Enables Complete Visibility**: Detailed runtime insights into your agent's operations
+- **Provides Debug Data**: Automatic generation of test cases from production runs
+
+### Comprehensive Event System
+
+Built-in event system for monitoring:
+
+- **Debug Event Viewer**: Visual inspection of agent operations in real-time
+- **Call Sequences**: Track every interaction between components
+- **Performance Monitoring**: Identify bottlenecks and optimize agent behavior
+
+## Development Server
+
+The built-in development server provides:
+- OpenAI-compatible API endpoints
+- Debug UI showing full agent operations
+- Hot-reloading of agent configurations
+- Test case generation from real interactions
+
+Run it with:
+
+```bash
+uv run xaibo dev
 ```
 
 ## Web Server and API Adapters
 
-Xaibo includes a built-in web server with API adapters for easy integration with existing tools and frameworks.
-
-### Running the Server from CLI
-
-Xaibo provides a convenient command-line interface to start the web server:
-
-    # Start the server with default settings
-    python -m xaibo.server.web
-    
-    # Specify port and host
-    python -m xaibo.server.web --port 3000 --host 127.0.0.1
-    
-    # Load agents from a directory
-    python -m xaibo.server.web --agent-dir ./my_agents
-    
-    # Enable specific adapters (e.g. openai api compatibility, see below)
-    python -m xaibo.server.web --adapter xaibo.server.adapters.OpenAiApiAdapter
-    
-    # Get help with all available options
-    python -m xaibo.server --help
-
-The CLI automatically loads agent configurations from YAML files in the specified directory, making it easy to deploy your agents as a service without writing any code.
-
+Xaibo includes built-in adapters for easy integration with existing tools. 
+But you can also create your own API Adapters. Below you can see how a fully custom API
+setup could look like.
 
 ### OpenAI API Compatibility
 
-The OpenAI API adapter allows you to use Xaibo agents with any client that supports the OpenAI Chat Completions API:
+Use Xaibo with any client that supports the OpenAI Chat Completions API:
+```
+python
+from xaibo import Xaibo
+from xaibo.server import XaiboWebServer
+from xaibo.server.adapters.openai import OpenAiApiAdapter
 
-    from xaibo import Xaibo
-    from xaibo.server import XaiboWebServer
-    from xaibo.server.adapters.openai import OpenAiApiAdapter
-    
-    # Initialize Xaibo and register your agents
-    xaibo = Xaibo()
-    xaibo.register_agent(my_agent_config)
-    
-    # Create a web server with the OpenAI adapter
-    server = XaiboWebServer(
-        xaibo=xaibo,
-        adapters=[OpenAiApiAdapter(xaibo)]
-    )
-    
-    # Start the server
-    server.run(host="0.0.0.0", port=8000)
+# Initialize Xaibo and register your agents
+xaibo = Xaibo()
+xaibo.register_agent(my_agent_config)
 
-Once running, you can connect to your Xaibo agents using any OpenAI-compatible client by pointing it to your server's endpoint. The adapter exposes standard OpenAI API endpoints:
+# Create a web server with the OpenAI adapter
+server = XaiboWebServer(
+    xaibo=xaibo,
+    adapters=[OpenAiApiAdapter(xaibo)]
+)
 
-- `GET /openai/models` - Lists all registered agents as available models
-- `POST /openai/chat/completions` - Handles chat completion requests
+# Start the server
+server.run(host="0.0.0.0", port=8000)
+```
 
-This makes it easy to integrate Xaibo with existing tools and UIs that support the OpenAI API.
+## Roadmap
 
+Xaibo is actively developing:
+- Enhanced visual configuration UI
+- Visual tool definition with Circuits
+- More API adapters beyond OpenAI standard
+- Multi-user aware agents
 
-# Contributing
+The core principles and APIs are stable for production use.
 
-## Running Tests
+## Contributing
+
+### Running Tests
 Tests are implemented using pytest. If you are using PyCharm to run them, you 
 will need to configure it to also show logging output. That way some failures
 will be a lot easier to debug.
 
 Go to File > Settings > Advanced Settings > Python and check the option 
 `Pytest: do not add "--no-header --no-summary -q"`.
+
+## Get Involved
+
+- GitHub: [github.com/xpressai/xaibo](https://github.com/xpressai/xaibo)
+- Discord: https://discord.gg/uASMzSSVKe
+- Contact: hello@xpress.ai
