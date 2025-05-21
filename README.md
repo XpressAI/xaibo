@@ -2,7 +2,21 @@
 
 Xaibo is a modular agent framework designed for building flexible AI systems with clean protocol-based interfaces.
 
-## Overview
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Quick Start](#quick-start)
+- [Key Features](#key-features)
+- [Core Concepts](#core-concepts)
+- [Detailed Documentation](#detailed-documentation)
+  - [Dependency Groups](#dependency-groups)
+  - [Exchange Configuration](#exchange-configuration)
+  - [Protocol Implementations](#protocol-implementations)
+  - [Web Server and API Adapters](#web-server-and-api-adapters)
+- [Development](#development)
+- [Get Involved](#get-involved)
+
+## Introduction
 
 Xaibo uses a protocol-driven architecture that allows components to interact through well-defined interfaces. This approach enables:
 
@@ -11,6 +25,7 @@ Xaibo uses a protocol-driven architecture that allows components to interact thr
 - **Testability**: Mock dependencies for isolated testing
 
 ## Quick Start
+
 ```bash
 # Install uv if you don't have it
 pip install uv
@@ -22,7 +37,8 @@ uvx xaibo init my_project
 cd my_project
 uv run xaibo dev
 ```
-This sets up a recommended project structure with an example agent and starts a server with a debug UI and OpenAI-compatible API. See the [Dependency Groups](#dependency-groups) section for information about installing required dependencies.
+
+This sets up a recommended project structure with an example agent and starts a server with a debug UI and OpenAI-compatible API.
 
 ### Project Structure
 
@@ -41,7 +57,6 @@ my_project/
 │   └── test_example.py
 └── .env               # Environment variables
 ```
-
 
 #### Example Agent
 
@@ -68,7 +83,6 @@ modules:
         You are a helpful assistant with access to a variety of tools.
 ```
 
-
 #### Example Tool
 
 ```python
@@ -80,6 +94,19 @@ from xaibo.primitives.modules.tools.python_tool_provider import tool
 def current_time():
     'Gets the current time in UTC'
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+```
+
+### Development Server
+
+The built-in development server provides:
+- OpenAI-compatible API endpoints
+- Debug UI showing full agent operations
+- Hot-reloading of agent configurations
+
+Run it with:
+
+```bash
+uv run xaibo dev
 ```
 
 ## Key Features
@@ -116,69 +143,38 @@ Built-in event system for monitoring:
 - **Call Sequences**: Track every interaction between components
 - **Performance Monitoring**: Identify bottlenecks and optimize agent behavior
 
-## Development Server
+## Core Concepts
 
-The built-in development server provides:
-- OpenAI-compatible API endpoints
-- Debug UI showing full agent operations
-- Hot-reloading of agent configurations
+Xaibo is built around several key architectural concepts that provide its flexibility and power:
 
-Run it with:
+### Protocols
 
-```bash
-uv run xaibo dev
-```
+Protocols define interfaces that components must implement, creating clear boundaries between different parts of the system. Core protocols include:
 
-## Core Protocols
+- **LLM Protocol**: Defines how to interact with language models
+- **Tools Protocol**: Standardizes tool integration
+- **Memory Protocol**: Defines how agents store and retrieve information
+- **Response Protocol**: Specifies how agents provide responses
+- **Conversation Protocol**: Manages dialog history
+- **Message Handlers Protocol**: Defines how to process different input types
 
-Xaibo's protocol-based architecture is built around a set of core protocols that define the interfaces for different components:
+### Modules
 
-### LLM Protocol
+Modules are the building blocks of Xaibo agents. Each module implements one or more protocols and can depend on other modules. Examples include:
 
-The `LLMProtocol` in `llm.py` defines how to interact with language models:
-- `generate()`: Produces a complete response from the LLM given a list of messages
-- `generate_stream()`: Returns an async iterator for streaming responses
+- LLM modules (OpenAI, Anthropic, Google, etc.)
+- Memory modules (Vector memory, embedders, chunkers)
+- Tool modules (Python tools, function calling)
+- Orchestrator modules (manage agent behavior)
 
-### Tools Protocol
+### Exchanges
 
-The `ToolProviderProtocol` in `tools.py` standardizes tool integration:
-- `list_tools()`: Returns available tools with their descriptions and parameters
-- `execute_tool()`: Runs a specific tool with provided parameters and returns results
+Exchanges are the connections between modules that define how dependencies are resolved. They create a flexible wiring system that allows modules to declare what protocols they need without knowing the specific implementation.
 
-### Memory Protocol
+## Detailed Documentation
 
-Memory-related protocols in `memory.py` define how agents store and retrieve information:
-- `MemoryProtocol`: Core interface for storing, retrieving, and searching memories
-- `ChunkingProtocol`: Splits text into appropriate chunks for embedding
-- `EmbeddingProtocol`: Converts text, images, or audio into vector embeddings
-- `VectorIndexProtocol`: Indexes and searches vector embeddings
-
-### Response Protocol
-
-The `ResponseProtocol` in `response.py` defines how agents provide responses:
-- `respond_text()`: Sends text responses
-- `respond_image()`, `respond_audio()`, `respond_file()`: Handles different media types
-- `respond()`: Sends complex responses with multiple components
-- `get_response()`: Retrieves the current response object
-
-### Conversation Protocol
-
-The `ConversationHistoryProtocol` in `conversation.py` manages dialog history:
-- `get_history()`: Retrieves the current conversation history
-- `add_message()`: Adds a new message to the history
-- `clear_history()`: Resets the conversation
-
-### Message Handlers Protocol
-
-Message handler protocols in `message_handlers.py` define how to process different input types:
-- `TextMessageHandlerProtocol`: Processes text inputs
-- `ImageMessageHandlerProtocol`: Handles image data
-- `AudioMessageHandlerProtocol`: Processes audio inputs
-- `VideoMessageHandlerProtocol`: Handles video data
-
-These protocols create a flexible, modular system where components can be swapped as long as they implement the required interface.
-
-## Dependency Groups
+<details>
+<summary><strong>Dependency Groups</strong> - How to install dependencies for different use cases</summary>
 
 Xaibo organizes its dependencies into logical groups that can be installed based on your specific needs. This approach keeps the core package lightweight while allowing you to add only the dependencies required for your use case.
 
@@ -230,7 +226,10 @@ pip install xaibo[webserver,openai,anthropic,google,bedrock,local]
 pip install xaibo[dev]
 ```
 
-## Exchange Configuration
+</details>
+
+<details>
+<summary><strong>Exchange Configuration</strong> - How to configure module connections</summary>
 
 The exchange configuration is a core concept in Xaibo that defines how modules are connected to each other. It enables the dependency injection system by specifying which module provides an implementation for a protocol that another module requires.
 
@@ -285,8 +284,6 @@ exchange:
 Xaibo can automatically infer exchange configurations when there's an unambiguous match between a module that requires a protocol and a module that provides it. For example, if only one module provides the `LLMProtocol` and another module requires it, Xaibo will automatically create the exchange.
 
 ### Examples from Test Resources
-
-The test resources provide several examples of exchange configurations:
 
 #### Minimal Configuration (echo.yaml)
 
@@ -348,9 +345,10 @@ This is useful for modules that need to work with multiple implementations of th
 - `__entry__`: A special module identifier that represents the entry point for handling messages. It must be connected to a module that provides a message handler protocol.
 - `__response__`: A special module that provides the `ResponseProtocol` for sending responses back to the user.
 
-By understanding and configuring exchanges, you can create flexible and modular agent architectures in Xaibo.
+</details>
 
-## Protocol Implementations
+<details>
+<summary><strong>Protocol Implementations</strong> - Available implementations for each protocol</summary>
 
 Xaibo provides several implementations for each protocol to support different use cases:
 
@@ -480,7 +478,10 @@ Xaibo provides several implementations for each protocol to support different us
 
 These implementations can be mixed and matched to create agents with different capabilities, and you can create your own implementations by following the protocol interfaces.
 
-## Web Server and API Adapters
+</details>
+
+<details>
+<summary><strong>Web Server and API Adapters</strong> - Server configuration and API compatibility</summary>
 
 Xaibo includes built-in adapters for easy integration with existing tools. 
 But you can also create your own API Adapters. Below you can see how a fully custom API
@@ -489,8 +490,7 @@ setup could look like.
 ### OpenAI API Compatibility
 
 Use Xaibo with any client that supports the OpenAI Chat Completions API:
-```
-python
+```python
 from xaibo import Xaibo
 from xaibo.server import XaiboWebServer
 from xaibo.server.adapters.openai import OpenAiApiAdapter
@@ -509,7 +509,11 @@ server = XaiboWebServer(
 server.run(host="0.0.0.0", port=8000)
 ```
 
-## Roadmap
+</details>
+
+## Development
+
+### Roadmap
 
 Xaibo is actively developing:
 - Enhanced visual configuration UI
@@ -519,9 +523,9 @@ Xaibo is actively developing:
 
 The core principles and APIs are stable for production use.
 
-## Contributing
+### Contributing
 
-### Running Tests
+#### Running Tests
 Tests are implemented using pytest. If you are using PyCharm to run them, you 
 will need to configure it to also show logging output. That way some failures
 will be a lot easier to debug.
