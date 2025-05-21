@@ -6,6 +6,8 @@ Xaibo is a modular agent framework designed for building flexible AI systems wit
 
 - [Introduction](#introduction)
 - [Quick Start](#quick-start)
+  - [Interacting with Xaibo](#interacting-with-xaibo)
+  - [Project Structure](#project-structure)
 - [Key Features](#key-features)
 - [Core Concepts](#core-concepts)
 - [Detailed Documentation](#detailed-documentation)
@@ -39,6 +41,44 @@ uv run xaibo dev
 ```
 
 This sets up a recommended project structure with an example agent and starts a server with a debug UI and OpenAI-compatible API.
+
+### Interacting with Xaibo
+
+Once the development server is running, you can interact with it using the OpenAI-compatible API:
+
+```bash
+# Send a simple chat completion request to the Xaibo OpenAI-compatible API
+curl -X POST http://127.0.0.1:9001/openai/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "example",
+    "messages": [
+      {"role": "user", "content": "Hello, what time is it now?"}
+    ]
+  }'
+```
+
+```bash
+# Same request using HTTPie (a more user-friendly alternative to curl)
+http POST http://127.0.0.1:9001/openai/chat/completions \
+  model=example \
+  messages:='[{"role": "user", "content": "Hello, what time is it now?"}]'
+```
+
+This will route your request to the example agent configured in your project.
+
+The development server also provides a debug UI that visualizes the agent's operations:
+
+<div style="display: flex; gap: 10px; margin: 20px 0;">
+  <div style="flex: 1;">
+    <img src="docs/images/sequence-diagram.png" alt="Xaibo Debug UI - Sequence Diagram Overview" width="100%">
+    <p><em>Sequence Diagram Overview</em></p>
+  </div>
+  <div style="flex: 1;">
+    <img src="docs/images/detail-view.png" alt="Xaibo Debug UI - Detail View" width="100%">
+    <p><em>Detail View of Component Interactions</em></p>
+  </div>
+</div>
 
 ### Project Structure
 
@@ -94,19 +134,6 @@ from xaibo.primitives.modules.tools.python_tool_provider import tool
 def current_time():
     'Gets the current time in UTC'
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-```
-
-### Development Server
-
-The built-in development server provides:
-- OpenAI-compatible API endpoints
-- Debug UI showing full agent operations
-- Hot-reloading of agent configurations
-
-Run it with:
-
-```bash
-uv run xaibo dev
 ```
 
 ## Key Features
