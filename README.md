@@ -230,6 +230,126 @@ pip install xaibo[webserver,openai,anthropic,google,bedrock,local]
 pip install xaibo[dev]
 ```
 
+## Exchange Configuration
+
+The exchange configuration is a core concept in Xaibo that defines how modules are connected to each other. It enables the dependency injection system by specifying which module provides an implementation for a protocol that another module requires.
+
+### What are Exchanges in Xaibo?
+
+In Xaibo, exchanges are the connections between modules that define how dependencies are resolved. They create a flexible wiring system that allows:
+
+- Modules to declare what protocols they need without knowing the specific implementation
+- Easy swapping of implementations without changing the modules that use them
+- Clear separation of concerns through protocol-based interfaces
+- Support for both singleton and list-type dependencies
+
+### Exchange Configuration Structure
+
+An exchange configuration consists of:
+
+- `module`: The ID of the module that requires a dependency
+- `protocol`: The protocol interface that defines the dependency
+- `provider`: The ID of the module that provides the implementation (or a list of module IDs for list dependencies)
+- `field_name`: Optional parameter name in the module's constructor (useful when a module has multiple dependencies of the same protocol type)
+
+### Configuring Exchanges
+
+Exchanges can be configured explicitly in your agent YAML file or automatically inferred by Xaibo:
+
+#### Explicit Configuration
+
+```yaml
+id: my-agent
+modules:
+  - module: xaibo.primitives.modules.llm.OpenAILLM
+    id: llm
+    config:
+      model: gpt-3.5-turbo
+  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+    id: orchestrator
+    config:
+      max_thoughts: 10
+exchange:
+  # Connect the orchestrator to the LLM
+  - module: orchestrator
+    protocol: LLMProtocol
+    provider: llm
+  # Set the entry point for text messages
+  - module: __entry__
+    protocol: TextMessageHandlerProtocol
+    provider: orchestrator
+```
+
+#### Implicit Configuration
+
+Xaibo can automatically infer exchange configurations when there's an unambiguous match between a module that requires a protocol and a module that provides it. For example, if only one module provides the `LLMProtocol` and another module requires it, Xaibo will automatically create the exchange.
+
+### Examples from Test Resources
+
+The test resources provide several examples of exchange configurations:
+
+#### Minimal Configuration (echo.yaml)
+
+```yaml
+# This is a minimal configuration where exchanges are inferred
+id: echo-agent-minimal
+modules:
+  - module: xaibo_examples.echo.Echo
+    id: echo
+    config:
+        prefix: "You said: "
+```
+
+In this example, the Echo module provides the `TextMessageHandlerProtocol` and requires the `ResponseProtocol`. Xaibo automatically configures the exchanges.
+
+#### Complete Configuration (echo_complete.yaml)
+
+```yaml
+id: echo-agent
+modules:
+  - module: xaibo_examples.echo.Echo
+    id: echo
+    provides: [TextMessageHandlerProtocol]
+    uses: [ResponseProtocol]
+    config:
+        prefix: "You said: "
+  - module: xaibo.primitives.modules.ResponseHandler
+    id: __response__
+    provides: [ResponseProtocol]
+exchange:
+  # Set the entry point for text messages
+  - module: __entry__
+    protocol: TextMessageHandlerProtocol
+    provider: echo
+  # Connect the echo module to the response handler
+  - module: echo
+    protocol: ResponseProtocol
+    provider: __response__
+```
+
+This example explicitly defines all exchanges, making the configuration more verbose but also more explicit.
+
+#### List Dependencies
+
+Xaibo also supports list-type dependencies, where a module can depend on multiple implementations of the same protocol:
+
+```yaml
+exchange:
+  # Provide multiple dependencies to a single module
+  - module: list_module
+    protocol: DependencyProtocol
+    provider: [dep1, dep2, dep3]
+```
+
+This is useful for modules that need to work with multiple implementations of the same protocol, such as a module that needs to process multiple types of tools.
+
+### Special Exchange Configurations
+
+- `__entry__`: A special module identifier that represents the entry point for handling messages. It must be connected to a module that provides a message handler protocol.
+- `__response__`: A special module that provides the `ResponseProtocol` for sending responses back to the user.
+
+By understanding and configuring exchanges, you can create flexible and modular agent architectures in Xaibo.
+
 ## Protocol Implementations
 
 Xaibo provides several implementations for each protocol to support different use cases:
