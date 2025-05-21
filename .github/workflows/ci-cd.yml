@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           # Install all dependency groups needed for tests
-          uv pip install -e ".[dev,webserver,openai,anthropic,google,bedrock,local]" --all-extras
+          uv sync --all-extras
       
       - name: Run tests
         run: |

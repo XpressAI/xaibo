@@ -2257,6 +2257,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "docstring-parser" },
+    { name = "numpy" },
     { name = "pydantic" },
     { name = "pydantic-yaml" },
     { name = "pytest" },
@@ -2275,7 +2276,6 @@ google = [
     { name = "google-genai" },
 ]
 local = [
-    { name = "numpy" },
     { name = "sentence-transformers" },
     { name = "soundfile" },
     { name = "tiktoken" },
@@ -2304,7 +2304,7 @@ requires-dist = [
     { name = "docstring-parser", specifier = ">=0.16" },
     { name = "fastapi", extras = ["standard"], marker = "extra == 'webserver'", specifier = ">=0.115.12" },
     { name = "google-genai", marker = "extra == 'google'", specifier = ">=1.5.0" },
-    { name = "numpy", marker = "extra == 'local'", specifier = ">=2.2.5" },
+    { name = "numpy", specifier = ">=2.2.5" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.65.4" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-yaml", specifier = ">=1.4.0" },
