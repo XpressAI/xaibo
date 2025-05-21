@@ -68,7 +68,7 @@
             "id": "llm",
             "provides": ["LLMProtocol"],
             "uses": null,
-            "config": {"model": "gpt-4o-mini", "api_key": "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"}
+            "config": {"model": "gpt-4o-mini", "api_key": "not-a-real-key"}
         }, {
             "module": "xai_components.xai_xaibo.xaibo_components.XircuitsToolProvider",
             "id": "tools",
