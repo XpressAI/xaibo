@@ -1,6 +1,6 @@
 [project]
 name = "xaibo"
-version = "0.1.1"
+version = "0.0.0.dev0"  # Development version, will be replaced during CI/CD
 description = "Xaibo is a framework for building powerful, transparent, and modular AI agents."
 keywords = ["AI", "agent", "framework", "modular"]
 readme = "README.md"

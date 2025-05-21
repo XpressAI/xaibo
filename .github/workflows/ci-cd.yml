@@ -65,6 +65,24 @@ jobs:
         with:
           version: latest
       
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          # Extract tag name from github.ref (e.g., 'refs/tags/v1.2.3' -> 'v1.2.3')
+          TAG=${GITHUB_REF#refs/tags/}
+          # Remove 'v' prefix if present (e.g., 'v1.2.3' -> '1.2.3')
+          VERSION=${TAG#v}
+          # Set output for use in later steps
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
+
+      - name: Update version in pyproject.toml
+        run: |
+          # Use sed to replace the version line in pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          echo "Updated pyproject.toml with version $VERSION"
+          cat pyproject.toml | grep version
+
       - name: Build package
         run: |
           uv build
