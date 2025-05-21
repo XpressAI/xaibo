@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           # Install all dependency groups needed for tests
-          uv sync --all-extras
+          uv sync --all-extras --all-groups
       
       - name: Run tests
         run: |
