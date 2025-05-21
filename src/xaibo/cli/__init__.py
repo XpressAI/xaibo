@@ -7,8 +7,10 @@ import subprocess, shlex, sys, os
 import questionary
 
 from xaibo import Xaibo
-from xaibo.server.web import XaiboWebServer
-
+try:
+    from xaibo.server.web import XaiboWebServer
+except ImportError as e:
+    XaiboWebServer = None
 
 def universal_run(command, *, timeout=60, text=True, env=None, cwd=None):
     """
