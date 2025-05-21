@@ -96,7 +96,7 @@ def test_modify_messages_with_tools(mock_llm, sample_tool):
     assert len(modified) == 2
     assert modified[0].role == LLMRole.SYSTEM
     assert "You are a helpful assistant." in modified[0].content[0].text
-    assert "get_weather:" in modified[0].content[0].text
+    assert "get_weather:" in modified[0].content[-1].text
     
     # Test without system message
     messages = [
@@ -107,7 +107,7 @@ def test_modify_messages_with_tools(mock_llm, sample_tool):
     
     assert len(modified) == 2
     assert modified[0].role == LLMRole.SYSTEM
-    assert "get_weather:" in modified[0].content[0].text
+    assert "get_weather:" in modified[0].content[-1].text
     assert modified[1].role == LLMRole.USER
 
 

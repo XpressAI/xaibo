@@ -16,3 +16,10 @@ try:
     from .huggingface_embedder import *
 except ImportError:
     pass
+
+
+try:
+    from .openai_embedder import *
+except ImportError:
+    pass
+

@@ -3,12 +3,19 @@ import logging
 import pytest
 import os
 from pathlib import Path
-from xaibo import AgentConfig, Xaibo
-from xaibo.core.models.response import Response
 
+
+from xaibo import AgentConfig, Xaibo, ConfigOverrides, ExchangeConfig
+from xaibo.core.models.response import Response
+from xaibo.primitives.modules.conversation import SimpleConversation
+
+
+@pytest.fixture
+def empty_conversation():
+    return SimpleConversation()
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_instantiation():
+async def test_stressing_tool_user_instantiation(empty_conversation):
     """Test instantiating a stressing tool user agent"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
@@ -28,7 +35,13 @@ async def test_stressing_tool_user_instantiation():
     xaibo.register_agent(config)
     
     # Get agent instance
-    agent = xaibo.get_agent("minimal-tool-user")
+    agent = xaibo.get_agent_with("minimal-tool-user", ConfigOverrides(
+        instances={'history': empty_conversation},
+        exchange=[ExchangeConfig(
+            protocol='ConversationHistoryProtocol',
+            provider='history'
+        )]
+    ))
     
     # Verify agent was created successfully
     assert agent is not None
@@ -36,7 +49,7 @@ async def test_stressing_tool_user_instantiation():
 
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_current_time(caplog):
+async def test_stressing_tool_user_current_time(caplog, empty_conversation):
     """Test stressing tool user with current_time tool"""
     caplog.set_level(logging.DEBUG, 'xaibo.events')
 
@@ -58,8 +71,13 @@ async def test_stressing_tool_user_current_time(caplog):
     xaibo.register_agent(config)
     
     # Get agent instance
-    agent = xaibo.get_agent("minimal-tool-user")
-    
+    agent = xaibo.get_agent_with("minimal-tool-user", ConfigOverrides(
+        instances={'history': empty_conversation},
+        exchange=[ExchangeConfig(
+            protocol='ConversationHistoryProtocol',
+            provider='history'
+        )]
+    ))
     # Test with a prompt that should trigger the current_time tool
     response = await agent.handle_text("What time is it right now?")
     
@@ -69,7 +87,7 @@ async def test_stressing_tool_user_current_time(caplog):
 
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_calendar():
+async def test_stressing_tool_user_calendar(empty_conversation):
     """Test stressing tool user with calendar tool"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
@@ -89,8 +107,13 @@ async def test_stressing_tool_user_calendar():
     xaibo.register_agent(config)
     
     # Get agent instance
-    agent = xaibo.get_agent("minimal-tool-user")
-    
+    agent = xaibo.get_agent_with("minimal-tool-user", ConfigOverrides(
+        instances={'history': empty_conversation},
+        exchange=[ExchangeConfig(
+            protocol='ConversationHistoryProtocol',
+            provider='history'
+        )]
+    ))
     # Get today's date in YYYY-MM-DD format
     from datetime import datetime
     today = datetime.today().strftime("%Y-%m-%d")
@@ -104,7 +127,7 @@ async def test_stressing_tool_user_calendar():
 
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_time_and_calendar():
+async def test_stressing_tool_user_time_and_calendar(empty_conversation):
     """Test stressing tool user with time and calendar tool"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
@@ -128,7 +151,13 @@ async def test_stressing_tool_user_time_and_calendar():
         events.append(event)
 
     # Get agent instance
-    agent = xaibo.get_agent_with("minimal-tool-user", None, [
+    agent = xaibo.get_agent_with("minimal-tool-user", ConfigOverrides(
+        instances={'history': empty_conversation},
+        exchange=[ExchangeConfig(
+            protocol='ConversationHistoryProtocol',
+            provider='history'
+        )]
+    ), [
         ("", collect_events)
     ])
 
@@ -140,7 +169,7 @@ async def test_stressing_tool_user_time_and_calendar():
     assert "standup" in response.text.lower() or "focus time" in response.text.lower()
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_error_handling():
+async def test_stressing_tool_user_error_handling(empty_conversation):
     """Test stressing tool user handles tool errors gracefully"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
@@ -161,8 +190,13 @@ async def test_stressing_tool_user_error_handling():
     xaibo.register_agent(config)
     
     # Get agent instance
-    agent = xaibo.get_agent("minimal-tool-user")
-    
+    agent = xaibo.get_agent_with("minimal-tool-user", ConfigOverrides(
+        instances={'history': empty_conversation},
+        exchange=[ExchangeConfig(
+            protocol='ConversationHistoryProtocol',
+            provider='history'
+        )]
+    ))
     # Test with a prompt that should trigger the weather tool with Germany (which raises an exception)
     response = await agent.handle_text("What's the weather in Berlin, Germany?")
     
