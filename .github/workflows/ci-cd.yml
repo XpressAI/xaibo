@@ -58,7 +58,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
-          uv-version: latest
+          version: latest
       
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
