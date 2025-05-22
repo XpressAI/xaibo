@@ -19,7 +19,7 @@ async def test_list_tools(provider):
     
     # Verify the first tool
     weather_tool = next(t for t in tools if t.name == "xaibo_examples-demo_tools-test_tools-sample_function")
-    assert weather_tool.description == "Get the current weather in a given location"
+    assert weather_tool.description.strip() == "Get the current weather in a given location"
     assert "location" in weather_tool.parameters
     assert weather_tool.parameters["location"].required is True
     assert "unit" in weather_tool.parameters
@@ -27,7 +27,7 @@ async def test_list_tools(provider):
     
     # Verify the second tool
     search_tool = next(t for t in tools if t.name == "xaibo_examples-demo_tools-test_tools-another_function")
-    assert search_tool.description == "Search for information"
+    assert search_tool.description.strip() == "Search for information"
     assert "query" in search_tool.parameters
 
 
@@ -109,13 +109,13 @@ async def test_direct_function_tools():
     
     # Verify tool definitions
     add_tool = next(t for t in tools if t.name.endswith("-add_numbers"))
-    assert add_tool.description == "Add two numbers together"
+    assert add_tool.description.strip() == "Add two numbers together"
     assert "a" in add_tool.parameters
     assert add_tool.parameters["a"].required is True
     assert add_tool.parameters["a"].type == "integer"
     
     greet_tool = next(t for t in tools if t.name.endswith("-greet"))
-    assert greet_tool.description == "Generate a greeting"
+    assert greet_tool.description.strip() == "Generate a greeting"
     assert "name" in greet_tool.parameters
     assert greet_tool.parameters["name"].required is True
     assert "greeting" in greet_tool.parameters
