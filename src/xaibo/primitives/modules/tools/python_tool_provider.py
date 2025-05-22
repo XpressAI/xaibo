@@ -119,7 +119,7 @@ class PythonToolProvider(ToolProviderProtocol):
 
         return Tool(
             name=self._get_tool_name(fn),
-            description=docstr.short_description or "",
+            description=docstr.long_description or "",
             parameters=parameters
         )
 
