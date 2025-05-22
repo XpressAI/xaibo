@@ -503,6 +503,59 @@ Xaibo provides several implementations for each protocol to support different us
         return datetime.now().strftime("%H:%M:%S")
     ```
 
+- `xaibo.primitives.modules.tools.MCPToolProvider`: Connects to MCP (Model Context Protocol) servers to provide their tools
+  - **Python Dependencies**: `aiohttp`, `websockets` (core dependencies)
+  - **Constructor Dependencies**: None
+  - **Config options**:
+    - `servers`: List of MCP server configurations (required)
+    - `timeout`: Optional timeout for server operations in seconds (default: 30.0)
+    - Server configuration structure:
+      - `name`: Unique identifier for the server (required)
+      - `transport`: Transport type - "stdio", "sse", or "websocket" (required)
+      - For `stdio` transport:
+        - `command`: List of command and arguments to start the server process (default: [])
+        - `args`: Additional arguments (default: [])
+        - `env`: Environment variables for the process (default: {})
+      - For `sse` and `websocket` transports:
+        - `url`: Server URL (default: "")
+        - `headers`: HTTP headers for authentication/configuration (default: {})
+  - **Features**:
+    - Supports multiple MCP servers simultaneously
+    - Tools are namespaced with server name (e.g., "server_name.tool_name")
+    - Automatic connection management and protocol communication
+    - Caches tool definitions for performance
+    - Handles different transport mechanisms (stdio, SSE, WebSocket)
+  - Usage:
+    ```yaml
+    # Agent configuration with MCP tool provider
+    modules:
+      - id: mcp-tools
+        module: xaibo.primitives.modules.tools.MCPToolProvider
+        config:
+          timeout: 60.0
+          servers:
+            # Stdio server (local process)
+            - name: filesystem
+              transport: stdio
+              command: ["python", "-m", "mcp_server_filesystem"]
+              args: ["--root", "/workspace"]
+              env:
+                LOG_LEVEL: "INFO"
+            # SSE server (HTTP-based)
+            - name: web_search
+              transport: sse
+              url: "https://api.example.com/mcp"
+              headers:
+                Authorization: "Bearer your-api-key"
+                Content-Type: "application/json"
+            # WebSocket server
+            - name: database
+              transport: websocket
+              url: "ws://localhost:8080/mcp"
+              headers:
+                X-API-Key: "your-websocket-key"
+    ```
+
 These implementations can be mixed and matched to create agents with different capabilities, and you can create your own implementations by following the protocol interfaces.
 
 </details>
