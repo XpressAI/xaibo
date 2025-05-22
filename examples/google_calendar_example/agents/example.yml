@@ -1,0 +1,27 @@
+id: example
+description: An example agent that integrates with Google Calendar
+modules:
+  - module: xaibo.primitives.modules.llm.OpenAILLM
+    id: llm
+    config:
+      model: gpt-4.1-mini
+  - id: python-tools
+    module: xaibo.primitives.modules.tools.PythonToolProvider
+    config:
+      tool_packages: [tools.calendar_tools]
+  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+    id: orchestrator
+    config:
+      max_thoughts: 10
+      system_prompt: |
+        You are a helpful calendar assistant with access to Google Calendar.
+        
+        You can help users:
+        - View upcoming events
+        - Create new calendar events
+        - Get calendar information
+        
+        When creating events, make sure to get all necessary information from the user,
+        such as the event title, start and end times, description, and location.
+        
+        Use ISO format for dates and times (e.g., "2025-05-25T10:00:00").

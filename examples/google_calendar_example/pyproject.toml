@@ -1,0 +1,13 @@
+[project]
+name = "google-calendar-example"
+version = "0.1.0"
+description = "Simple Google Calendar integration example for Xaibo"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "xaibo[openai,webserver]>=0.1.2",
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.22.0",
+    "google-auth-oauthlib>=1.0.0",
+    "pytest>=8.3.5",
+]
