@@ -544,7 +544,7 @@ server.run(host="0.0.0.0", port=8000)
 
 Xaibo is actively developing:
 - Enhanced visual configuration UI
-- Visual tool definition with Circuits
+- Visual tool definition with Xircuits
 - More API adapters beyond OpenAI standard
 - Multi-user aware agents
 
