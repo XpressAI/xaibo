@@ -107,7 +107,6 @@ class ModuleWithNamedDependency:
         return self.dependency
 
 @pytest.mark.asyncio
-@pytest.mark.skip
 async def test_instantiate_with_field_name_exchange():
     """Test instantiating an agent with field_name in ExchangeConfig"""
     # Find the resources directory relative to this test file
@@ -120,12 +119,12 @@ async def test_instantiate_with_field_name_exchange():
     
     # Add modules to config
     config.modules.append(ModuleConfig(
-        module="tests.core.test_instantiation.ModuleWithNamedDependency",
+        module=f"{ModuleWithNamedDependency.__module__}.ModuleWithNamedDependency",
         id="named_dependency_module"
     ))
     
     config.modules.append(ModuleConfig(
-        module="tests.core.test_instantiation.DependencyModule",
+        module=f"{DependencyModule.__module__}.DependencyModule",
         id="dependency_module"
     ))
     
@@ -211,7 +210,6 @@ class ListDependencyModule:
         return self.dependencies
 
 @pytest.mark.asyncio
-@pytest.mark.skip
 async def test_list_type_dependency():
     """Test instantiating a module with a list type dependency"""
     
@@ -221,21 +219,21 @@ async def test_list_type_dependency():
         modules=[
             ModuleConfig(
                 id="list_module",
-                module="tests.core.test_instantiation.ListDependencyModule"
+                module=f"{ListDependencyModule.__module__}.ListDependencyModule"
             ),
             ModuleConfig(
                 id="dep1",
-                module="tests.core.test_instantiation.DependencyModuleWithId",
+                module=f"{DependencyModuleWithId.__module__}.DependencyModuleWithId",
                 config={"id": "dep1"}
             ),
             ModuleConfig(
                 id="dep2",
-                module="tests.core.test_instantiation.DependencyModuleWithId",
+                module=f"{DependencyModuleWithId.__module__}.DependencyModuleWithId",
                 config={"id": "dep2"}
             ),
             ModuleConfig(
                 id="dep3",
-                module="tests.core.test_instantiation.DependencyModuleWithId",
+                module=f"{DependencyModuleWithId.__module__}.DependencyModuleWithId",
                 config={"id": "dep3"}
             )
         ],
@@ -273,7 +271,6 @@ async def test_list_type_dependency():
     assert "dep3" in dependency_ids
 
 @pytest.mark.asyncio
-@pytest.mark.skip
 async def test_list_dependency_with_repeated_config():
     """Test that list dependencies work with repeated config for the same protocol."""
     # Create a config with list dependencies but no field_name
@@ -282,16 +279,16 @@ async def test_list_dependency_with_repeated_config():
         modules=[
             ModuleConfig(
                 id="list_module",
-                module="tests.core.test_instantiation.ListDependencyModule"
+                module=f"{ListDependencyModule.__module__}.ListDependencyModule"
             ),
             ModuleConfig(
                 id="dep1",
-                module="tests.core.test_instantiation.DependencyModuleWithId",
+                module=f"{DependencyModuleWithId.__module__}.DependencyModuleWithId",
                 config={"id": "dep1"}
             ),
             ModuleConfig(
                 id="dep2",
-                module="tests.core.test_instantiation.DependencyModuleWithId",
+                module=f"{DependencyModuleWithId.__module__}.DependencyModuleWithId",
                 config={"id": "dep2"}
             )
         ],
@@ -332,7 +329,6 @@ async def test_list_dependency_with_repeated_config():
     assert "dep2" in dependency_ids
 
 @pytest.mark.asyncio
-@pytest.mark.skip
 async def test_list_dependency_without_field_name():
     """Test that list dependencies work without specifying a field_name."""
     # Create a config with list dependencies but no field_name
@@ -341,16 +337,16 @@ async def test_list_dependency_without_field_name():
         modules=[
             ModuleConfig(
                 id="list_module",
-                module="tests.core.test_instantiation.ListDependencyModule"
+                module=f"{ListDependencyModule.__module__}.ListDependencyModule"
             ),
             ModuleConfig(
                 id="dep1",
-                module="tests.core.test_instantiation.DependencyModuleWithId",
+                module=f"{DependencyModuleWithId.__module__}.DependencyModuleWithId",
                 config={"id": "dep1"}
             ),
             ModuleConfig(
                 id="dep2",
-                module="tests.core.test_instantiation.DependencyModuleWithId",
+                module=f"{DependencyModuleWithId.__module__}.DependencyModuleWithId",
                 config={"id": "dep2"}
             )
         ],
