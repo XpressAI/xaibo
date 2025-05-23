@@ -92,7 +92,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--agent-dir", dest="agent_dir", default="./agents", action="store")
     parser.add_argument("--adapter", dest="adapters", default=[], action="append",
-                        help="Python Package path to an API adapter class (e.g. xaibo.server.adapters.OpenAiApiAdapter)")
+                        help="Python Package path to an API adapter class (e.g. xaibo.server.adapters.OpenAiApiAdapter, xaibo.server.adapters.McpApiAdapter)")
     parser.add_argument("--host", dest="host", default="127.0.0.1", action="store",
                         help="Host address to bind the server to")
     parser.add_argument("--port", dest="port", default=8000, type=int, action="store",

@@ -503,6 +503,59 @@ Xaibo provides several implementations for each protocol to support different us
         return datetime.now().strftime("%H:%M:%S")
     ```
 
+- `xaibo.primitives.modules.tools.MCPToolProvider`: Connects to MCP (Model Context Protocol) servers to provide their tools
+  - **Python Dependencies**: `aiohttp`, `websockets` (core dependencies)
+  - **Constructor Dependencies**: None
+  - **Config options**:
+    - `servers`: List of MCP server configurations (required)
+    - `timeout`: Optional timeout for server operations in seconds (default: 30.0)
+    - Server configuration structure:
+      - `name`: Unique identifier for the server (required)
+      - `transport`: Transport type - "stdio", "sse", or "websocket" (required)
+      - For `stdio` transport:
+        - `command`: List of command and arguments to start the server process (default: [])
+        - `args`: Additional arguments (default: [])
+        - `env`: Environment variables for the process (default: {})
+      - For `sse` and `websocket` transports:
+        - `url`: Server URL (default: "")
+        - `headers`: HTTP headers for authentication/configuration (default: {})
+  - **Features**:
+    - Supports multiple MCP servers simultaneously
+    - Tools are namespaced with server name (e.g., "server_name.tool_name")
+    - Automatic connection management and protocol communication
+    - Caches tool definitions for performance
+    - Handles different transport mechanisms (stdio, SSE, WebSocket)
+  - Usage:
+    ```yaml
+    # Agent configuration with MCP tool provider
+    modules:
+      - id: mcp-tools
+        module: xaibo.primitives.modules.tools.MCPToolProvider
+        config:
+          timeout: 60.0
+          servers:
+            # Stdio server (local process)
+            - name: filesystem
+              transport: stdio
+              command: ["python", "-m", "mcp_server_filesystem"]
+              args: ["--root", "/workspace"]
+              env:
+                LOG_LEVEL: "INFO"
+            # SSE server (HTTP-based)
+            - name: web_search
+              transport: sse
+              url: "https://api.example.com/mcp"
+              headers:
+                Authorization: "Bearer your-api-key"
+                Content-Type: "application/json"
+            # WebSocket server
+            - name: database
+              transport: websocket
+              url: "ws://localhost:8080/mcp"
+              headers:
+                X-API-Key: "your-websocket-key"
+    ```
+
 These implementations can be mixed and matched to create agents with different capabilities, and you can create your own implementations by following the protocol interfaces.
 
 </details>
@@ -535,6 +588,199 @@ server = XaiboWebServer(
 # Start the server
 server.run(host="0.0.0.0", port=8000)
 ```
+
+### MCP (Model Context Protocol) Adapter
+
+The MCP adapter exposes Xaibo agents as MCP tools, allowing them to be used by any MCP-compatible client. This enables seamless integration with MCP-enabled applications and development environments.
+
+#### What is the MCP Adapter?
+
+The MCP adapter implements the [Model Context Protocol](https://modelcontextprotocol.io/) specification, which provides a standardized way for AI applications to access external tools and resources. When enabled, the MCP adapter:
+
+- Exposes each registered Xaibo agent as an MCP tool
+- Handles JSON-RPC 2.0 communication protocol
+- Supports agent entry points for specialized functionality
+- Provides proper error handling and response formatting
+- Maintains compatibility with MCP client implementations
+
+#### How to Use the MCP Adapter
+
+##### Command Line Usage
+
+Start the Xaibo server with the MCP adapter enabled:
+
+```bash
+# Start server with MCP adapter
+python -m xaibo.server.web \
+  --agent-dir ./agents \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --host 127.0.0.1 \
+  --port 8000
+
+# You can also combine it with other adapters
+python -m xaibo.server.web \
+  --agent-dir ./agents \
+  --adapter xaibo.server.adapters.OpenAiApiAdapter \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --host 127.0.0.1 \
+  --port 8000
+```
+
+##### Programmatic Usage
+
+```python
+from xaibo import Xaibo
+from xaibo.server import XaiboWebServer
+from xaibo.server.adapters.mcp import McpApiAdapter
+
+# Initialize Xaibo and register your agents
+xaibo = Xaibo()
+xaibo.register_agent(my_agent_config)
+
+# Create a web server with the MCP adapter
+server = XaiboWebServer(
+    xaibo=xaibo,
+    adapters=["xaibo.server.adapters.McpApiAdapter"]
+)
+
+# Start the server
+server.start()
+```
+
+##### Using Multiple Adapters
+
+You can run both OpenAI and MCP adapters simultaneously:
+
+```python
+from xaibo import Xaibo
+from xaibo.server import XaiboWebServer
+
+# Initialize Xaibo and register your agents
+xaibo = Xaibo()
+xaibo.register_agent(my_agent_config)
+
+# Create a web server with both adapters
+server = XaiboWebServer(
+    xaibo=xaibo,
+    adapters=[
+        "xaibo.server.adapters.OpenAiApiAdapter",
+        "xaibo.server.adapters.McpApiAdapter"
+    ]
+)
+
+server.start()
+```
+
+#### API Endpoints
+
+When the MCP adapter is enabled, it provides the following endpoint:
+
+- **POST `/mcp`**: Main MCP JSON-RPC 2.0 endpoint for all protocol communication
+
+#### MCP Protocol Methods
+
+The adapter supports these MCP protocol methods:
+
+- `initialize`: Establishes connection and exchanges capabilities
+- `notifications/initialized`: Confirms initialization completion
+- `tools/list`: Returns available Xaibo agents as MCP tools
+- `tools/call`: Executes a specific agent with provided arguments
+
+#### Tool Schema
+
+Each Xaibo agent is exposed as an MCP tool with the following schema:
+
+```json
+{
+  "name": "agent_id",
+  "description": "Execute Xaibo agent 'agent_id'",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "The text message to send to the agent"
+      }
+    },
+    "required": ["message"]
+  }
+}
+```
+
+For agents with multiple entry points, tools are named as `agent_id.entry_point`.
+
+#### Example Usage with MCP Client
+
+Here's how you might interact with the MCP adapter using a JSON-RPC client:
+
+```bash
+# Initialize the MCP connection
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": {
+        "name": "my-client",
+        "version": "1.0.0"
+      }
+    }
+  }'
+
+# List available tools (agents)
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+
+# Call a specific agent
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "my-agent",
+      "arguments": {
+        "message": "Hello, what can you help me with?"
+      }
+    }
+  }'
+```
+
+#### Integration with Development Environments
+
+The MCP adapter enables Xaibo agents to be used directly within MCP-compatible development environments and AI assistants. This allows developers to:
+
+- Access Xaibo agents as tools within their IDE
+- Integrate agents into AI-powered development workflows
+- Use agents for code generation, analysis, and automation tasks
+- Leverage specialized agents for domain-specific operations
+
+#### Error Handling
+
+The MCP adapter provides comprehensive error handling with standard JSON-RPC 2.0 error codes:
+
+- `-32700`: Parse error (malformed JSON)
+- `-32600`: Invalid request (missing required fields)
+- `-32601`: Method not found (unsupported MCP method)
+- `-32602`: Invalid parameters (missing agent or arguments)
+- `-32603`: Internal error (agent execution failure)
+
+#### Configuration Notes
+
+- The MCP adapter runs on the `/mcp` path prefix by default
+- All responses use HTTP status 200 with JSON-RPC error handling
+- Agent responses are converted to MCP content format automatically
+- File attachments are represented as text descriptions in the current implementation
 
 </details>
 
