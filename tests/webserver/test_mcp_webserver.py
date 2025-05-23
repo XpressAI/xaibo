@@ -142,6 +142,22 @@ def xaibo_instance():
     )
     xaibo.register_agent(history_config)
     
+    # Register an agent with a custom description to test AgentConfig.description usage
+    described_config = AgentConfig(
+        id="described-agent",
+        description="This is a custom agent description for MCP testing",
+        modules=[
+            ModuleConfig(
+                module=Echo,
+                id="echo",
+                config={
+                    "prefix": "Described: "
+                }
+            )
+        ]
+    )
+    xaibo.register_agent(described_config)
+    
     return xaibo
 
 
@@ -688,6 +704,42 @@ def test_mcp_response_format_compliance(client):
             assert "message" in data["error"]
             assert isinstance(data["error"]["code"], int)
             assert isinstance(data["error"]["message"], str)
+
+
+def test_mcp_agent_config_description_usage(client):
+    """Test that AgentConfig.description is used for tool descriptions in MCP"""
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "test-description-1",
+        "method": "tools/list",
+        "params": {}
+    }
+    
+    response = client.post("/mcp/", json=request_data)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "test-description-1"
+    assert "result" in data
+    
+    result = data["result"]
+    assert "tools" in result
+    tools = result["tools"]
+    
+    # Find the described-agent tool
+    described_tool = next((tool for tool in tools if tool["name"] == "described-agent"), None)
+    assert described_tool is not None, "described-agent tool should be present"
+    
+    # Verify that the custom description from AgentConfig is used
+    assert described_tool["description"] == "This is a custom agent description for MCP testing"
+    
+    # Find an agent without description (echo-agent) to verify fallback behavior
+    echo_tool = next((tool for tool in tools if tool["name"] == "echo-agent"), None)
+    assert echo_tool is not None, "echo-agent tool should be present"
+    
+    # Verify that the fallback description is used when AgentConfig.description is None
+    assert echo_tool["description"] == "Execute Xaibo agent 'echo-agent'"
 
 
 def test_mcp_error_codes_compliance(client):

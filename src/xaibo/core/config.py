@@ -55,6 +55,7 @@ class ConfigOverrides(BaseModel):
 
 class AgentConfig(BaseModel):
     id: str
+    description: Optional[str] = None
     modules: List[ModuleConfig]
     exchange: Optional[List[ExchangeConfig]] = None
 

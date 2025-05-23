@@ -151,11 +151,21 @@ class McpApiAdapter:
                         else:
                             tool_name = f"{agent_id}.{entry_point}"
                             
+                        # Use AgentConfig.description if available, otherwise fall back to default
+                        if config.description:
+                            description = config.description
+                            # Add entry point info if not the default entry point
+                            if entry_point != '__entry__':
+                                description += f" (entry point: {entry_point})"
+                        else:
+                            # Fallback to original description format
+                            description = f"Execute Xaibo agent '{agent_id}'" + (
+                                f" with entry point '{entry_point}'" if entry_point != '__entry__' else ""
+                            )
+                        
                         tool = {
                             "name": tool_name,
-                            "description": f"Execute Xaibo agent '{agent_id}'" + (
-                                f" with entry point '{entry_point}'" if entry_point != '__entry__' else ""
-                            ),
+                            "description": description,
                             "inputSchema": {
                                 "type": "object",
                                 "properties": {
