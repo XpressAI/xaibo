@@ -44,3 +44,5 @@ src/lib/paraglide
 # Houdini
 .houdini
 
+# mkdocs output
+site

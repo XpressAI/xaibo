@@ -1,0 +1,145 @@
+site_name: Xaibo - AI Agent Framework
+site_description: A modular agent framework designed for building flexible AI systems with clean protocol-based interfaces
+site_url: https://www.xaibo.ai
+repo_url: https://github.com/xpressai/xaibo
+repo_name: xpressai/xaibo
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - toc.follow
+    - toc.integrate
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - content.action.view
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/robot
+  font:
+    text: Inter
+    code: JetBrains Mono
+  custom_dir: docs/overrides
+
+plugins:
+  - search:
+      lang: en
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+        # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started.md
+    - core-concepts.md
+    - project-structure.md
+  - User Guide:
+    - features.md
+    - configuration.md
+    - examples.md
+  - Development:
+    - api-reference.md
+    - Protocol Interfaces: api/protocols.md
+    - Module APIs: api/modules.md
+    - Server APIs: api/server.md
+    - Event System: api/events.md
+    - architecture.md
+    - tools-and-integrations.md
+  - Operations:
+    - deployment.md
+    - troubleshooting.md
+  - Community:
+    - contributing.md
+    - changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/xpressai/xaibo
+      name: GitHub Repository
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/uASMzSSVKe
+      name: Join our Discord
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/xpressai
+      name: Follow us on Twitter
+    - icon: fontawesome/solid/globe
+      link: https://xpress.ai
+      name: XpressAI Website
+  generator: false
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: >-
+            Thanks for your feedback! Help us improve this page by
+            <a href="https://github.com/xpressai/xaibo/issues/new/?title=[Docs Feedback] {title} - {url}" target="_blank" rel="noopener">telling us what you found lacking</a>.
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+copyright: Copyright &copy; 2025 XpressAI - Building the future of AI agents
