@@ -134,7 +134,7 @@ class WebSocketMCPServer:
                 }
             }
     
-    async def handle_client(self, websocket, path):
+    async def handle_client(self, websocket):
         """Handle a WebSocket client connection"""
         try:
             async for message in websocket:
