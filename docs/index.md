@@ -1,61 +1,142 @@
-# Xaibo
+<div class="hero-section" style="margin-top: -4em">
+      <h1 style="color: white">
+      <svg xmlns="http://www.w3.org/2000/svg" style="margin-bottom: -8px" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot-icon lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+       Xaibo
+      </h1>
+      <p>A modular agent framework designed for building flexible AI systems with clean protocol-based interfaces</p>
+      <div style="margin-top: 2rem;">
+        <a href="tutorial/" class="md-button md-button--primary" style="margin-right: 1rem;">
+          Get Started
+        </a>
+        <a href="https://github.com/xpressai/xaibo" class="md-button" style="background: rgba(255,255,255,0.2); color: white;">
+          View on GitHub
+        </a>
+      </div>
+    </div>
 
-Xaibo is a modular agent framework designed for building flexible AI systems with clean protocol-based interfaces.
+<div class="feature-grid">
+  <div class="feature-card">
+    <h3>🧩 Modular Architecture</h3>
+    <p>Easily swap components without changing other parts of the system. Want to switch from OpenAI to Anthropic? Just change the configuration.</p>
+  </div>
+  <div class="feature-card">
+    <h3>🔌 Protocol-Based Design</h3>
+    <p>Components communicate through well-defined interfaces, creating clean boundaries and enabling superior testing capabilities.</p>
+  </div>
+  <div class="feature-card">
+    <h3>🔍 Complete Observability</h3>
+    <p>Every component interaction is captured with transparent proxies, providing detailed runtime insights and automatic test case generation.</p>
+  </div>
+</div>
 
-## Introduction
+## What is Xaibo?
 
-Xaibo uses a protocol-driven architecture that allows components to interact through well-defined interfaces. This approach enables:
+Xaibo is a powerful, protocol-driven framework that enables developers to build sophisticated AI agents with unprecedented flexibility and modularity. By using well-defined interfaces and dependency injection, Xaibo allows you to create, test, and deploy AI systems that are both robust and easily maintainable.
 
-- **Modularity**: Easily swap components without changing other parts of the system
-- **Extensibility**: Add new capabilities by implementing existing protocols or defining new ones  
-- **Testability**: Mock dependencies for isolated testing
+!!! tip "Quick Start"
+    Get up and running with Xaibo in minutes:
+    ```bash
+    pip install uv
+    uvx xaibo init my_project
+    cd my_project
+    uv run xaibo dev
+    ```
 
-## Quick Start
+## Why Choose Xaibo?
 
-Get started with Xaibo in just a few commands:
+### 🧩 **Modular Architecture**
+Easily swap components without changing other parts of the system. Want to switch from OpenAI to Anthropic? Just change the configuration.
 
-```bash
-# Install uv if you don't have it
-pip install uv
+### 🔌 **Protocol-Based Design**
+Components communicate through well-defined interfaces, creating clean boundaries and enabling superior testing capabilities.
 
-# Initialize a new Xaibo project
-uvx xaibo init my_project
+### 🔍 **Complete Observability**
+Every component interaction is captured with transparent proxies, providing detailed runtime insights and automatic test case generation.
 
-# Start the development server
-cd my_project
-uv run xaibo dev
-```
+### 🚀 **Production Ready**
+Built-in web server with OpenAI-compatible API and MCP (Model Context Protocol) support for seamless integration.
 
-This sets up a recommended project structure with an example agent and starts a server with a debug UI and OpenAI-compatible API.
+---
 
-### Interacting with Your Agent
+## Key Features
 
-Once the development server is running, you can interact with it using the OpenAI-compatible API:
+<div class="grid cards" markdown>
 
-```bash
-# Send a simple chat completion request to the Xaibo OpenAI-compatible API
-curl -X POST http://127.0.0.1:9001/openai/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "example",
-    "messages": [
-      {"role": "user", "content": "Hello, what time is it now?"}
-    ]
-  }'
-```
+-   :material-puzzle-outline: **Protocol-Based Architecture**
 
-```bash
-# Same request using HTTPie (a more user-friendly alternative to curl)
-http POST http://127.0.0.1:9001/openai/chat/completions \
-  model=example \
-  messages:='[{"role": "user", "content": "Hello, what time is it now?"}]'
-```
+    ---
 
-This will route your request to the example agent configured in your project.
+    Components interact through well-defined protocol interfaces, creating clear boundaries and enabling easy testing with mocks.
 
-### Debug UI
+-   :material-swap-horizontal: **Dependency Injection**
 
-The development server provides a debug UI that visualizes the agent's operations:
+    ---
+
+    Explicitly declare what components need, making it easy to swap implementations and inject predictable mocks for testing.
+
+-   :material-eye-outline: **Transparent Proxies**
+
+    ---
+
+    Every component is wrapped with observability that captures parameters, timing, and exceptions for complete visibility.
+
+-   :material-chart-timeline-variant: **Comprehensive Event System**
+
+    ---
+
+    Built-in event system provides real-time monitoring, call sequences tracking, and performance insights.
+
+</div>
+
+---
+
+## Quick Navigation
+
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch: **[Getting Started](tutorial/index.md)**
+
+    ---
+
+    Step-by-step tutorial to build your first AI agent with tools and understand Xaibo's architecture
+
+-   :material-book-open-page-variant: **[How-to Guides](how-to/index.md)**
+
+    ---
+
+    Practical guides for installation, tool integration, LLM configuration, and deployment
+
+-   :material-brain: **[Core Concepts](explanation/index.md)**
+
+    ---
+
+    Deep dive into protocols, modules, dependency injection, and Xaibo's design principles
+
+-   :material-api: **[API Reference](reference/index.md)**
+
+    ---
+
+    Complete technical documentation for modules, protocols, configuration, and CLI commands
+
+-   :material-tools: **[Building Tools](tutorial/building-tools.md)**
+
+    ---
+
+    Learn to create custom Python and MCP tools that extend your agent's capabilities
+
+-   :material-cog: **[Architecture Guide](explanation/architecture/protocols.md)**
+
+    ---
+
+    Understand Xaibo's protocol-based architecture and transparent proxy system
+
+</div>
+
+---
+
+## Visual Debug Interface
+
+Xaibo includes a powerful debug UI that visualizes your agent's operations in real-time:
 
 <div style="display: flex; gap: 10px; margin: 20px 0;">
   <div style="flex: 1;">
@@ -68,237 +149,33 @@ The development server provides a debug UI that visualizes the agent's operation
   </div>
 </div>
 
-### Project Structure
+---
 
-When you run `uvx xaibo init my_project`, Xaibo creates the following structure:
+## Community & Support
 
-```
-my_project/
-├── agents/
-│   └── example.yml    # Example agent configuration
-├── modules/
-│   └── __init__.py
-├── tools/
-│   ├── __init__.py
-│   └── example.py     # Example tool implementation
-├── tests/
-│   └── test_example.py
-└── .env               # Environment variables
-```
+<div class="grid cards" markdown>
 
-#### Example Agent Configuration
+-   :fontawesome-brands-github: **[GitHub Repository](https://github.com/xpressai/xaibo)**
 
-The initialization creates an example agent with a simple tool:
+    ---
 
-```yaml
-# agents/example.yml
-id: example
-description: An example agent that uses tools
-modules:
-  - module: xaibo.primitives.modules.llm.OpenAILLM
-    id: llm
-    config:
-      model: gpt-3.5-turbo
-  - id: python-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
-    config:
-      tool_packages: [tools.example]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
-    id: orchestrator
-    config:
-      max_thoughts: 10
-      system_prompt: |
-        You are a helpful assistant with access to a variety of tools.
-```
+    Source code, issues, and contributions
 
-#### Example Tool Implementation
+-   :fontawesome-brands-discord: **[Discord Community](https://discord.gg/uASMzSSVKe)**
 
-```python
-# tools/example.py
-from datetime import datetime, timezone
-from xaibo.primitives.modules.tools.python_tool_provider import tool
+    ---
 
-@tool
-def current_time():
-    'Gets the current time in UTC'
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-```
+    Join our community for support and discussions
 
-## Key Features
+-   :material-email: **[Contact Us](mailto:hello@xpress.ai)**
 
-### Protocol-Based Architecture
+    ---
 
-Components communicate through well-defined protocol interfaces, creating clear boundaries:
+    Get in touch with the Xaibo team
 
-- **Clean Separation**: Modules interact only through protocols, not implementation details
-- **Easy Testing**: Mock any component by providing an alternative that implements the same protocol
-- **Flexible Composition**: Mix and match components as long as they fulfill required protocols
+</div>
 
-### Dependency Injection
+---
 
-Components explicitly declare what they need:
-
-- **Easy Swapping**: Change implementations without rewriting core logic (e.g., switch memory from SQLite to cloud)
-- **Superior Testing**: Inject predictable mocks instead of real LLMs for deterministic tests
-- **Clear Boundaries**: Explicit dependencies create better architecture
-
-### Transparent Proxies
-
-Every component is wrapped with a "two-way mirror" that:
-
-- **Observes Every Call**: Parameters, timing, exceptions are all captured
-- **Enables Complete Visibility**: Detailed runtime insights into your agent's operations
-- **Provides Debug Data**: Automatic generation of test cases from production runs
-
-### Comprehensive Event System
-
-Built-in event system for monitoring:
-
-- **Debug Event Viewer**: Visual inspection of agent operations in real-time
-- **Call Sequences**: Track every interaction between components
-- **Performance Monitoring**: Identify bottlenecks and optimize agent behavior
-
-## Core Concepts
-
-Xaibo is built around several key architectural concepts that provide its flexibility and power:
-
-### Protocols
-
-Protocols define interfaces that components must implement, creating clear boundaries between different parts of the system. Core protocols include:
-
-- **LLM Protocol**: Defines how to interact with language models
-- **Tools Protocol**: Standardizes tool integration
-- **Memory Protocol**: Defines how agents store and retrieve information
-- **Response Protocol**: Specifies how agents provide responses
-- **Conversation Protocol**: Manages dialog history
-- **Message Handlers Protocol**: Defines how to process different input types
-
-### Modules
-
-Modules are the building blocks of Xaibo agents. Each module implements one or more protocols and can depend on other modules. Examples include:
-
-- LLM modules (OpenAI, Anthropic, Google, etc.)
-- Memory modules (Vector memory, embedders, chunkers)
-- Tool modules (Python tools, function calling)
-- Orchestrator modules (manage agent behavior)
-
-### Exchanges
-
-Exchanges are the connections between modules that define how dependencies are resolved. They create a flexible wiring system that allows modules to declare what protocols they need without knowing the specific implementation.
-
-## Documentation Sections
-
-### Getting Started
-- [Installation Guide](installation.md) - Detailed installation instructions and dependency management
-- [Tutorial](tutorial.md) - Step-by-step guide to building your first agent
-- [Examples](examples.md) - Real-world examples and use cases
-
-### Reference
-- [Configuration Reference](reference/configuration.md) - Complete configuration options
-- [Protocol Reference](reference/protocols.md) - All available protocols and their interfaces
-- [Module Reference](reference/modules.md) - Built-in modules and their configurations
-- [API Reference](reference/api.md) - Web server and API adapter documentation
-
-### How-To Guides
-- [Creating Custom Modules](how-to/custom-modules.md) - Build your own protocol implementations
-- [Setting Up Memory](how-to/memory-setup.md) - Configure vector memory and embeddings
-- [Tool Integration](how-to/tool-integration.md) - Add custom tools and MCP servers
-- [Deployment](how-to/deployment.md) - Production deployment strategies
-
-### Explanation
-- [Architecture Overview](explanation/architecture.md) - Deep dive into Xaibo's design principles
-- [Protocol System](explanation/protocols.md) - Understanding the protocol-based architecture
-- [Event System](explanation/events.md) - How the transparent proxy system works
-- [Dependency Injection](explanation/dependency-injection.md) - The exchange system explained
-
-## Installation
-
-Install Xaibo with the dependency groups you need:
-
-```bash
-# Core package
-pip install xaibo
-
-# With specific LLM providers
-pip install xaibo[openai,anthropic]
-
-# With web server and UI
-pip install xaibo[webserver]
-
-# With local embeddings and transformers
-pip install xaibo[local]
-
-# All features
-pip install xaibo[webserver,openai,anthropic,google,bedrock,local]
-```
-
-## API Compatibility
-
-### OpenAI API
-
-Xaibo provides full compatibility with the OpenAI Chat Completions API, allowing you to use existing OpenAI clients and tools:
-
-```python
-from xaibo import Xaibo
-from xaibo.server import XaiboWebServer
-from xaibo.server.adapters.openai import OpenAiApiAdapter
-
-# Initialize Xaibo and register your agents
-xaibo = Xaibo()
-xaibo.register_agent(my_agent_config)
-
-# Create a web server with the OpenAI adapter
-server = XaiboWebServer(
-    xaibo=xaibo,
-    adapters=[OpenAiApiAdapter(xaibo)]
-)
-
-# Start the server
-server.run(host="0.0.0.0", port=8000)
-```
-
-### Model Context Protocol (MCP)
-
-Xaibo agents can be exposed as MCP tools for integration with MCP-compatible development environments:
-
-```bash
-# Start server with MCP adapter
-python -m xaibo.server.web \
-  --agent-dir ./agents \
-  --adapter xaibo.server.adapters.McpApiAdapter \
-  --host 127.0.0.1 \
-  --port 8000
-```
-
-## Development and Contributing
-
-Xaibo is actively developing with a focus on:
-- Enhanced visual configuration UI
-- Visual tool definition with Xircuits
-- More API adapters beyond OpenAI standard
-- Multi-user aware agents
-
-The core principles and APIs are stable for production use.
-
-### Running Tests
-
-Tests are implemented using pytest. For detailed test output in PyCharm:
-
-Go to File > Settings > Advanced Settings > Python and check the option 
-`Pytest: do not add "--no-header --no-summary -q"`.
-
-## Get Involved
-
-- **GitHub**: [https://github.com/xpressai/xaibo](https://github.com/xpressai/xaibo)
-- **Discord**: [https://discord.gg/uASMzSSVKe](https://discord.gg/uASMzSSVKe)
-- **Contact**: hello@xpress.ai
-
-## Source Code
-
-Explore the Xaibo source code on GitHub:
-
-- [Core Framework](https://github.com/xpressai/xaibo/tree/main/src/xaibo/core) - Agent, configuration, and exchange system
-- [Protocol Definitions](https://github.com/xpressai/xaibo/tree/main/src/xaibo/core/protocols) - All protocol interfaces
-- [Primitive Modules](https://github.com/xpressai/xaibo/tree/main/src/xaibo/primitives/modules) - Built-in implementations
-- [Server Adapters](https://github.com/xpressai/xaibo/tree/main/src/xaibo/server/adapters) - API compatibility layers
-- [Examples](https://github.com/xpressai/xaibo/tree/main/examples) - Real-world usage examples
+!!! info "Ready to Build?"
+    Start with our [Getting Started guide](tutorials/getting-started.md) to create your first Xaibo agent, or dive into [Core Concepts](explanation/core-concepts.md) to understand the framework's architecture.
