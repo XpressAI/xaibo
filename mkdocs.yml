@@ -117,6 +117,7 @@ nav:
       - LLM Protocol: reference/protocols/llm.md
       - Tools Protocol: reference/protocols/tools.md
       - Memory Protocol: reference/protocols/memory.md
+      - Response Protocol: reference/protocols/response.md
     - Modules:
       - LLM Modules: reference/modules/llm.md
       - Tool Modules: reference/modules/tools.md
@@ -125,6 +126,7 @@ nav:
     - API Reference:
       - Web Server: reference/api/server.md
       - API Adapters: reference/api/adapters.md
+    - Troubleshooting: reference/troubleshooting.md
   - Explanation:
     - explanation/index.md
     - Architecture:

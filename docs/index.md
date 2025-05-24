@@ -178,4 +178,4 @@ Xaibo includes a powerful debug UI that visualizes your agent's operations in re
 ---
 
 !!! info "Ready to Build?"
-    Start with our [Getting Started guide](tutorials/getting-started.md) to create your first Xaibo agent, or dive into [Core Concepts](explanation/core-concepts.md) to understand the framework's architecture.
+    Start with our [Getting Started guide](tutorial/index.md) to create your first Xaibo agent, or dive into [Core Concepts](explanation/index.md) to understand the framework's architecture.
