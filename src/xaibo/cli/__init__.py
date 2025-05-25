@@ -80,7 +80,7 @@ modules:
   - module: xaibo.primitives.modules.llm.{llm_provider}
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:

@@ -24,7 +24,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
       
   # Text chunker for splitting documents
   - module: xaibo.primitives.modules.memory.TokenChunker

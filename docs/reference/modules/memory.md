@@ -101,7 +101,7 @@ Splits text based on token counts for optimal embedding.
 
 | Encoding | Description | Used By |
 |----------|-------------|---------|
-| `cl100k_base` | GPT-4, GPT-3.5-turbo | OpenAI models |
+| `cl100k_base` | GPT-4, gpt-4.1-nano | OpenAI models |
 | `p50k_base` | GPT-3 (davinci, curie, etc.) | Legacy OpenAI models |
 | `r50k_base` | GPT-3 (ada, babbage) | Legacy OpenAI models |
 | `gpt2` | GPT-2 | GPT-2 models |

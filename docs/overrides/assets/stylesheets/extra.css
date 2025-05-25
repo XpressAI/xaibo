@@ -53,7 +53,16 @@
   box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
 }
 
-/* Admonition styling */
+/* Simple Admonition styling - Enhanced font sizes for better visibility */
+.md-typeset .admonition {
+  font-size: 1em;
+}
+
+.md-typeset .admonition > .admonition-title {
+  font-size: 1em;
+  font-weight: 600;
+}
+
 .md-typeset .admonition.note {
   border-color: var(--md-accent-fg-color);
 }

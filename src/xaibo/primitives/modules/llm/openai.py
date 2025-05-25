@@ -26,7 +26,7 @@ class OpenAILLM(LLMProtocol):
         Args:
             config: Configuration dictionary with the following optional keys:
                 - api_key: OpenAI API key. If not provided, will try to get from OPENAI_API_KEY env var.
-                - model: The model to use for generation. Default is "gpt-3.5-turbo".
+                - model: The model to use for generation. Default is "gpt-4.1-nano".
                 - base_url: Base URL for the OpenAI API. Default is "https://api.openai.com/v1".
                 - timeout: Timeout for API requests in seconds. Default is 60.0.
                 - Any additional keys will be passed as arguments to the API.
@@ -37,7 +37,7 @@ class OpenAILLM(LLMProtocol):
         if not self.api_key:
             raise ValueError("OpenAI API key must be provided or set as OPENAI_API_KEY environment variable")
         
-        self.model = config.get('model', "gpt-3.5-turbo")
+        self.model = config.get('model', "gpt-4.1-nano")
         
         # Extract known configuration parameters
         base_url = config.get('base_url', "https://api.openai.com/v1")

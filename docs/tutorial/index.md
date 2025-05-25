@@ -23,7 +23,7 @@ You'll create a personal assistant agent that can:
 
 Before starting, make sure you have:
 
-- Python 3.8 or higher installed
+- Python 3.10 or higher installed
 - Basic familiarity with command line operations
 - A text editor for editing configuration files
 
@@ -42,15 +42,6 @@ Discover how Xaibo's protocol-based architecture enables flexible, modular agent
 
 ### [4. Testing Agents](testing-agents.md)
 Master testing AI agents with dependency injection and event capture. Learn to replace components with test doubles, verify agent behavior, and build reliable test suites for complex agent interactions.
-
-## Learning Approach
-
-Each lesson follows a hands-on approach:
-
-- **Clear steps** - Every action is explained with expected results
-- **Working examples** - All code examples are tested and functional
-- **Immediate feedback** - You'll see results after each step
-- **Building blocks** - Each lesson builds on the previous one
 
 ## Getting Help
 

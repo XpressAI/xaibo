@@ -14,7 +14,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - id: mcp-tools
     module: xaibo.primitives.modules.tools.MCPToolProvider
     config:

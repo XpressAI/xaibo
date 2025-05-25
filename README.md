@@ -26,6 +26,12 @@ Xaibo uses a protocol-driven architecture that allows components to interact thr
 - **Extensibility**: Add new capabilities by implementing existing protocols or defining new ones  
 - **Testability**: Mock dependencies for isolated testing
 
+## Prerequisites
+
+Before installing Xaibo, ensure you have:
+- Python 3.10 or higher installed
+- pip or uv package manager
+
 ## Quick Start
 
 ```bash
@@ -110,7 +116,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
@@ -290,7 +296,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - module: xaibo.primitives.modules.orchestrator.StressingToolUser
     id: orchestrator
     config:
@@ -385,7 +391,7 @@ Xaibo provides several implementations for each protocol to support different us
   - **Python Dependencies**: `openai` dependency group
   - **Constructor Dependencies**: None
   - **Config options**:
-    - `model`: Model name (e.g., "gpt-4", "gpt-3.5-turbo")
+    - `model`: Model name (e.g., "gpt-4", "gpt-4.1-nano")
     - `api_key`: OpenAI API key (optional, falls back to environment variable)
     - `base_url`: Base URL for the OpenAI API (default: "https://api.openai.com/v1")
     - `timeout`: Timeout for API requests in seconds (default: 60.0)

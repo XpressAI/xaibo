@@ -34,6 +34,8 @@
 Xaibo is a powerful, protocol-driven framework that enables developers to build sophisticated AI agents with unprecedented flexibility and modularity. By using well-defined interfaces and dependency injection, Xaibo allows you to create, test, and deploy AI systems that are both robust and easily maintainable.
 
 !!! tip "Quick Start"
+    **Prerequisites:** Python 3.10 or higher installed
+    
     Get up and running with Xaibo in minutes:
     ```bash
     pip install uv
@@ -41,6 +43,7 @@ Xaibo is a powerful, protocol-driven framework that enables developers to build 
     cd my_project
     uv run xaibo dev
     ```
+    Start with our [Getting Started guide](tutorial/index.md) guide to create your first Xaibo agent
 
 ## Why Choose Xaibo?
 
@@ -177,5 +180,5 @@ Xaibo includes a powerful debug UI that visualizes your agent's operations in re
 
 ---
 
-!!! info "Ready to Build?"
-    Start with our [Getting Started guide](tutorial/index.md) to create your first Xaibo agent, or dive into [Core Concepts](explanation/index.md) to understand the framework's architecture.
+# Ready to Build?
+Start with our [Getting Started guide](tutorial/index.md) to create your first Xaibo agent, or dive into [Core Concepts](explanation/index.md) to understand the framework's architecture.

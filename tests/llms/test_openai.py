@@ -17,7 +17,7 @@ async def test_openai_generate():
     
     # Initialize the LLM
     llm = OpenAILLM({
-        "model": "gpt-3.5-turbo"
+        "model": "gpt-4.1-nano"
     })
     
     # Create a simple message
@@ -47,7 +47,7 @@ async def test_openai_generate_with_options():
     
     # Initialize the LLM
     llm = OpenAILLM({
-        "model": "gpt-3.5-turbo"
+        "model": "gpt-4.1-nano"
     })
     
     # Create a simple message
@@ -81,7 +81,7 @@ async def test_openai_function_calling():
     
     # Initialize the LLM
     llm = OpenAILLM({
-        "model": "gpt-3.5-turbo"
+        "model": "gpt-4.1-nano"
     })
     
     # Define a function
@@ -131,7 +131,7 @@ async def test_openai_tool_response():
     
     # Initialize the LLM
     llm = OpenAILLM({
-        "model": "gpt-3.5-turbo"
+        "model": "gpt-4.1-nano"
     })
     
     # Define a function
@@ -179,7 +179,7 @@ async def test_openai_streaming():
     
     # Initialize the LLM
     llm = OpenAILLM({
-        "model": "gpt-3.5-turbo"
+        "model": "gpt-4.1-nano"
     })
     
     # Create a simple message

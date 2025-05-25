@@ -27,7 +27,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
@@ -57,14 +57,14 @@ nano agents/example.yml
 code agents/example.yml
 ```
 
-Change the model from `gpt-3.5-turbo` to `gpt-4`:
+Change the model from `gpt-4.1-nano` to `gpt-4`:
 
 ```yaml
 modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-4  # Changed from gpt-3.5-turbo
+      model: gpt-4  # Changed from gpt-4.1-nano
 ```
 
 Restart your server:
@@ -190,7 +190,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
@@ -271,7 +271,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - id: basic-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:

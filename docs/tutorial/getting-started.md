@@ -4,6 +4,8 @@ In this lesson, you'll create your first Xaibo agent from scratch. You'll instal
 
 ## Step 1: Install Xaibo
 
+**Prerequisites:** Ensure you have Python 3.10 or higher installed on your system.
+
 First, let's install the `uv` package manager if you don't have it:
 
 ```bash
@@ -66,7 +68,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: gpt-4.1-nano
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:

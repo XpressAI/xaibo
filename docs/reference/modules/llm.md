@@ -18,7 +18,7 @@ OpenAI language model integration supporting GPT models.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `model` | `str` | `"gpt-3.5-turbo"` | OpenAI model name (e.g., "gpt-4", "gpt-3.5-turbo") |
+| `model` | `str` | `"gpt-4.1-nano"` | OpenAI model name (e.g., "gpt-4", "gpt-4.1-nano") |
 | `api_key` | `str` | `None` | OpenAI API key (falls back to `OPENAI_API_KEY` env var) |
 | `base_url` | `str` | `"https://api.openai.com/v1"` | Base URL for OpenAI API |
 | `timeout` | `float` | `60.0` | Request timeout in seconds |
