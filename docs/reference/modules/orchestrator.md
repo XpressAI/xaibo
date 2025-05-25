@@ -12,7 +12,7 @@ An orchestrator that processes user messages by leveraging an LLM to generate re
 
 **Dependencies**: None
 
-**Protocols**: Provides [`TextMessageHandlerProtocol`](../protocols/message_handlers.md), Uses [`LLMProtocol`](../protocols/llm.md), [`ToolProviderProtocol`](../protocols/tools.md), [`ResponseProtocol`](../protocols/response.md), [`ConversationHistoryProtocol`](../protocols/conversation.md)
+**Protocols**: Provides [`TextMessageHandlerProtocol`](https://github.com/XpressAI/xaibo/blob/main/src/xaibo/core/protocols/message_handlers.py), Uses [`LLMProtocol`](../protocols/llm.md), [`ToolProviderProtocol`](../protocols/tools.md), [`ResponseProtocol`](../protocols/response.md), [`ConversationHistoryProtocol`](https://github.com/XpressAI/xaibo/blob/main/src/xaibo/core/protocols/conversation.py)
 
 ### Constructor Dependencies
 
@@ -150,7 +150,7 @@ await orchestrator.handle_text("What's the weather like in Paris?")
 
 ## Custom Orchestrators
 
-To create custom orchestrators, implement the [`TextMessageHandlerProtocol`](../protocols/message_handlers.md):
+To create custom orchestrators, implement the [`TextMessageHandlerProtocol`](https://github.com/XpressAI/xaibo/blob/main/src/xaibo/core/protocols/message_handlers.py):
 
 ```python
 from xaibo.core.protocols.message_handlers import TextMessageHandlerProtocol
