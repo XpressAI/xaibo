@@ -12,7 +12,7 @@ try:
 except ImportError as e:
     XaiboWebServer = None
 
-def universal_run(command, *, timeout=60, text=True, env=None, cwd=None):
+def universal_run(command, *, timeout=None, text=True, env=None, cwd=None):
     """
     Cross‑platform command runner.
     - command: list or string (space‑separated)
@@ -26,7 +26,7 @@ def universal_run(command, *, timeout=60, text=True, env=None, cwd=None):
     if isinstance(cwd, Path):
         cwd = str(cwd)
     cp = subprocess.run([exe, *command[1:]],
-                        check=True, capture_output=True,
+                        check=True, capture_output=False,
                         timeout=timeout, text=text,
                         env=env, cwd=cwd)
     return cp.stdout
@@ -155,7 +155,7 @@ def init(args, extra_args=[]):
     curdir = Path(os.getcwd())
     project_dir = curdir / project_name
     universal_run(f"uv init {project_name}", cwd=curdir)
-    universal_run(f"uv add xaibo xaibo[{",".join(modules)}] pytest", cwd=project_dir)
+    universal_run(f"uv add xaibo xaibo[{','.join(modules)}] pytest", cwd=project_dir)
 
     (project_dir / "agents").mkdir()
     (project_dir / "modules").mkdir()
@@ -171,6 +171,11 @@ def init(args, extra_args=[]):
     env_content = generate_env_content(modules)
     with (project_dir / ".env").open("w", encoding="utf-8") as f:
         f.write(env_content)
+    
+    # Add .env to .gitignore
+    with (project_dir / ".gitignore").open("a", encoding="utf-8") as f:
+        f.write(".env\n")
+
 
 
     with (project_dir / "agents" / "example.yml").open("w", encoding="utf-8") as f:
@@ -258,6 +263,7 @@ async def test_example_agent():
     assert "time" in response.text.lower()
 """
         )
+    
 
     print(f"{project_name} initialized.")
 
