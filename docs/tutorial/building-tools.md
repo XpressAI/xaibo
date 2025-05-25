@@ -5,6 +5,7 @@ In this lesson, you'll learn how to create custom tools that give your agent new
 ## What You'll Build
 
 You'll create three new tools:
+
 - **Weather tool**: Get weather information for any city
 - **Calendar tool**: Access calendar entries for specific dates  
 - **Calculator tool**: Perform mathematical calculations
@@ -29,6 +30,7 @@ def current_time():
 ```
 
 Key elements of a tool:
+
 - **Import the decorator**: [`@tool`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/tools/python_tool_provider.py) from the tool provider
 - **Function definition**: Regular Python function
 - **Docstring**: Describes what the tool does (the agent uses this)
@@ -399,6 +401,7 @@ def get_weather(city: str, country: str = "US"):
 ```
 
 **Type hints help the agent:**
+
 - `str` for text
 - `int` for numbers  
 - `bool` for true/false

@@ -24,11 +24,14 @@ class ToolProviderProtocol(Protocol):
 
 ### Methods
 
+---
+
 #### `list_tools() -> List[Tool]`
 
 Retrieve all tools available from this provider.
 
 **Returns:**
+
 - `List[Tool]`: List of tool definitions with names, descriptions, and parameter schemas
 
 **Example:**
@@ -40,18 +43,23 @@ for tool in tools:
         print(f"  {param_name} ({param.type}): {param.description}")
 ```
 
+---
+
 #### `execute_tool(tool_name: str, parameters: Dict[str, Any]) -> ToolResult`
 
 Execute a specific tool with provided parameters.
 
 **Parameters:**
+
 - `tool_name` (`str`, required): Name of the tool to execute
 - `parameters` (`Dict[str, Any]`, required): Tool parameters as key-value pairs
 
 **Returns:**
+
 - `ToolResult`: Execution result with success status, result data, or error information
 
 **Raises:**
+
 - `ToolNotFoundError`: If the specified tool is not available
 - `ToolExecutionError`: If tool execution fails
 
@@ -67,6 +75,9 @@ if result.success:
 else:
     print(f"Error: {result.error}")
 ```
+
+---
+
 
 ## Data Models
 
@@ -196,6 +207,7 @@ result = ToolResult(
 ```
 
 ## Implementation Example
+
 
 ```python
 from xaibo.core.protocols.tools import ToolProviderProtocol

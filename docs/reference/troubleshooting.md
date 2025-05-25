@@ -7,16 +7,19 @@ This reference provides systematic solutions for common issues encountered when 
 ### Missing Dependencies Error
 
 **Symptoms:**
+
 - `ImportError` when importing xaibo modules
 - `ModuleNotFoundError` for optional dependencies
 - CLI commands fail with import errors
 
 **Causes:**
+
 - Missing optional dependency groups
 - Incomplete installation
 - Python version incompatibility
 
 **Resolution:**
+
 1. Verify Python version: `python --version` (requires >=3.10)
 2. Install with required dependency groups:
    ```bash
@@ -28,6 +31,7 @@ This reference provides systematic solutions for common issues encountered when 
    ```
 
 **Available dependency groups:**
+
 - `webserver`: FastAPI, Strawberry GraphQL, watchfiles
 - `openai`: OpenAI client library
 - `anthropic`: Anthropic client library  
@@ -38,11 +42,13 @@ This reference provides systematic solutions for common issues encountered when 
 ### UV Package Manager Issues
 
 **Symptoms:**
+
 - `xaibo init` command fails
 - `FileNotFoundError` for uv command
 - Project initialization incomplete
 
 **Resolution:**
+
 1. Install UV package manager:
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -51,13 +57,16 @@ This reference provides systematic solutions for common issues encountered when 
 3. Ensure UV is in PATH
 4. Retry project initialization
 
+
 ### Web Server Dependencies Missing
 
 **Symptoms:**
+
 - `ImportError: cannot import name 'XaiboWebServer'`
 - `xaibo dev` or `xaibo serve` commands fail
 
 **Resolution:**
+
 1. Install webserver dependencies:
    ```bash
    pip install xaibo[webserver]
@@ -69,6 +78,7 @@ This reference provides systematic solutions for common issues encountered when 
 ### Invalid Agent Configuration
 
 **Symptoms:**
+
 - `ValueError: Invalid agent config`
 - YAML parsing errors
 - Agent instantiation failures
@@ -113,10 +123,12 @@ exchange:
 ### Multiple Provider Conflicts
 
 **Symptoms:**
+
 - `ValueError: Multiple providers found for protocol`
 - Agent configuration validation errors
 
 **Resolution:**
+
 1. Identify conflicting providers in error message
 2. Add explicit exchange configuration:
    ```yaml
@@ -130,11 +142,13 @@ exchange:
 ### Environment Variable Issues
 
 **Symptoms:**
+
 - Authentication errors with LLM providers
 - `401 Unauthorized` responses
 - Missing API key errors
 
 **Resolution:**
+
 1. Create `.env` file in project root:
    ```bash
    OPENAI_API_KEY=your_key_here
@@ -154,11 +168,13 @@ exchange:
 ### Module Import Failures
 
 **Symptoms:**
+
 - `ImportError` during agent instantiation
 - `AttributeError: module has no attribute`
 - Module class not found errors
 
 **Resolution:**
+
 1. Verify module path in configuration:
    ```python
    # Test module import manually
@@ -171,11 +187,13 @@ exchange:
 ### Protocol Implementation Errors
 
 **Symptoms:**
+
 - `AttributeError: Entry module does not implement TextMessageHandlerProtocol`
 - Missing protocol method errors
 - Protocol mismatch exceptions
 
 **Resolution:**
+
 1. Verify module implements required protocols:
    ```python
    # Check module provides correct protocols
@@ -192,11 +210,13 @@ exchange:
 ### Tool Integration Failures
 
 **Symptoms:**
+
 - Tool discovery errors
 - Function call execution failures
 - MCP server connection issues
 
 **Python tool errors:**
+
 1. Verify tool package structure:
    ```python
    # tools/__init__.py must exist
@@ -216,6 +236,7 @@ exchange:
    ```
 
 **MCP server errors:**
+
 1. Verify server process is running
 2. Check connection configuration:
    ```yaml
@@ -232,21 +253,25 @@ exchange:
 ### LLM Provider Issues
 
 **OpenAI Integration:**
+
 - Verify API key format: `sk-...`
-- Check model availability: `gpt-3.5-turbo`, `gpt-4`
+- Check model availability
 - Monitor rate limits and quotas
 
 **Anthropic Integration:**
+
 - Verify API key format: `sk-ant-...`
-- Check model names: `claude-3-sonnet-20240229`
+- Check model names
 - Handle content filtering responses
 
 **Google Integration:**
+
 - Verify API key configuration
-- Check model availability: `gemini-pro`
+- Check model availability
 - Handle safety filter responses
 
 **AWS Bedrock Integration:**
+
 - Configure AWS credentials properly
 - Verify region availability
 - Check model access permissions
@@ -254,12 +279,14 @@ exchange:
 ### MCP Server Integration
 
 **Connection Issues:**
+
 - Verify server executable permissions
 - Check server startup logs
 - Test server independently
 - Validate JSON-RPC communication
 
 **Protocol Compatibility:**
+
 - Ensure MCP protocol version compatibility
 - Verify tool schema definitions
 - Check resource URI formats

@@ -13,7 +13,7 @@ Main web server class that hosts Xaibo agents with configurable API adapters.
 ```python
 XaiboWebServer(
     xaibo: Xaibo,
-    adapters: List[str],
+    adapters: list[str],
     agent_dir: str,
     host: str = "127.0.0.1",
     port: int = 8000,
@@ -26,7 +26,7 @@ XaiboWebServer(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `xaibo` | `Xaibo` | Required | Xaibo instance for agent management |
-| `adapters` | `List[str]` | Required | List of adapter class paths to load |
+| `adapters` | `list[str]` | Required | List of adapter class paths to load |
 | `agent_dir` | `str` | Required | Directory containing agent configuration files |
 | `host` | `str` | `"127.0.0.1"` | Host address to bind the server |
 | `port` | `int` | `8000` | Port number for the server |
@@ -178,7 +178,7 @@ python -m xaibo.server.web [options]
 | `--adapter` | `str` | `[]` | Adapter class path (repeatable) |
 | `--host` | `str` | `"127.0.0.1"` | Host address to bind |
 | `--port` | `int` | `8000` | Port number |
-| `--debug-ui` | `bool` | `False` | Enable debug UI and tracing |
+| `--debug-ui` | `bool` | `False` | Enable writing debug traces and start web ui |
 
 ### Examples
 
@@ -240,11 +240,11 @@ for adapter in adapters:
 
 ### Available Adapters
 
-| Adapter | Description | Path |
-|---------|-------------|------|
-| OpenAI API | OpenAI Chat Completions compatibility | `xaibo.server.adapters.OpenAiApiAdapter` |
-| MCP API | Model Context Protocol server | `xaibo.server.adapters.McpApiAdapter` |
-| UI API | Debug UI and GraphQL API | `xaibo.server.adapters.UiApiAdapter` |
+| Adapter | Description | Path | Endpoints |
+|---------|-------------|------|-----------|
+| OpenAI API | OpenAI Chat Completions compatibility | `xaibo.server.adapters.OpenAiApiAdapter` | `/openai/models`, `/openai/chat/completions` |
+| MCP API | Model Context Protocol server | `xaibo.server.adapters.McpApiAdapter` | `/mcp/` |
+| UI API | Debug UI and GraphQL API | `xaibo.server.adapters.UiApiAdapter` | `/api/ui/graphql`, `/` (static files) |
 
 ## Error Handling
 
@@ -252,27 +252,27 @@ for adapter in adapters:
 
 ```python
 # Invalid agent configuration
-ValueError: "Invalid agent config in ./agents/broken.yml: Missing required field 'id'"
+ValueError: "Agent configuration validation error"
 
 # Adapter loading error
-ImportError: "No module named 'invalid.adapter.path'"
+ImportError: "Failed to load adapter class"
 ```
 
 ### Runtime Errors
 
 ```python
 # Port already in use
-OSError: "[Errno 48] Address already in use"
+OSError: "Address already in use"
 
 # Permission denied
-PermissionError: "[Errno 13] Permission denied: './agents'"
+PermissionError: "Permission denied accessing agent directory"
 ```
 
 ### Agent Registration Errors
 
 ```python
 # Duplicate agent ID
-ValueError: "Agent with ID 'duplicate' already registered"
+ValueError: "Agent ID already registered"
 
 # Invalid agent configuration
 ValidationError: "Agent configuration validation failed"
@@ -282,15 +282,15 @@ ValidationError: "Agent configuration validation failed"
 
 ### File Watching
 
-- Uses `watchfiles` for efficient file system monitoring
-- Debounces rapid file changes
+- Uses `watchfiles.awatch` for efficient file system monitoring
+- Monitors agent directory for configuration changes
 - Handles large directory structures efficiently
 
 ### Agent Loading
 
 - Lazy loading of agent configurations
 - Incremental updates for changed files only
-- Parallel loading of multiple configurations
+- Sequential loading and registration of configurations
 
 ### Memory Management
 
@@ -317,185 +317,3 @@ ValidationError: "Agent configuration validation failed"
 - Isolated agent execution contexts
 - Resource limits per agent
 - Error containment between agents
-
-## Monitoring and Logging
-
-### Server Metrics
-
-```python
-# Access server metrics
-server_stats = {
-    "active_agents": len(xaibo.agents),
-    "total_requests": request_counter,
-    "uptime": time.time() - start_time
-}
-```
-
-### Event Tracing
-
-```python
-# Event trace structure
-{
-    "timestamp": "2024-01-15T10:30:00Z",
-    "agent_id": "example-agent",
-    "event_type": "llm_request",
-    "data": {
-        "messages": [...],
-        "options": {...}
-    }
-}
-```
-
-### Log Configuration
-
-```python
-import logging
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-# Server-specific logger
-logger = logging.getLogger("xaibo.server")
-```
-
-## Development Workflow
-
-### Local Development
-
-```python
-# Development server setup
-from xaibo import Xaibo
-from xaibo.server.web import XaiboWebServer
-
-xaibo = Xaibo()
-server = XaiboWebServer(
-    xaibo=xaibo,
-    adapters=["xaibo.server.adapters.OpenAiApiAdapter"],
-    agent_dir="./dev-agents",
-    debug=True
-)
-server.start()
-```
-
-### Testing
-
-```python
-import pytest
-from fastapi.testclient import TestClient
-
-def test_server_startup():
-    xaibo = Xaibo()
-    server = XaiboWebServer(
-        xaibo=xaibo,
-        adapters=[],
-        agent_dir="./test-agents"
-    )
-    
-    client = TestClient(server.app)
-    response = client.get("/health")
-    assert response.status_code == 200
-```
-
-### Production Deployment
-
-```python
-# Production server configuration
-server = XaiboWebServer(
-    xaibo=xaibo,
-    adapters=[
-        "xaibo.server.adapters.OpenAiApiAdapter",
-        "xaibo.server.adapters.McpApiAdapter"
-    ],
-    agent_dir="/app/agents",
-    host="0.0.0.0",
-    port=8000,
-    debug=False
-)
-
-# Use production ASGI server
-import uvicorn
-uvicorn.run(
-    server.app,
-    host="0.0.0.0",
-    port=8000,
-    workers=4,
-    access_log=True
-)
-```
-
-## Configuration Examples
-
-### Environment-Based Configuration
-
-```python
-import os
-
-server = XaiboWebServer(
-    xaibo=xaibo,
-    adapters=os.getenv("XAIBO_ADAPTERS", "").split(","),
-    agent_dir=os.getenv("XAIBO_AGENT_DIR", "./agents"),
-    host=os.getenv("XAIBO_HOST", "127.0.0.1"),
-    port=int(os.getenv("XAIBO_PORT", "8000")),
-    debug=os.getenv("XAIBO_DEBUG", "false").lower() == "true"
-)
-```
-
-### Docker Configuration
-
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-
-EXPOSE 8000
-
-CMD ["python", "-m", "xaibo.server.web", \
-     "--agent-dir", "/app/agents", \
-     "--adapter", "xaibo.server.adapters.OpenAiApiAdapter", \
-     "--host", "0.0.0.0", \
-     "--port", "8000"]
-```
-
-### Kubernetes Configuration
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: xaibo-server
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: xaibo-server
-  template:
-    metadata:
-      labels:
-        app: xaibo-server
-    spec:
-      containers:
-      - name: xaibo-server
-        image: xaibo:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: XAIBO_HOST
-          value: "0.0.0.0"
-        - name: XAIBO_PORT
-          value: "8000"
-        - name: XAIBO_AGENT_DIR
-          value: "/app/agents"
-        volumeMounts:
-        - name: agent-configs
-          mountPath: /app/agents
-      volumes:
-      - name: agent-configs
-        configMap:
-          name: xaibo-agents

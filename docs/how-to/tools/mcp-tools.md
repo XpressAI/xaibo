@@ -4,7 +4,7 @@ This guide shows you how to connect external MCP servers to your Xaibo agents, g
 
 ## Configure MCP tool provider
 
-1. Add the MCP tool provider to your agent configuration:
+Add the MCP tool provider to your agent configuration:
 
 ```yaml
 # agents/mcp_agent.yml
@@ -35,7 +35,7 @@ modules:
 
 ## Connect to stdio MCP servers
 
-2. Configure local MCP servers that run as separate processes:
+Configure local MCP servers that run as separate processes:
 
 ```yaml
 servers:
@@ -62,7 +62,7 @@ servers:
 
 ## Connect to HTTP-based MCP servers
 
-3. Configure MCP servers accessible over HTTP using Server-Sent Events:
+Configure MCP servers accessible over HTTP using Server-Sent Events:
 
 ```yaml
 servers:
@@ -85,7 +85,7 @@ servers:
 
 ## Connect to WebSocket MCP servers
 
-4. Configure MCP servers that use WebSocket connections:
+Configure MCP servers that use WebSocket connections:
 
 ```yaml
 servers:
@@ -106,7 +106,7 @@ servers:
 
 ## Use multiple MCP servers
 
-5. Configure multiple MCP servers in a single agent:
+Configure multiple MCP servers in a single agent:
 
 ```yaml
 # agents/multi_mcp_agent.yml
@@ -161,7 +161,7 @@ modules:
 
 ## Test MCP tool integration
 
-6. Start your agent and verify MCP tools are available:
+Start your agent and verify MCP tools are available:
 
 ```bash
 # Start the development server
@@ -180,7 +180,7 @@ curl -X POST http://127.0.0.1:9001/openai/chat/completions \
 
 ## Install common MCP servers
 
-7. Install popular MCP servers for common use cases:
+Install popular MCP servers for common use cases:
 
 ```bash
 # Filesystem server
@@ -201,7 +201,7 @@ npm install -g @modelcontextprotocol/server-brave-search
 
 ## Create a custom MCP server
 
-8. Build your own MCP server for custom functionality:
+Build your own MCP server for custom functionality:
 
 ```python
 # custom_mcp_server.py
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     asyncio.run(app.run())
 ```
 
-9. Use your custom MCP server:
+Use your custom MCP server:
 
 ```yaml
 servers:
@@ -281,7 +281,7 @@ servers:
 
 ## Handle MCP server authentication
 
-10. Configure authentication for secure MCP servers:
+Configure authentication for secure MCP servers:
 
 ```yaml
 servers:
@@ -322,7 +322,7 @@ REQUEST_SIGNATURE=your_signature
 
 ## Monitor MCP connections
 
-11. Check MCP server status and debug connection issues:
+Check MCP server status and debug connection issues:
 
 ```python
 # debug_mcp.py

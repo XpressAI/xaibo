@@ -32,15 +32,19 @@ class LLMProtocol(Protocol):
 
 ### Methods
 
+---
+
 #### `generate(messages, options=None) -> LLMResponse`
 
 Generate a complete response from the language model.
 
 **Parameters:**
+
 - `messages` (`List[LLMMessage]`, required): Conversation history and current input
 - `options` (`Optional[LLMOptions]`, optional): Generation parameters and tool definitions
 
 **Returns:**
+
 - `LLMResponse`: Complete response with content, tool calls, and usage statistics
 
 **Example:**
@@ -59,15 +63,19 @@ response = await llm.generate(messages, options)
 print(response.content)  # "The capital of France is Paris."
 ```
 
+---
+
 #### `generate_stream(messages, options=None) -> AsyncIterator[str]`
 
 Generate a streaming response from the language model.
 
 **Parameters:**
+
 - `messages` (`List[LLMMessage]`, required): Conversation history and current input
 - `options` (`Optional[LLMOptions]`, optional): Generation parameters and tool definitions
 
 **Returns:**
+
 - `AsyncIterator[str]`: Stream of text chunks as they are generated
 
 **Example:**
@@ -75,6 +83,7 @@ Generate a streaming response from the language model.
 async for chunk in llm.generate_stream(messages, options):
     print(chunk, end="", flush=True)
 ```
+---
 
 ## Data Models
 
@@ -96,6 +105,8 @@ Represents a message in the conversation history.
 
 #### Class Methods
 
+---
+
 ##### `system(content: str, name: Optional[str] = None) -> LLMMessage`
 
 Create a system message.
@@ -103,6 +114,8 @@ Create a system message.
 ```python
 msg = LLMMessage.system("You are a helpful assistant")
 ```
+
+---
 
 ##### `user(content: str, name: Optional[str] = None) -> LLMMessage`
 
@@ -112,6 +125,8 @@ Create a user message.
 msg = LLMMessage.user("Hello, how are you?")
 ```
 
+---
+
 ##### `user_image(image_path: str, name: Optional[str] = None) -> LLMMessage`
 
 Create a user message with an image.
@@ -119,6 +134,8 @@ Create a user message with an image.
 ```python
 msg = LLMMessage.user_image("/path/to/image.jpg")
 ```
+
+---
 
 ##### `assistant(content: str, name: Optional[str] = None) -> LLMMessage`
 
@@ -128,6 +145,8 @@ Create an assistant message.
 msg = LLMMessage.assistant("I'm doing well, thank you!")
 ```
 
+---
+
 ##### `function(id: str, name: str, arguments: Dict[str, Any]) -> LLMMessage`
 
 Create a function call message.
@@ -136,6 +155,8 @@ Create a function call message.
 msg = LLMMessage.function("call_123", "get_weather", {"city": "Paris"})
 ```
 
+---
+
 ##### `function_result(id: str, name: str, content: str) -> LLMMessage`
 
 Create a function result message.
@@ -143,6 +164,8 @@ Create a function result message.
 ```python
 msg = LLMMessage.function_result("call_123", "get_weather", "Sunny, 22°C")
 ```
+
+---
 
 ### LLMRole
 
@@ -221,6 +244,8 @@ Response from language model generation.
 
 #### Class Methods
 
+---
+
 ##### `merge(*responses: LLMResponse) -> LLMResponse`
 
 Merge multiple responses into a single response.
@@ -231,6 +256,8 @@ response2 = LLMResponse(content="World")
 merged = LLMResponse.merge(response1, response2)
 print(merged.content)  # "Hello\nWorld"
 ```
+
+---
 
 ### LLMFunctionCall
 
@@ -418,3 +445,4 @@ class MockLLM:
 
 # Verify protocol compliance
 assert isinstance(MockLLM([]), LLMProtocol)
+```

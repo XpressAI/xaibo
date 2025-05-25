@@ -1,18 +1,18 @@
 # How the Exchange System Works
 
-The exchange system is Xaibo's dependency injection container—the sophisticated machinery that takes a collection of module definitions and automatically wires them together into a functioning agent. Understanding how this system works illuminates not just the technical mechanics of Xaibo, but the architectural philosophy that makes the framework so flexible and maintainable.
+The exchange system is Xaibo's dependency injection container, the sophisticated machinery that takes a collection of module definitions and automatically wires them together into a functioning agent. Understanding how this system works illuminates not just the technical mechanics of Xaibo, but the architectural philosophy that makes the framework so flexible and maintainable.
 
 ## The Wiring Problem
 
-Imagine you're assembling a complex electronic device. You have dozens of components, each with specific input and output requirements. Some components need power, others need data signals, and still others need control inputs. The challenge isn't just connecting the components—it's figuring out the correct order to connect them, ensuring that each component gets what it needs when it needs it.
+Imagine you're assembling a complex electronic device. You have dozens of components, each with specific input and output requirements. Some components need power, others need data signals, and still others need control inputs. The challenge isn't just connecting the components, it's figuring out the correct order to connect them, ensuring that each component gets what it needs when it needs it.
 
-This is exactly the problem that Xaibo's exchange system solves, but for software components instead of electronic ones. Each module has dependencies—other modules it needs to function properly. The exchange system analyzes these dependencies and automatically creates the necessary connections in the correct order.
+This is exactly the problem that Xaibo's exchange system solves, but for software components instead of electronic ones. Each module has dependencies, other modules it needs to function properly. The exchange system analyzes these dependencies and automatically creates the necessary connections in the correct order.
 
 ## Dependency Analysis
 
 The exchange system begins by analyzing the constructor signatures of all modules in the agent configuration. When a module declares a parameter like `llm: LLMProtocol`, the exchange system understands that this module needs something that implements the `LLMProtocol` interface.
 
-This analysis happens automatically through Python's type annotation system. The exchange system uses introspection to examine each module's `__init__` method and extract the type information for each parameter. This approach means that dependencies are declared in the natural place—the constructor—rather than in separate configuration files or decorators.
+This analysis happens automatically through Python's type annotation system. The exchange system uses introspection to examine each module's `__init__` method and extract the type information for each parameter. This approach means that dependencies are declared in the natural place, the constructor, rather than in separate configuration files or decorators.
 
 The dependency analysis also handles more complex scenarios. If a module declares a parameter like `tools: list[ToolsProtocol]`, the exchange system understands that this module needs a list of implementations, not just a single one. This enables modules like tool collectors that need to work with multiple tool providers simultaneously.
 
@@ -46,13 +46,13 @@ The explicit configuration also supports more sophisticated scenarios, like prov
 
 The [`Exchange`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/exchange.py) class acts as both a dependency injection container and a service registry. Once modules are instantiated, they're stored in the exchange and can be retrieved by other parts of the system.
 
-This registry function is important for several reasons. It ensures that modules are singletons within an agent—each module is instantiated exactly once and reused whenever it's needed. It also provides a central place to manage module lifecycles and handle cleanup when an agent is shut down.
+This registry function is important for several reasons. It ensures that modules are singletons within an agent, each module is instantiated exactly once and reused whenever it's needed. It also provides a central place to manage module lifecycles and handle cleanup when an agent is shut down.
 
-The exchange also handles the proxy wrapping that enables Xaibo's observability features. When a module is retrieved from the exchange, it's automatically wrapped in a proxy that captures method calls and emits events. This happens transparently—neither the requesting module nor the provided module needs to know about the proxy layer.
+The exchange also handles the proxy wrapping that enables Xaibo's observability features. When a module is retrieved from the exchange, it's automatically wrapped in a proxy that captures method calls and emits events. This happens transparently, neither the requesting module nor the provided module needs to know about the proxy layer.
 
 ## Instantiation Order
 
-One of the most complex aspects of the exchange system is determining the correct order to instantiate modules. This isn't just a matter of convenience—it's essential for correctness. A module can't be instantiated until all of its dependencies are available.
+One of the most complex aspects of the exchange system is determining the correct order to instantiate modules. This isn't just a matter of convenience, it's essential for correctness. A module can't be instantiated until all of its dependencies are available.
 
 The exchange system solves this using a topological sort algorithm that analyzes the dependency graph and determines a valid instantiation order. This algorithm handles complex scenarios like modules with multiple dependencies, optional dependencies, and even circular dependencies (which are detected and reported as errors).
 
@@ -60,7 +60,7 @@ The instantiation order computation also considers the specific types of depende
 
 ## Handling Ambiguity
 
-Sometimes the automatic resolution process encounters ambiguity—multiple modules provide the same protocol, or a module's dependencies can't be uniquely resolved. The exchange system handles these situations gracefully by providing clear error messages that explain what went wrong and suggest possible solutions.
+Sometimes the automatic resolution process encounters ambiguity, multiple modules provide the same protocol, or a module's dependencies can't be uniquely resolved. The exchange system handles these situations gracefully by providing clear error messages that explain what went wrong and suggest possible solutions.
 
 For example, if two modules both provide `LLMProtocol` and a third module depends on it, the exchange system will report that the dependency is ambiguous and suggest using explicit configuration to resolve it. This approach prevents silent failures and makes it easier to debug configuration issues.
 
@@ -120,7 +120,7 @@ The exchange system also supports versioning and migration strategies for config
 
 ## The Bigger Picture
 
-The exchange system is more than just a technical component—it's the embodiment of Xaibo's architectural philosophy. By making dependencies explicit and manageable, the exchange system enables the modularity, testability, and flexibility that make Xaibo systems maintainable over time.
+The exchange system is more than just a technical component, it's the embodiment of Xaibo's architectural philosophy. By making dependencies explicit and manageable, the exchange system enables the modularity, testability, and flexibility that make Xaibo systems maintainable over time.
 
 The exchange system also reflects the recognition that complex software systems benefit from careful architectural planning. Rather than leaving dependency management as an afterthought, Xaibo makes it a first-class concern with sophisticated tooling and clear patterns.
 

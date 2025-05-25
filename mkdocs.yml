@@ -93,6 +93,7 @@ nav:
     - Getting Started: tutorial/getting-started.md
     - Building Tools: tutorial/building-tools.md
     - Understanding Protocols: tutorial/understanding-protocols.md
+    - Testing Agents: tutorial/testing-agents.md
   - How-to Guides:
     - how-to/index.md
     - Getting Started:

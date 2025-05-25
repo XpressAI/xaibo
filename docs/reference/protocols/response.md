@@ -40,11 +40,14 @@ class ResponseProtocol(Protocol):
 
 ### Methods
 
+---
+
 #### `get_response() -> Response`
 
 Retrieve the current response object containing accumulated text and attachments.
 
 **Returns:**
+
 - [`Response`](#response): The current response object with text content and file attachments
 
 **Example:**
@@ -56,11 +59,14 @@ if current_response.attachments:
     print(f"Attachments: {len(current_response.attachments)}")
 ```
 
+---
+
 #### `respond_text(response) -> None`
 
 Send a text response to the user.
 
 **Parameters:**
+
 - `response` (`str`, required): The response text to send
 
 **Example:**
@@ -68,11 +74,14 @@ Send a text response to the user.
 await response_handler.respond_text("Hello! How can I help you today?")
 ```
 
+---
+
 #### `respond_image(iolike) -> None`
 
 Send an image response to the user.
 
 **Parameters:**
+
 - `iolike` (`BinaryIO`, required): IO object containing the image data
 
 **Example:**
@@ -81,11 +90,14 @@ with open("chart.png", "rb") as image_file:
     await response_handler.respond_image(image_file)
 ```
 
+---
+
 #### `respond_audio(iolike) -> None`
 
 Send an audio response to the user.
 
 **Parameters:**
+
 - `iolike` (`BinaryIO`, required): IO object containing the audio data
 
 **Example:**
@@ -93,6 +105,8 @@ Send an audio response to the user.
 with open("speech.mp3", "rb") as audio_file:
     await response_handler.respond_audio(audio_file)
 ```
+
+---
 
 #### `respond_file(iolike) -> None`
 
@@ -106,6 +120,8 @@ Send a file response to the user.
 with open("report.pdf", "rb") as file:
     await response_handler.respond_file(file)
 ```
+
+---
 
 #### `respond(response) -> None`
 
@@ -126,6 +142,8 @@ complex_response = Response(
 )
 await response_handler.respond(complex_response)
 ```
+
+---
 
 ## Data Structures
 
@@ -150,6 +168,7 @@ class Response:
 ```
 
 **Attributes:**
+
 - `text` (`Optional[str]`): Text content of the response
 - `attachments` (`List[FileAttachment]`): List of file attachments
 
@@ -168,6 +187,7 @@ class FileAttachment:
 ```
 
 **Attributes:**
+
 - `content` (`BinaryIO`): IO object containing the file data
 - `type` ([`FileType`](#filetype)): Type classification of the file
 
@@ -184,6 +204,7 @@ class FileType(Enum):
 ```
 
 **Values:**
+
 - `IMAGE`: Image file attachments (PNG, JPEG, GIF, etc.)
 - `AUDIO`: Audio file attachments (MP3, WAV, etc.)
 - `FILE`: Generic file attachments (PDF, documents, etc.)

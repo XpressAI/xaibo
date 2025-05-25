@@ -4,7 +4,7 @@ This guide shows you how to create custom Python functions and make them availab
 
 ## Create a Python tool function
 
-1. Create a new Python file in your project's `tools/` directory:
+Create a new Python file in your project's `tools/` directory:
 
 ```python
 # tools/my_tools.py
@@ -41,7 +41,7 @@ def format_text(text: str, style: str = "uppercase") -> str:
 
 ## Add tools to your agent configuration
 
-2. Configure your agent to use the Python tool provider:
+Configure your agent to use the Python tool provider:
 
 ```yaml
 # agents/my_agent.yml
@@ -67,7 +67,7 @@ modules:
 
 ## Test your tools
 
-3. Start your agent and test the tools:
+Start your agent and test the tools:
 
 ```bash
 # Start the development server
@@ -86,7 +86,7 @@ curl -X POST http://127.0.0.1:9001/openai/chat/completions \
 
 ## Add tools with complex parameters
 
-4. Create tools that accept structured data:
+Create tools that accept structured data:
 
 ```python
 # tools/advanced_tools.py
@@ -142,7 +142,7 @@ def search_database(query: str, filters: Dict = None, limit: int = 10) -> List[D
 
 ## Handle errors in tools
 
-5. Add proper error handling to your tools:
+Add proper error handling to your tools:
 
 ```python
 # tools/robust_tools.py
@@ -197,7 +197,7 @@ def validate_email(email: str) -> Dict:
 
 ## Use multiple tool packages
 
-6. Configure multiple tool packages in your agent:
+Configure multiple tool packages in your agent:
 
 ```yaml
 # agents/multi_tool_agent.yml
@@ -220,7 +220,7 @@ modules:
 
 ## Add tools from external packages
 
-7. Use tools from installed Python packages:
+Use tools from installed Python packages:
 
 ```python
 # tools/external_tools.py

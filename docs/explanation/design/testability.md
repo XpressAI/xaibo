@@ -32,7 +32,7 @@ class TestLLM:
         self.responses = responses
         self.call_count = 0
     
-    async def generate_response(self, conversation):
+    async def generate(self, messages, options=None):
         response = self.responses[self.call_count % len(self.responses)]
         self.call_count += 1
         return LLMResponse(content=response)
@@ -60,7 +60,7 @@ Xaibo includes several built-in test implementations that demonstrate effective 
 
 The `MockLLM` implements the full `LLMProtocol` while providing complete control over responses. It can return predetermined responses, simulate streaming behavior, introduce controlled delays, and even simulate error conditions. This enables testing of complex orchestration logic without the unpredictability of real language models.
 
-The pattern demonstrated by `MockLLM` can be applied to other protocols as well. Test implementations of [`ToolsProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py) can simulate tool execution without actually running external commands. Test implementations of [`MemoryProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/memory.py) can provide predictable memory behavior without external databases.
+The pattern demonstrated by `MockLLM` can be applied to other protocols as well. Test implementations of [`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py) can simulate tool execution without actually running external commands. Test implementations of [`MemoryProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/memory.py) can provide predictable memory behavior without external databases.
 
 ## Event-Driven Test Verification
 
@@ -180,4 +180,8 @@ The framework's testing capabilities also enable new possibilities for AI system
 
 **Quality Assurance**: Using comprehensive testing to provide confidence in AI system reliability.
 
-By making testing a first-class concern in AI system architecture, Xaibo enables the development of AI systems that are not just functional, but reliable, maintainable, and trustworthy. The testing capabilities aren't an afterthought—they're an integral part of the framework's design philosophy that prioritizes quality and reliability alongside functionality.
+By making testing a first-class concern in AI system architecture, Xaibo enables the development of AI systems that are not just functional, but reliable, maintainable, and trustworthy. The testing capabilities aren't an afterthought, they're an integral part of the framework's design philosophy that prioritizes quality and reliability alongside functionality.
+
+## Putting It Into Practice
+
+To see these testing concepts in action, work through the [Testing Agents tutorial](../../tutorial/testing-agents.md), which demonstrates hands-on implementation of dependency injection, event capture, and comprehensive agent testing strategies.

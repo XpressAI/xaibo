@@ -14,7 +14,7 @@ Xaibo's architecture is built around three fundamental principles that work toge
 
 **Protocol-Driven Design**: Instead of concrete dependencies, components interact through well-defined interfaces. This creates natural boundaries that make the system more modular and testable.
 
-**Transparent Observability**: Every interaction between components is automatically captured and made visible. This isn't just logging—it's a comprehensive view into how your agent thinks and operates.
+**Transparent Observability**: Every interaction between components is automatically captured and made visible. This isn't just logging, it's a comprehensive view into how your agent thinks and operates.
 
 **Dependency Injection**: Components explicitly declare what they need, allowing the framework to wire them together automatically while maintaining flexibility for testing and configuration.
 
@@ -47,4 +47,4 @@ Think of these explanations as conversations about software architecture, using 
 
 Xaibo's design reflects broader trends in software engineering: the move toward microservices, the emphasis on observability, and the recognition that complex systems require careful architectural planning. By understanding these principles in the context of AI agents, you'll be better equipped to build systems that are not just functional, but maintainable and extensible over time.
 
-The framework doesn't just solve today's problems—it provides a foundation for solving tomorrow's problems too.
+The framework doesn't just solve today's problems, it provides a foundation for solving tomorrow's problems too.

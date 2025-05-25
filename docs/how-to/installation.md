@@ -151,3 +151,4 @@ Always install Xaibo in a virtual environment to avoid conflicts:
 python -m venv xaibo-env
 source xaibo-env/bin/activate  # On Windows: xaibo-env\Scripts\activate
 pip install xaibo[your,dependencies]
+```

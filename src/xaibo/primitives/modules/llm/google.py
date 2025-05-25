@@ -1,4 +1,5 @@
 from typing import AsyncIterator, Dict, List, Optional, Any
+import logging
 
 from google import genai
 from google.genai import types
@@ -7,6 +8,8 @@ import base64
 
 from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 from xaibo.core.protocols.llm import LLMProtocol
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleLLM(LLMProtocol):

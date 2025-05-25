@@ -44,10 +44,10 @@ class ExampleProtocol(Protocol):
 
 | Protocol | Purpose | Reference |
 |----------|---------|-----------|
-| [`LLMProtocol`](llm.md) | Language model integration | [Specification](llm.md) |
-| [`ToolProviderProtocol`](tools.md) | Tool execution and management | [Specification](tools.md) |
-| [`MemoryProtocol`](memory.md) | Memory storage and retrieval | [Specification](memory.md) |
-| `ResponseProtocol` | Response formatting and delivery | [Source](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/response.py) |
+| `LLMProtocol` | Language model integration | [Specification](llm.md) |
+| `ToolProviderProtocol` | Tool execution and management | [Specification](tools.md) |
+| `MemoryProtocol` | Memory storage and retrieval | [Specification](memory.md) |
+| `ResponseProtocol` | Response formatting and delivery | [Specification](memory.md) |
 | `ConversationProtocol` | Dialog history management | [Source](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/conversation.py) |
 
 ## Protocol Implementation
@@ -213,7 +213,7 @@ Extend existing protocols:
 
 ```python
 @runtime_checkable
-class AdvancedLLMProtocol(LLMProtocol, Protocol):
+class AdvancedLLMProtocol(LLMProtocol):
     """Extended LLM protocol with additional capabilities"""
     
     async def analyze_sentiment(self, text: str) -> float:
@@ -251,21 +251,6 @@ class AdvancedLLMProtocol(LLMProtocol, Protocol):
 4. **Validation**: Ensure all dependencies are satisfied
 
 ## Common Patterns
-
-### Adapter Pattern
-
-```python
-class ExternalServiceAdapter:
-    """Adapt external service to Xaibo protocol"""
-    
-    def __init__(self, external_client):
-        self.client = external_client
-    
-    async def generate(self, messages, options=None):
-        # Adapt external API to LLMProtocol
-        external_response = await self.client.complete(messages)
-        return LLMResponse(content=external_response.text)
-```
 
 ### Decorator Pattern
 

@@ -4,7 +4,7 @@ At the heart of Xaibo lies a fundamental architectural decision: components comm
 
 ## The Problem with Direct Dependencies
 
-Traditional software often suffers from tight coupling—components that know too much about each other's internal workings. In AI systems, this problem is amplified. Consider a typical agent that needs to:
+Traditional software often suffers from tight coupling, components that know too much about each other's internal workings. In AI systems, this problem is amplified. Consider a typical agent that needs to:
 
 - Generate responses using a language model
 - Store and retrieve memories
@@ -17,13 +17,13 @@ This tight coupling creates a cascade of problems: testing becomes difficult bec
 
 ## Protocols as Contracts
 
-Xaibo solves this through protocols—formal contracts that define what a component can do without specifying how it does it. A protocol is essentially an interface that captures the essential behavior of a component while hiding its implementation details.
+Xaibo solves this through protocols, formal contracts that define what a component can do without specifying how it does it. A protocol is essentially an interface that captures the essential behavior of a component while hiding its implementation details.
 
 Consider the [`LLMProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/llm.py). It defines a single essential operation: given a conversation, produce a response. It doesn't care whether that response comes from OpenAI's GPT-4, Anthropic's Claude, a local model, or even a simple rule-based system. The protocol captures the *what* while leaving the *how* completely open.
 
 ```python
 class LLMProtocol(Protocol):
-    async def generate_response(self, conversation: Conversation) -> LLMResponse:
+    async def generate(self, messages: List[LLMMessage], options: Optional[LLMOptions] = None) -> LLMResponse:
         """Generate a response to a conversation."""
         ...
 ```
@@ -34,21 +34,21 @@ This abstraction is powerful because it creates a stable interface that other co
 
 The real power of protocol-driven architecture emerges when multiple protocols work together. Each protocol defines a clean boundary, and these boundaries compose naturally to create complex systems.
 
-The [`ToolsProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py) defines how tools are discovered and executed. The [`MemoryProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/memory.py) defines how information is stored and retrieved. The [`ResponseProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/response.py) defines how responses are delivered to users.
+The [`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py) defines how tools are discovered and executed. The [`MemoryProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/memory.py) defines how information is stored and retrieved. The [`ResponseProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/response.py) defines how responses are delivered to users.
 
 An orchestrator module can declare dependencies on all these protocols without knowing anything about their implementations. This creates a powerful separation of concerns: the orchestrator focuses on coordination logic, while specialized modules handle the details of language generation, tool execution, and memory management.
 
 ## Flexibility Through Abstraction
 
-This protocol-driven approach enables remarkable flexibility. Want to switch from OpenAI to Anthropic? Simply swap the LLM module—no changes needed to the orchestrator or any other component. Need to add a new type of memory system? Implement the `MemoryProtocol` and the rest of the system automatically gains access to it.
+This protocol-driven approach enables remarkable flexibility. Want to switch from OpenAI to Anthropic? Simply swap the LLM module, no changes needed to the orchestrator or any other component. Need to add a new type of memory system? Implement the `MemoryProtocol` and the rest of the system automatically gains access to it.
 
-The abstraction also enables sophisticated compositions. The [`LLMCombinator`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/llm/combinator.py) module implements the `LLMProtocol` while internally coordinating multiple other LLM implementations. From the perspective of components that depend on it, it's just another LLM—but internally it might route different types of requests to different models, or combine responses from multiple models.
+The abstraction also enables sophisticated compositions. The [`LLMCombinator`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/llm/combinator.py) module implements the `LLMProtocol` while internally coordinating multiple other LLM implementations. From the perspective of components that depend on it, it's just another LLM, but internally it might route different types of requests to different models, or combine responses from multiple models.
 
 ## Testing Through Protocols
 
 Protocols make testing dramatically easier. Instead of mocking complex external services, you can create simple implementations that fulfill the protocol contract. The [`MockLLM`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/llm/mock.py) module provides predictable responses for testing, while still implementing the same `LLMProtocol` that production systems use.
 
-This isn't just convenient—it's transformative for testing AI systems. You can write deterministic tests that verify orchestration logic without the unpredictability of real language models. You can simulate error conditions, test edge cases, and verify behavior under controlled conditions.
+This isn't just convenient, it's transformative for testing AI systems. You can write deterministic tests that verify orchestration logic without the unpredictability of real language models. You can simulate error conditions, test edge cases, and verify behavior under controlled conditions.
 
 ## Evolution and Compatibility
 
@@ -58,7 +58,7 @@ The protocol system also enables gradual migration. You can introduce new implem
 
 ## The Cost of Abstraction
 
-Like any architectural decision, protocol-driven design involves trade-offs. The abstraction layer adds some complexity—you need to understand both the protocol interface and the specific implementations you're using. There's also a small performance overhead from the indirection, though in practice this is negligible compared to the cost of operations like language model inference.
+Like any architectural decision, protocol-driven design involves trade-offs. The abstraction layer adds some complexity, you need to understand both the protocol interface and the specific implementations you're using. There's also a small performance overhead from the indirection, though in practice this is negligible compared to the cost of operations like language model inference.
 
 The bigger cost is conceptual: developers need to think in terms of interfaces and implementations rather than concrete objects. This requires a shift in mindset, but it's a shift that pays dividends as systems grow in complexity.
 
@@ -74,9 +74,9 @@ Xaibo's core protocols form a coherent ecosystem that covers the essential aspec
 
 - **Communication protocols** ([`TextMessageHandlerProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/message_handlers.py), [`ResponseProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/response.py)) handle interaction with users
 - **Cognitive protocols** ([`LLMProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/llm.py), [`MemoryProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/memory.py)) manage reasoning and knowledge
-- **Action protocols** ([`ToolsProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py)) enable interaction with external systems
-- **Coordination protocols** ([`ConversationProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/conversation.py)) manage state and flow
+- **Action protocols** ([`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py)) enable interaction with external systems
+- **Coordination protocols** ([`ConversationHistoryProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/conversation.py)) manage state and flow
 
 This ecosystem provides a complete foundation for building AI agents while remaining open to extension and modification. New protocols can be added for emerging capabilities, and existing protocols can evolve to support new patterns.
 
-The protocol-driven architecture is more than just a technical choice—it's a philosophy that prioritizes flexibility, testability, and long-term maintainability over short-term convenience. It reflects the recognition that AI systems, like all complex software, benefit from careful architectural planning and clean abstractions.
+The protocol-driven architecture is more than just a technical choice, it's a philosophy that prioritizes flexibility, testability, and long-term maintainability over short-term convenience. It reflects the recognition that AI systems, like all complex software, benefit from careful architectural planning and clean abstractions.

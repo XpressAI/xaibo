@@ -1,18 +1,18 @@
 # Why Xaibo Chose Modularity Over Monolithic Design
 
-The decision to build Xaibo as a modular framework rather than a monolithic system represents a fundamental philosophical choice about how complex software should be structured. This choice affects every aspect of the framework, from how components are designed to how systems evolve over time. Understanding why modularity was chosen—and what alternatives were rejected—illuminates the deeper principles that guide Xaibo's architecture.
+The decision to build Xaibo as a modular framework rather than a monolithic system represents a fundamental philosophical choice about how complex software should be structured. This choice affects every aspect of the framework, from how components are designed to how systems evolve over time. Understanding why modularity was chosen, and what alternatives were rejected, illuminates the deeper principles that guide Xaibo's architecture.
 
 ## The Monolithic Alternative
 
 To understand why Xaibo chose modularity, it's helpful to consider what a monolithic AI agent framework might look like. Such a framework would provide a single, integrated solution that handles all aspects of agent behavior: language model integration, tool execution, memory management, and user interaction would all be built into a unified system.
 
-This monolithic approach has some appealing characteristics. It's conceptually simpler—there's one system to understand rather than many interacting components. It can be more efficient—direct function calls are faster than protocol-mediated interactions. It's easier to optimize—the entire system can be tuned as a single unit.
+This monolithic approach has some appealing characteristics. It's conceptually simpler, there's one system to understand rather than many interacting components. It can be more efficient, direct function calls are faster than protocol-mediated interactions. It's easier to optimize, the entire system can be tuned as a single unit.
 
 Many successful AI frameworks have taken this approach. They provide comprehensive solutions that work well out of the box, with minimal configuration required. For simple use cases or rapid prototyping, this can be exactly what's needed.
 
 ## The Limits of Monoliths
 
-However, monolithic systems have fundamental limitations that become apparent as requirements grow in complexity. These limitations aren't just technical—they're architectural and organizational.
+However, monolithic systems have fundamental limitations that become apparent as requirements grow in complexity. These limitations aren't just technical, they're architectural and organizational.
 
 **Coupling and Dependencies**: In a monolithic system, components become tightly coupled over time. The language model integration might depend on specific memory formats, the tool execution system might assume particular response structures, and the user interface might be tied to specific orchestration patterns. These dependencies make it difficult to change any part of the system without affecting others.
 
@@ -28,7 +28,7 @@ Xaibo's modular approach addresses these limitations by decomposing the system i
 
 **Independent Evolution**: Modules can evolve independently as long as they maintain their protocol contracts. A new LLM provider can be added without affecting memory management. A more efficient vector index can be swapped in without changing tool execution logic.
 
-**Technology Flexibility**: The modular approach enables mixing and matching technologies. You can use OpenAI for language generation, local embeddings for memory, and cloud services for tool execution—all within the same agent.
+**Technology Flexibility**: The modular approach enables mixing and matching technologies. You can use OpenAI for language generation, local embeddings for memory, and cloud services for tool execution, all within the same agent.
 
 **Focused Testing**: Each module can be tested in isolation using mock implementations of its dependencies. This makes tests faster, more reliable, and easier to understand. You can test orchestration logic without real language models, or memory management without external databases.
 
@@ -36,7 +36,7 @@ Xaibo's modular approach addresses these limitations by decomposing the system i
 
 ## The Cost of Modularity
 
-Modularity isn't free—it comes with costs that must be weighed against its benefits. Understanding these costs helps explain why modularity isn't always the right choice, and why Xaibo's particular approach to modularity is designed to minimize these costs.
+Modularity isn't free, it comes with costs that must be weighed against its benefits. Understanding these costs helps explain why modularity isn't always the right choice, and why Xaibo's particular approach to modularity is designed to minimize these costs.
 
 **Conceptual Overhead**: Modular systems require understanding multiple components and their interactions rather than a single unified system. Developers need to think about protocols, dependencies, and composition patterns. This conceptual overhead can be significant, especially for newcomers to the framework.
 
@@ -56,7 +56,7 @@ Xaibo's approach to modularity is designed to maximize the benefits while minimi
 
 **Transparent Observability**: The proxy system provides comprehensive visibility into component interactions without requiring explicit instrumentation. This makes debugging modular systems easier by providing automatic insight into how components interact.
 
-**Comprehensive Testing Support**: The framework's testing support makes it easy to create mock implementations and test components in isolation. This addresses one of the traditional challenges of modular systems—ensuring that components work correctly both individually and in composition.
+**Comprehensive Testing Support**: The framework's testing support makes it easy to create mock implementations and test components in isolation. This addresses one of the traditional challenges of modular systems, ensuring that components work correctly both individually and in composition.
 
 ## Modularity Patterns in Xaibo
 
@@ -114,7 +114,7 @@ The modular approach reflects several important principles:
 
 **Single Responsibility**: Each module has one reason to change, reducing the risk that changes in one area will affect others.
 
-These principles aren't just academic concepts—they have practical implications for how systems behave over time. Modular systems tend to be more maintainable, more testable, and more adaptable to changing requirements.
+These principles aren't just academic concepts, they have practical implications for how systems behave over time. Modular systems tend to be more maintainable, more testable, and more adaptable to changing requirements.
 
 ## The Future of Modular AI Systems
 

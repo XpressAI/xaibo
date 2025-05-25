@@ -29,7 +29,7 @@ Before starting, make sure you have:
 
 ## Tutorial Structure
 
-This tutorial is organized into three progressive lessons:
+This tutorial is organized into four progressive lessons:
 
 ### [1. Getting Started](getting-started.md)
 Your first steps with Xaibo. You'll install the framework, create a new project, and run your first agent. **Start here** if you're new to Xaibo.
@@ -39,6 +39,9 @@ Learn how to create custom tools that give your agent new capabilities. You'll b
 
 ### [3. Understanding Protocols](understanding-protocols.md)
 Discover how Xaibo's protocol-based architecture enables flexible, modular agent design. You'll learn to swap components and understand the framework's power.
+
+### [4. Testing Agents](testing-agents.md)
+Master testing AI agents with dependency injection and event capture. Learn to replace components with test doubles, verify agent behavior, and build reliable test suites for complex agent interactions.
 
 ## Learning Approach
 

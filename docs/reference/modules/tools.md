@@ -294,110 +294,259 @@ exchange:
 - **Provider Routing**: Routes tool execution to correct provider
 - **Unified Interface**: Presents single interface for all tools
 
-## OneshotToolProvider
+## OneShotTools
 
-Executes tools once and caches results.
+Provides LLM-based tools defined with conversation templates and parameter injection.
 
 **Source**: [`src/xaibo/primitives/modules/tools/oneshot.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/tools/oneshot.py)
 
-**Module Path**: `xaibo.primitives.modules.tools.OneshotToolProvider`
+**Module Path**: `xaibo.primitives.modules.tools.OneShotTools`
 
 **Dependencies**: None
 
-**Protocols**: Provides [`ToolProviderProtocol`](../protocols/tools.md), Uses [`ToolProviderProtocol`](../protocols/tools.md)
+**Protocols**: Provides [`ToolProviderProtocol`](../protocols/tools.md), Uses [`LLMProtocol`](../protocols/llm.md)
 
 ### Configuration
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `cache_duration` | `int` | `3600` | Cache duration in seconds |
-| `max_cache_size` | `int` | `1000` | Maximum number of cached results |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `tools` | `List[OneShotTool]` | List of one-shot tool definitions |
 
 ### Constructor Dependencies
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `provider` | `ToolProviderProtocol` | Underlying tool provider |
+| `llm` | `LLMProtocol` | LLM provider for tool execution |
+
+### Tool Definition Structure
+
+Each tool in the `tools` list requires:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `str` | Unique tool identifier |
+| `description` | `str` | Tool description for LLM context |
+| `parameters` | `List[OneShotToolParameter]` | Input parameters |
+| `returns` | `OneShotToolReturn` | Return type specification |
+| `conversation` | `List[OneShotToolConversationEntry]` | Conversation template |
+
+### Parameter Definition
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `str` | Parameter name |
+| `type` | `str` | Parameter type (string, integer, etc.) |
+| `description` | `str` | Parameter description |
+
+### Return Type Definition
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `str` | Expected return type |
+| `description` | `str` | Return value description |
+
+### Conversation Entry Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `role` | `LLMRole` | Message role (user, assistant, system) |
+| `message` | `List[OneShotToolConversationMessage]` | Message content |
+
+### Message Types
+
+| Type | Description | Fields |
+|------|-------------|--------|
+| `text` | Text content with parameter injection | `text` |
+| `image_url` | Image content from URL or file path | `url` |
+
+### Parameter Injection
+
+Parameters are injected into conversation templates using the syntax `$$params.parameter_name$$`:
+
+```yaml
+conversation:
+  - role: user
+    message:
+      - type: text
+        text: "Analyze this image: $$params.image_path$$"
+      - type: image_url
+        url: "$$params.image_path$$"
+```
 
 ### Example Configuration
 
 ```yaml
 modules:
-  - module: xaibo.primitives.modules.tools.PythonToolProvider
-    id: base-tools
+  - module: xaibo.primitives.modules.llm.OpenAIProvider
+    id: vision-llm
     config:
-      tool_packages: [tools.expensive_operations]
+      model: "gpt-4.1"
   
-  - module: xaibo.primitives.modules.tools.OneshotToolProvider
-    id: cached-tools
+  - module: xaibo.primitives.modules.tools.OneShotTools
+    id: vision-tools
     config:
-      cache_duration: 1800  # 30 minutes
-      max_cache_size: 500
+      tools:
+        - name: extract_text_from_image
+          description: "Extract text content from an image using OCR"
+          parameters:
+            - name: image_path
+              type: string
+              description: "Path to the image file"
+          returns:
+            type: string
+            description: "Extracted text content"
+          conversation:
+            - role: user
+              message:
+                - type: text
+                  text: "Please extract all text from this image and return it as plain text:"
+                - type: image_url
+                  url: "$$params.image_path$$"
+        
+        - name: analyze_chart_data
+          description: "Extract structured data from charts and graphs"
+          parameters:
+            - name: chart_image
+              type: string
+              description: "Path to chart image file"
+            - name: data_format
+              type: string
+              description: "Desired output format (json, csv, table)"
+          returns:
+            type: string
+            description: "Structured data in requested format"
+          conversation:
+            - role: user
+              message:
+                - type: text
+                  text: "Analyze this chart and extract the data in $$params.data_format$$ format:"
+                - type: image_url
+                  url: "$$params.chart_image$$"
 
 exchange:
-  - module: cached-tools
+  - module: vision-tools
     protocol: ToolProviderProtocol
-    provider: base-tools
+    provider: vision-llm
 ```
+
+### Use Cases
+
+- **OCR Processing**: Extract text from images using vision-capable LLMs
+- **Document Analysis**: Analyze document structure and content
+- **Data Extraction**: Extract structured data from charts, tables, forms
+- **Image Classification**: Classify images into categories
+- **Content Moderation**: Analyze images for policy compliance
+- **Visual Question Answering**: Answer questions about image content
 
 ### Features
 
-- **Result Caching**: Caches tool execution results
-- **TTL Support**: Configurable time-to-live for cache entries
-- **Memory Management**: LRU eviction for cache size limits
-- **Cache Keys**: Intelligent cache key generation
+- **Template-Based**: Define tools using conversation templates
+- **Parameter Injection**: Dynamic parameter substitution in prompts
+- **Multi-Modal Support**: Supports both text and image inputs
+- **Vision Integration**: Works with vision-capable LLMs
+- **File Path Handling**: Automatic conversion of file paths to base64 data URIs
+- **Flexible Prompting**: Full control over LLM conversation structure
 
-## NoFunctionCallingAdapter
+## TextBasedToolCallAdapter
 
-Adapts tool providers for LLMs without native function calling support.
+Wraps LLM providers to enable tool calling for LLMs without native function calling support by converting tool definitions to text prompts and parsing tool calls from response content.
 
 **Source**: [`src/xaibo/primitives/modules/tools/no_function_calling_adapter.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/tools/no_function_calling_adapter.py)
 
-**Module Path**: `xaibo.primitives.modules.tools.NoFunctionCallingAdapter`
+**Module Path**: `xaibo.primitives.modules.tools.TextBasedToolCallAdapter`
 
 **Dependencies**: None
 
-**Protocols**: Provides [`ToolProviderProtocol`](../protocols/tools.md), Uses [`ToolProviderProtocol`](../protocols/tools.md)
+**Protocols**: Provides [`LLMProtocol`](../protocols/llm.md), Uses [`LLMProtocol`](../protocols/llm.md)
 
 ### Configuration
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `tool_format` | `str` | `"json"` | Format for tool descriptions ("json", "xml", "markdown") |
-| `include_examples` | `bool` | `True` | Include usage examples in descriptions |
+| `config` | `dict` | `{}` | Optional configuration dictionary (currently unused) |
 
 ### Constructor Dependencies
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `provider` | `ToolProviderProtocol` | Underlying tool provider |
+| `llm` | `LLMProtocol` | The underlying LLM provider to wrap |
+
+### Tool Call Format
+
+The adapter instructs LLMs to use a specific text format for tool calls:
+
+```
+TOOL: tool_name {"parameter": "value", "other_param": 123}
+```
 
 ### Example Configuration
 
 ```yaml
 modules:
-  - module: xaibo.primitives.modules.tools.PythonToolProvider
-    id: base-tools
+  - module: xaibo.primitives.modules.llm.OpenAIProvider
+    id: base-llm
     config:
-      tool_packages: [tools.weather]
+      model: "gpt-3.5-turbo"
   
-  - module: xaibo.primitives.modules.tools.NoFunctionCallingAdapter
-    id: text-tools
-    config:
-      tool_format: "markdown"
-      include_examples: true
+  - module: xaibo.primitives.modules.tools.TextBasedToolCallAdapter
+    id: text-based-llm
 
 exchange:
-  - module: text-tools
-    protocol: ToolProviderProtocol
-    provider: base-tools
+  - module: text-based-llm
+    protocol: LLMProtocol
+    provider: base-llm
 ```
+
+### Tool Prompt Generation
+
+The adapter automatically generates tool descriptions and injects them into the conversation. The format includes:
+
+- Tool name and description
+- Parameter details with type and requirement information
+- Usage instructions with the "TOOL:" prefix format
+- Example usage
+
+Example generated prompt:
+```
+Available tools:
+
+get_weather: Get the current weather in a given location
+Parameters:
+  - location (required): The city and state, e.g. San Francisco, CA
+  - unit: The temperature unit to use (celsius or fahrenheit)
+
+To use a tool, write TOOL: followed by the tool name and JSON arguments on a single line.
+Whenever you say 'I will now...' , you must follow that up with the appropriate TOOL: invocation.
+Example: TOOL: get_weather {"location": "San Francisco, CA"}
+```
+
+### Tool Call Parsing
+
+The adapter parses tool calls from LLM responses by:
+
+1. Scanning response content line by line for "TOOL:" prefix
+2. Extracting tool name and JSON arguments
+3. Creating [`LLMFunctionCall`](../protocols/llm.md) objects with unique IDs
+4. Handling malformed JSON by falling back to raw input
+5. Removing tool call lines from the final response content
+
+### Message Processing
+
+The adapter modifies input messages by:
+
+- Adding tool descriptions to existing system messages
+- Creating a new system message if none exists
+- Preserving all other message content and metadata
+- Removing function definitions from [`LLMOptions`](../protocols/llm.md) to avoid duplication
 
 ### Features
 
-- **Text-Based Tools**: Converts tools to text descriptions
-- **Multiple Formats**: Supports JSON, XML, and Markdown formats
-- **Usage Examples**: Generates example usage for each tool
+- **Text-Based Tool Calling**: Converts function calling to text-based instructions
+- **Automatic Tool Prompt Injection**: Adds tool descriptions to system messages
+- **Tool Call Parsing**: Extracts tool calls from LLM responses using "TOOL:" prefix
+- **Streaming Support**: Supports both regular and streaming generation modes (note: tool call detection not supported in streaming)
+- **Error Handling**: Gracefully handles malformed JSON in tool arguments
+- **Content Cleaning**: Removes tool call lines from final response content
 - **LLM Integration**: Works with LLMs that don't support function calling
 
 ## Common Configuration Patterns
@@ -434,25 +583,35 @@ exchange:
     provider: [python-tools, mcp-tools]
 ```
 
-### Cached Expensive Operations
+### LLM-Based Vision Tools
 
 ```yaml
 modules:
-  - module: xaibo.primitives.modules.tools.PythonToolProvider
-    id: expensive-tools
+  - module: xaibo.primitives.modules.llm.OpenAIProvider
+    id: vision-llm
     config:
-      tool_packages: [tools.ai_analysis, tools.data_processing]
+      model: "gpt-4.1"
   
-  - module: xaibo.primitives.modules.tools.OneshotToolProvider
-    id: cached-expensive-tools
+  - module: xaibo.primitives.modules.tools.OneShotTools
+    id: vision-tools
     config:
-      cache_duration: 3600  # 1 hour
-      max_cache_size: 100
-
-exchange:
-  - module: cached-expensive-tools
-    protocol: ToolProviderProtocol
-    provider: expensive-tools
+      tools:
+        - name: document_ocr
+          description: "Extract text from document images"
+          parameters:
+            - name: document_path
+              type: string
+              description: "Path to document image"
+          returns:
+            type: string
+            description: "Extracted text content"
+          conversation:
+            - role: user
+              message:
+                - type: text
+                  text: "Extract all text from this document:"
+                - type: image_url
+                  url: "$$params.document_path$$"
 ```
 
 ### Development vs Production Tools

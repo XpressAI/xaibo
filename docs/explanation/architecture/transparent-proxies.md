@@ -1,12 +1,12 @@
 # How Transparent Proxies Enable Observability
 
-One of Xaibo's most distinctive features is its transparent proxy system—a "two-way mirror" that provides complete visibility into your agent's operations without requiring any changes to your code. This system represents a fundamental shift in how observability is approached in software systems, moving from explicit instrumentation to automatic, comprehensive monitoring.
+One of Xaibo's most distinctive features is its transparent proxy system, a "two-way mirror" that provides complete visibility into your agent's operations without requiring any changes to your code. This system represents a fundamental shift in how observability is approached in software systems, moving from explicit instrumentation to automatic, comprehensive monitoring.
 
 ## The Observability Challenge in AI Systems
 
 AI systems present unique observability challenges. Unlike traditional software where you can predict execution paths and identify key metrics in advance, AI agents are inherently non-deterministic. They make decisions based on complex reasoning processes, interact with external services in unpredictable ways, and often exhibit emergent behaviors that weren't explicitly programmed.
 
-Traditional approaches to observability require developers to manually instrument their code—adding logging statements, metrics collection, and tracing calls throughout the application. This approach has several problems:
+Traditional approaches to observability require developers to manually instrument their code, adding logging statements, metrics collection, and tracing calls throughout the application. This approach has several problems:
 
 **Incomplete coverage**: Developers must remember to instrument every important operation, and they often miss edge cases or forget to update instrumentation when code changes.
 
@@ -18,13 +18,13 @@ Traditional approaches to observability require developers to manually instrumen
 
 ## The Proxy Pattern
 
-Xaibo solves these problems using the proxy pattern—a design pattern where one object acts as a placeholder or surrogate for another object. In Xaibo's case, every component is automatically wrapped in a [`Proxy`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/exchange.py) that intercepts all method calls and provides observability without the component knowing it's being observed.
+Xaibo solves these problems using the proxy pattern, a design pattern where one object acts as a placeholder or surrogate for another object. In Xaibo's case, every component is automatically wrapped in a [`Proxy`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/exchange.py) that intercepts all method calls and provides observability without the component knowing it's being observed.
 
 When you request a module from Xaibo's exchange system, you don't get the module directly. Instead, you get a proxy that forwards all operations to the real module while capturing detailed information about every interaction:
 
 ```python
 # When you call this...
-response = await llm.generate_response(conversation)
+response = await llm.generate(messages, options)
 
 # The proxy intercepts the call, captures timing and parameters,
 # forwards it to the real LLM, captures the response,
@@ -38,12 +38,16 @@ This interception is completely transparent to both the caller and the called co
 The proxy system captures far more information than traditional logging approaches. For every method call, Xaibo records:
 
 **Call details**: Method name, parameters, timestamp, and unique call identifier
+
 **Execution context**: Which module called which other module, creating a complete call graph
+
 **Timing information**: Precise timing for every operation, enabling performance analysis
+
 **Results and exceptions**: Complete response data and any exceptions that occurred
+
 **Relationship mapping**: How different components interact with each other over time
 
-This data is emitted as structured events through Xaibo's event system, where it can be consumed by various listeners for different purposes—debugging, performance monitoring, test case generation, or audit trails.
+This data is emitted as structured events through Xaibo's event system, where it can be consumed by various listeners for different purposes, debugging, performance monitoring, test case generation, or audit trails.
 
 ## The Two-Way Mirror Metaphor
 
@@ -57,7 +61,7 @@ This transparency is crucial for several reasons:
 
 **Zero performance impact when not needed**: Proxies can be disabled entirely for production deployments where observability isn't needed.
 
-**Complete coverage**: Nothing can hide from the proxy system—every interaction is captured.
+**Complete coverage**: Nothing can hide from the proxy system, every interaction is captured.
 
 ## Method-Level Granularity
 
@@ -66,6 +70,7 @@ The proxy system operates at the method level, which provides the right balance 
 Each method call gets wrapped in a [`MethodProxy`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/exchange.py) that handles the actual interception and event emission. This method-level approach means that complex operations are automatically broken down into their constituent parts, making it easy to understand how high-level behaviors emerge from low-level interactions.
 
 For example, when an orchestrator processes a user message, the proxy system automatically captures:
+
 - The initial message handling
 - LLM calls for reasoning
 - Tool executions
@@ -108,7 +113,7 @@ Traditional observability approaches in software systems typically fall into sev
 
 **Profiling**: Detailed analysis of code execution for performance optimization. Very detailed but typically used only during development.
 
-Xaibo's proxy system combines the benefits of all these approaches while avoiding their main drawbacks. It provides the detail of logging, the quantitative data of metrics, the flow tracking of tracing, and the comprehensive coverage of profiling—all without requiring explicit instrumentation.
+Xaibo's proxy system combines the benefits of all these approaches while avoiding their main drawbacks. It provides the detail of logging, the quantitative data of metrics, the flow tracking of tracing, and the comprehensive coverage of profiling, all without requiring explicit instrumentation.
 
 ## The Cost of Transparency
 

@@ -19,35 +19,49 @@ The root configuration object for defining an agent.
 
 ### Methods
 
+---
+
 #### `load_directory(directory: str) -> Dict[str, AgentConfig]`
 
 Load all agent configurations from a directory recursively.
 
 **Parameters:**
+
 - `directory` (str, required): Path to directory containing YAML agent configurations
 
 **Returns:**
+
 - `Dict[str, AgentConfig]`: Dictionary mapping file paths to AgentConfig instances
 
 **Raises:**
+
 - `ValueError`: If any YAML files cannot be parsed as valid agent configs
+
+---
 
 #### `from_yaml(yaml_str: str) -> AgentConfig`
 
 Load an AgentConfig from a YAML string.
 
 **Parameters:**
+
 - `yaml_str` (str, required): YAML string containing agent configuration
 
 **Returns:**
+
 - `AgentConfig`: Parsed agent configuration
+
+---
 
 #### `to_yaml() -> str`
 
 Convert this AgentConfig to YAML string format.
 
 **Returns:**
+
 - `str`: YAML string representation of this config
+
+---
 
 ## ModuleConfig
 

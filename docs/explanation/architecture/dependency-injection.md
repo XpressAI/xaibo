@@ -1,6 +1,6 @@
 # Understanding Dependency Injection in Xaibo
 
-Dependency injection is one of those concepts that sounds more complicated than it actually is. At its core, it's about making dependencies explicit rather than hidden, and letting a framework handle the tedious work of wiring components together. In Xaibo, dependency injection isn't just a convenience—it's fundamental to how the framework enables modularity, testability, and flexibility.
+Dependency injection is one of those concepts that sounds more complicated than it actually is. At its core, it's about making dependencies explicit rather than hidden, and letting a framework handle the tedious work of wiring components together. In Xaibo, dependency injection isn't just a convenience, it's fundamental to how the framework enables modularity, testability, and flexibility.
 
 ## The Problem of Hidden Dependencies
 
@@ -24,14 +24,16 @@ Xaibo takes a different approach. Components declare their dependencies explicit
 
 ```python
 class StressingToolUser:
-    def __init__(self, 
+    def __init__(self,
+                 response: ResponseProtocol,
                  llm: LLMProtocol,
-                 tools: ToolsProtocol = None,
-                 memory: MemoryProtocol = None,
+                 tool_provider: ToolProviderProtocol,
+                 history: ConversationHistoryProtocol,
                  config: dict = None):
+        self.response = response
         self.llm = llm
-        self.tools = tools
-        self.memory = memory
+        self.tool_provider = tool_provider
+        self.history = history
         # ... initialization logic
 ```
 
@@ -108,13 +110,13 @@ exchange = Exchange(
 )
 ```
 
-The orchestrator receives these mock implementations through the same dependency injection mechanism used in production. It doesn't know or care that it's running in a test environment—it just uses whatever implementations it receives.
+The orchestrator receives these mock implementations through the same dependency injection mechanism used in production. It doesn't know or care that it's running in a test environment, it just uses whatever implementations it receives.
 
 This approach makes tests faster, more reliable, and more focused. You can test the orchestrator's logic without depending on external services, network connectivity, or API rate limits.
 
 ## The Inversion of Control
 
-Dependency injection represents a broader principle called "inversion of control." Instead of components controlling their own dependencies, the control is inverted—an external system (the exchange) controls what dependencies each component receives.
+Dependency injection represents a broader principle called "inversion of control." Instead of components controlling their own dependencies, the control is inverted, an external system (the exchange) controls what dependencies each component receives.
 
 This inversion has several benefits:
 
@@ -140,7 +142,7 @@ Xaibo's approach combines the best aspects of these patterns while avoiding thei
 
 ## The Cost of Explicitness
 
-Making dependencies explicit does have costs. Component constructors become more verbose, and you need to understand the exchange system to configure complex dependency relationships. There's also a conceptual overhead—developers need to think about interfaces and implementations rather than just concrete objects.
+Making dependencies explicit does have costs. Component constructors become more verbose, and you need to understand the exchange system to configure complex dependency relationships. There's also a conceptual overhead, developers need to think about interfaces and implementations rather than just concrete objects.
 
 However, these costs are front-loaded. Once you understand the dependency injection pattern, it makes the system more predictable and easier to work with. The explicitness that seems like overhead when writing code becomes invaluable when debugging, testing, or extending the system.
 
@@ -157,7 +159,7 @@ By making these dependencies explicit and injectable, Xaibo enables you to:
 
 ## The Bigger Picture
 
-Dependency injection in Xaibo isn't just a technical pattern—it's part of a broader architectural philosophy that prioritizes explicitness over convenience, flexibility over simplicity, and long-term maintainability over short-term ease of use.
+Dependency injection in Xaibo isn't just a technical pattern, it's part of a broader architectural philosophy that prioritizes explicitness over convenience, flexibility over simplicity, and long-term maintainability over short-term ease of use.
 
 This philosophy recognizes that AI systems, like all complex software, benefit from careful architectural planning. By making dependencies explicit and manageable, Xaibo creates a foundation that can evolve with changing requirements and advancing technology.
 

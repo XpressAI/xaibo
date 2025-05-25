@@ -1,18 +1,18 @@
 # Understanding Xaibo's Event System
 
-Xaibo's event system is the nervous system of the framework—a comprehensive observability layer that captures every interaction between components and makes it available for analysis, debugging, and optimization. Unlike traditional logging or monitoring approaches, Xaibo's event system is built into the framework's core architecture, providing automatic, comprehensive visibility into agent behavior.
+Xaibo's event system is the nervous system of the framework, a comprehensive observability layer that captures every interaction between components and makes it available for analysis, debugging, and optimization. Unlike traditional logging or monitoring approaches, Xaibo's event system is built into the framework's core architecture, providing automatic, comprehensive visibility into agent behavior.
 
 ## The Observability Gap in AI Systems
 
 AI systems present unique observability challenges that traditional software monitoring approaches struggle to address. When a language model generates an unexpected response, when a tool execution fails, or when an agent exhibits emergent behavior, understanding what happened requires more than just logs or metrics.
 
-Traditional observability approaches are designed for predictable, deterministic systems. They assume you know in advance what events are important, what metrics to collect, and what traces to follow. AI systems violate these assumptions—they're inherently non-deterministic, they exhibit complex emergent behaviors, and their most interesting events are often the ones you didn't anticipate.
+Traditional observability approaches are designed for predictable, deterministic systems. They assume you know in advance what events are important, what metrics to collect, and what traces to follow. AI systems violate these assumptions, they're inherently non-deterministic, they exhibit complex emergent behaviors, and their most interesting events are often the ones you didn't anticipate.
 
 Xaibo's event system addresses this gap by capturing everything automatically. Instead of requiring developers to instrument their code with logging statements or metrics collection, the framework automatically emits detailed events for every component interaction. This comprehensive approach ensures that when something unexpected happens, you have the data needed to understand why.
 
 ## Event-Driven Architecture
 
-At its core, Xaibo's event system follows an event-driven architecture pattern. Components don't directly communicate with monitoring systems—instead, they emit events that can be consumed by multiple listeners simultaneously. This decoupling provides tremendous flexibility in how observability data is processed and used.
+At its core, Xaibo's event system follows an event-driven architecture pattern. Components don't directly communicate with monitoring systems, instead, they emit events that can be consumed by multiple listeners simultaneously. This decoupling provides tremendous flexibility in how observability data is processed and used.
 
 The event system is built around the [`Event`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/events.py) model, which captures comprehensive information about each component interaction:
 
@@ -25,7 +25,7 @@ This rich event model enables sophisticated analysis of agent behavior, from sim
 
 ## Automatic Event Generation
 
-The magic of Xaibo's event system lies in its automatic generation. Events are created transparently by the proxy system—every time one component calls a method on another component, the proxy automatically emits events capturing the interaction.
+The magic of Xaibo's event system lies in its automatic generation. Events are created transparently by the proxy system, every time one component calls a method on another component, the proxy automatically emits events capturing the interaction.
 
 This automatic generation has several important properties:
 
@@ -127,7 +127,7 @@ Traditional observability approaches in software systems typically fall into sev
 
 **Profiling tools**: Provide detailed performance information but are typically used only during development and may not capture the full context of operations.
 
-Xaibo's event system combines the benefits of all these approaches while avoiding their main limitations. It provides the detail of application logs, the quantitative data of metrics, the flow tracking of distributed tracing, and the performance insights of profiling—all without requiring explicit instrumentation.
+Xaibo's event system combines the benefits of all these approaches while avoiding their main limitations. It provides the detail of application logs, the quantitative data of metrics, the flow tracking of distributed tracing, and the performance insights of profiling, all without requiring explicit instrumentation.
 
 ## Event System Extensibility
 
@@ -161,4 +161,4 @@ By making observability automatic and comprehensive, Xaibo removes one of the tr
 
 Xaibo's event system reflects a broader philosophy about software observability. Instead of treating observability as an afterthought or add-on, the framework makes it a first-class concern that's built into the architecture from the ground up.
 
-This approach recognizes that in complex systems—and AI systems are inherently complex—understanding what happened is often as important as making it happen in the first place. The event system provides the foundation for this understanding, enabling developers to build systems that are not just functional, but comprehensible and maintainable over time.
+This approach recognizes that in complex systems, and AI systems are inherently complex, understanding what happened is often as important as making it happen in the first place. The event system provides the foundation for this understanding, enabling developers to build systems that are not just functional, but comprehensible and maintainable over time.

@@ -43,7 +43,7 @@ modules:
 Each module implements specific **protocols**:
 
 - **LLM module**: Implements [`LLMProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/llm.py)
-- **Tool provider**: Implements [`ToolsProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py)  
+- **Tool provider**: Implements [`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py)  
 - **Orchestrator**: Implements [`TextMessageHandlerProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/message_handlers.py)
 
 ## Step 2: Experiment with Different LLM Models
@@ -101,6 +101,7 @@ class LLMProtocol:
 ```
 
 Any module that implements this protocol can be used as an LLM, whether it's:
+
 - OpenAI GPT models
 - Anthropic Claude  
 - Google Gemini
@@ -329,21 +330,25 @@ Your agent now has access to tools from both providers! This demonstrates:
 Through your experiments, you've seen how protocols enable:
 
 **🔄 Easy Swapping**
+
 - Changed from GPT-3.5 to GPT-4 without touching other components
 - Switched to mock LLM for testing
 - All tools continued working unchanged
 
 **🧩 Flexible Composition**  
+
 - Added multiple tool providers
 - Connected components through exchanges
 - Mixed and matched implementations
 
 **🧪 Better Testing**
+
 - Used mock LLM for predictable responses
 - Isolated components for testing
 - Verified behavior without external dependencies
 
 **📈 Extensibility**
+
 - Added new tools without changing existing code
 - Created new tool providers easily
 - Extended functionality through configuration
@@ -371,6 +376,7 @@ Xaibo includes several core protocols you can experiment with:
 ```
 
 Each protocol defines a specific interface, enabling you to:
+
 - Choose implementations that fit your needs
 - Test with mock implementations
 - Extend functionality by implementing new modules
@@ -391,21 +397,25 @@ In this lesson, you've discovered:
 Your experiments demonstrate Xaibo's core architectural principles:
 
 **Separation of Concerns**: Each module has a specific responsibility
+
 - LLM modules handle language understanding
 - Tool modules provide capabilities  
 - Orchestrators manage workflow
 
 **Protocol-Based Interfaces**: Modules communicate through standardized protocols
+
 - Clear contracts between components
 - Easy to test and mock
 - Enables component substitution
 
 **Dependency Injection**: Modules declare what they need, not how to get it
+
 - Flexible wiring through exchanges
 - Easy to reconfigure
 - Supports multiple implementations
 
 **Event-Driven Transparency**: All interactions are observable
+
 - Debug UI shows component interactions
 - Performance monitoring built-in
 - Easy to understand agent behavior
@@ -434,6 +444,7 @@ You've completed the Xaibo tutorial! You now understand:
 
 Now that you understand the fundamentals, explore:
 
+- **[Testing Agents](testing-agents.md)**: Learn to test your agents with dependency injection and event capture
 - **[How-to Guides](../how-to/index.md)**: Practical solutions for specific tasks
 - **[Reference Documentation](../reference/index.md)**: Detailed API and configuration reference
 - **[Examples](https://github.com/xpressai/xaibo/tree/main/examples)**: Real-world agent implementations

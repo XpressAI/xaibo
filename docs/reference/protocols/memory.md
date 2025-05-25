@@ -29,14 +29,18 @@ class ChunkingProtocol(Protocol):
 
 ### Methods
 
+---
+
 #### `chunk(text: str) -> List[str]`
 
 Split input text into smaller chunks optimized for embedding.
 
 **Parameters:**
+
 - `text` (`str`, required): Input text to be split into chunks
 
 **Returns:**
+
 - `List[str]`: List of text chunks suitable for embedding
 
 **Example:**
@@ -47,6 +51,8 @@ print(f"Split into {len(chunks)} chunks")
 for i, chunk in enumerate(chunks):
     print(f"Chunk {i}: {chunk[:100]}...")
 ```
+
+---
 
 ## EmbeddingProtocol
 
@@ -72,14 +78,18 @@ class EmbeddingProtocol(Protocol):
 
 ### Methods
 
+---
+
 #### `text_to_embedding(text: str) -> np.ndarray`
 
 Convert text into a vector embedding.
 
 **Parameters:**
+
 - `text` (`str`, required): Input text to embed
 
 **Returns:**
+
 - `np.ndarray`: Vector embedding as NumPy array
 
 **Example:**
@@ -89,14 +99,18 @@ embedding = await embedder.text_to_embedding("Hello world")
 print(f"Embedding shape: {embedding.shape}")  # (384,)
 ```
 
+---
+
 #### `image_to_embedding(image_data: bytes) -> np.ndarray`
 
 Convert image data into a vector embedding.
 
 **Parameters:**
+
 - `image_data` (`bytes`, required): Raw image bytes to embed
 
 **Returns:**
+
 - `np.ndarray`: Vector embedding as NumPy array
 
 **Example:**
@@ -108,14 +122,18 @@ embedding = await embedder.image_to_embedding(image_data)
 print(f"Image embedding shape: {embedding.shape}")
 ```
 
+---
+
 #### `audio_to_embedding(audio_data: bytes) -> np.ndarray`
 
 Convert audio data into a vector embedding.
 
 **Parameters:**
+
 - `audio_data` (`bytes`, required): Raw audio bytes to embed
 
 **Returns:**
+
 - `np.ndarray`: Vector embedding as NumPy array
 
 **Example:**
@@ -126,6 +144,8 @@ with open("audio.wav", "rb") as f:
 embedding = await embedder.audio_to_embedding(audio_data)
 print(f"Audio embedding shape: {embedding.shape}")
 ```
+
+---
 
 ## VectorIndexProtocol
 
@@ -147,11 +167,14 @@ class VectorIndexProtocol(Protocol):
 
 ### Methods
 
+---
+
 #### `add_vectors(vectors: List[np.ndarray], attributes: Optional[List[dict]] = None) -> None`
 
 Add vectors to the index with optional metadata.
 
 **Parameters:**
+
 - `vectors` (`List[np.ndarray]`, required): List of vector embeddings to add to index
 - `attributes` (`Optional[List[dict]]`, optional): Optional list of attribute dictionaries, one per vector
 
@@ -167,15 +190,19 @@ attributes = [
 await vector_index.add_vectors(vectors, attributes)
 ```
 
+---
+
 #### `search(query_vector: np.ndarray, k: int = 10) -> List[VectorSearchResult]`
 
 Search for similar vectors using a query vector.
 
 **Parameters:**
+
 - `query_vector` (`np.ndarray`, required): Vector embedding to search for
 - `k` (`int`, optional): Number of results to return (default: 10)
 
 **Returns:**
+
 - `List[VectorSearchResult]`: List of search results with similarity scores and attributes
 
 **Example:**
@@ -187,6 +214,8 @@ for result in results:
     print(f"ID: {result.vector_id}, Score: {result.similarity_score}")
     print(f"Attributes: {result.attributes}")
 ```
+
+---
 
 ## MemoryProtocol
 
@@ -224,15 +253,19 @@ class MemoryProtocol(Protocol):
 
 ### Methods
 
+---
+
 #### `store_memory(text: str, attributes: Optional[dict] = None) -> str`
 
 Store a new memory with optional metadata.
 
 **Parameters:**
+
 - `text` (`str`, required): Text content to store
 - `attributes` (`Optional[dict]`, optional): Optional metadata attributes
 
 **Returns:**
+
 - `str`: ID of stored memory
 
 **Example:**
@@ -248,14 +281,18 @@ memory_id = await memory.store_memory(
 print(f"Stored memory with ID: {memory_id}")
 ```
 
+---
+
 #### `get_memory(memory_id: str) -> Optional[dict]`
 
 Retrieve a specific memory by its ID.
 
 **Parameters:**
+
 - `memory_id` (`str`, required): ID of memory to retrieve
 
 **Returns:**
+
 - `Optional[dict]`: Memory data if found, None if not found
 
 **Example:**
@@ -268,15 +305,19 @@ else:
     print("Memory not found")
 ```
 
+---
+
 #### `search_memory(query: str, k: int = 10) -> List[MemorySearchResult]`
 
 Search memories using semantic similarity.
 
 **Parameters:**
+
 - `query` (`str`, required): Search query text
 - `k` (`int`, optional): Number of results to return (default: 10)
 
 **Returns:**
+
 - `List[MemorySearchResult]`: List of search results with memory content and similarity scores
 
 **Example:**
@@ -289,11 +330,14 @@ for result in results:
     print(f"Attributes: {result.attributes}")
 ```
 
+---
+
 #### `list_memories() -> List[dict]`
 
 List all stored memories.
 
 **Returns:**
+
 - `List[dict]`: List of all memory entries
 
 **Example:**
@@ -304,14 +348,18 @@ for mem in all_memories:
     print(f"ID: {mem['id']}, Content: {mem['content'][:50]}...")
 ```
 
+---
+
 #### `delete_memory(memory_id: str) -> bool`
 
 Delete a memory by its ID.
 
 **Parameters:**
+
 - `memory_id` (`str`, required): ID of memory to delete
 
 **Returns:**
+
 - `bool`: True if deleted, False if not found
 
 **Example:**
@@ -323,16 +371,20 @@ else:
     print("Memory not found")
 ```
 
+---
+
 #### `update_memory(memory_id: str, text: str, attributes: Optional[dict] = None) -> bool`
 
 Update an existing memory with new content and attributes.
 
 **Parameters:**
+
 - `memory_id` (`str`, required): ID of memory to update
 - `text` (`str`, required): New text content
 - `attributes` (`Optional[dict]`, optional): Optional new metadata attributes
 
 **Returns:**
+
 - `bool`: True if updated, False if not found
 
 **Example:**
@@ -347,6 +399,8 @@ if updated:
 else:
     print("Memory not found")
 ```
+
+---
 
 ## Data Models
 

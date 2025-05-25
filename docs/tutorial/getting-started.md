@@ -148,6 +148,7 @@ Server running on http://127.0.0.1:9001
 ```
 
 Your agent is now running! The server provides:
+
 - A **debug UI** at http://127.0.0.1:9000 for visualizing agent operations
 - An **OpenAI-compatible API** at http://127.0.0.1:9001/openai for sending messages
 
@@ -181,6 +182,7 @@ You should see a response like:
 ```
 
 **Congratulations!** Your agent successfully:
+
 1. Received your message
 2. Decided to use the `current_time` tool
 3. Called the tool function
@@ -225,6 +227,7 @@ curl -X POST http://127.0.0.1:9001/openai/chat/completions \
 ```
 
 Notice how your agent:
+
 - Uses the tool when you ask for time
 - Answers math questions directly using the LLM
 - Provides natural, conversational responses

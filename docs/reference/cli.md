@@ -58,18 +58,10 @@ Start the development server with debug UI and API adapters.
 uv run xaibo dev [options]
 ```
 
-### Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--host` | `str` | `127.0.0.1` | Host address to bind the server |
-| `--port` | `int` | `9001` | Port number for the server |
-| `--agent-dir` | `str` | `./agents` | Directory containing agent configurations |
-| `--debug` | `bool` | `true` | Enable debug UI and event tracing |
-
 ### Default Adapters
 
 The development server automatically includes:
+
 - **OpenAI API Adapter**: Compatible with OpenAI Chat Completions API
 - **Debug UI Adapter**: Web interface for visualizing agent operations
 - **Event Tracing**: Automatic capture of all agent interactions
@@ -79,15 +71,6 @@ The development server automatically includes:
 ```bash
 # Start development server with defaults
 uv run xaibo dev
-
-# Start on different port
-uv run xaibo dev --port 8080
-
-# Start with custom agent directory
-uv run xaibo dev --agent-dir ./my-agents
-
-# Start without debug UI
-uv run xaibo dev --debug false
 ```
 
 ## python -m xaibo.server.web
@@ -146,60 +129,6 @@ python -m xaibo.server.web \
   --adapter xaibo.server.adapters.McpApiAdapter
 ```
 
-## Environment Variables
-
-Xaibo respects standard environment variables for API keys and configuration:
-
-### LLM Provider Keys
-
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | OpenAI API key |
-| `ANTHROPIC_API_KEY` | Anthropic API key |
-| `GOOGLE_API_KEY` | Google Gemini API key |
-| `AWS_ACCESS_KEY_ID` | AWS access key for Bedrock |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key for Bedrock |
-
-### Server Configuration
-
-| Variable | Description |
-|----------|-------------|
-| `XAIBO_HOST` | Default host for server binding |
-| `XAIBO_PORT` | Default port for server |
-| `XAIBO_AGENT_DIR` | Default agent configuration directory |
-
-### Example .env File
-
-```bash
-# LLM API Keys
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GOOGLE_API_KEY=AIza...
-
-# AWS Credentials for Bedrock
-AWS_ACCESS_KEY_ID=AKIA...
-AWS_SECRET_ACCESS_KEY=...
-AWS_DEFAULT_REGION=us-east-1
-
-# Server Configuration
-XAIBO_HOST=0.0.0.0
-XAIBO_PORT=8000
-XAIBO_AGENT_DIR=./agents
-
-# Debug Settings
-LOG_LEVEL=INFO
-```
-
-## Exit Codes
-
-| Code | Description |
-|------|-------------|
-| `0` | Success |
-| `1` | General error |
-| `2` | Configuration error |
-| `3` | Import error |
-| `4` | Network error |
-
 ## Common Usage Patterns
 
 ### Development Workflow
@@ -245,3 +174,4 @@ python -m xaibo.server.web \
 curl -X POST http://localhost:8000/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
+```

@@ -13,7 +13,7 @@ Provides OpenAI Chat Completions API compatibility for Xaibo agents.
 ### Constructor
 
 ```python
-OpenAiApiAdapter(xaibo: Xaibo)
+OpenAiApiAdapter(xaibo: Xaibo, streaming_timeout=10)
 ```
 
 #### Parameters
@@ -21,8 +21,29 @@ OpenAiApiAdapter(xaibo: Xaibo)
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `xaibo` | `Xaibo` | Xaibo instance containing registered agents |
+| `streaming_timeout` | `int` | Timeout in seconds for streaming responses (default: 10) |
 
 ### API Endpoints
+
+#### GET `/openai/models`
+
+Returns list of available agents as OpenAI-compatible models.
+
+**Response Format:**
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "my-agent",
+      "object": "model",
+      "created": 0,
+      "owned_by": "organization-owner"
+    }
+  ]
+}
+```
 
 #### POST `/openai/chat/completions`
 
@@ -55,14 +76,14 @@ OpenAI-compatible chat completions endpoint.
 |-----------|------|----------|-------------|
 | `model` | `str` | Yes | Xaibo agent ID to use |
 | `messages` | `List[dict]` | Yes | Conversation messages |
-| `temperature` | `float` | No | Sampling temperature (0.0-2.0) |
-| `max_tokens` | `int` | No | Maximum tokens to generate |
-| `top_p` | `float` | No | Nucleus sampling parameter |
 | `stream` | `bool` | No | Enable streaming responses |
-| `stop` | `List[str]` | No | Stop sequences |
-| `presence_penalty` | `float` | No | Presence penalty (-2.0 to 2.0) |
-| `frequency_penalty` | `float` | No | Frequency penalty (-2.0 to 2.0) |
-| `user` | `str` | No | User identifier |
+| `temperature` | `float` | No | *Not yet implemented* - Sampling temperature (0.0-2.0) |
+| `max_tokens` | `int` | No | *Not yet implemented* - Maximum tokens to generate |
+| `top_p` | `float` | No | *Not yet implemented* - Nucleus sampling parameter |
+| `stop` | `List[str]` | No | *Not yet implemented* - Stop sequences |
+| `presence_penalty` | `float` | No | *Not yet implemented* - Presence penalty (-2.0 to 2.0) |
+| `frequency_penalty` | `float` | No | *Not yet implemented* - Frequency penalty (-2.0 to 2.0) |
+| `user` | `str` | No | *Not yet implemented* - User identifier |
 
 **Response Format (Non-Streaming):**
 
@@ -83,9 +104,9 @@ OpenAI-compatible chat completions endpoint.
     }
   ],
   "usage": {
-    "prompt_tokens": 12,
-    "completion_tokens": 15,
-    "total_tokens": 27
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
   }
 }
 ```
@@ -106,6 +127,8 @@ data: [DONE]
 
 #### Text Messages
 
+Currently only text messages are supported:
+
 ```json
 {
   "role": "user",
@@ -113,7 +136,9 @@ data: [DONE]
 }
 ```
 
-#### Image Messages
+#### Image Messages (*Planned*)
+
+Image message support is planned for future releases:
 
 ```json
 {
@@ -133,7 +158,9 @@ data: [DONE]
 }
 ```
 
-#### Function Calls
+#### Function Calls (*Planned*)
+
+Function call support is planned for future releases:
 
 ```json
 {
@@ -148,45 +175,17 @@ data: [DONE]
 
 ### Error Handling
 
-The adapter returns OpenAI-compatible error responses:
+Basic error handling is implemented. Full OpenAI-compatible error response format and specific error codes are not yet fully implemented.
 
 #### Agent Not Found
 
 ```json
 {
-  "error": {
-    "message": "The model 'invalid-agent' does not exist",
-    "type": "invalid_request_error",
-    "param": "model",
-    "code": "model_not_found"
-  }
+  "detail": "model not found"
 }
 ```
 
-#### Invalid Request
-
-```json
-{
-  "error": {
-    "message": "Missing required parameter: 'messages'",
-    "type": "invalid_request_error",
-    "param": "messages",
-    "code": "missing_required_parameter"
-  }
-}
-```
-
-#### Rate Limiting
-
-```json
-{
-  "error": {
-    "message": "Rate limit exceeded",
-    "type": "rate_limit_error",
-    "code": "rate_limit_exceeded"
-  }
-}
-```
+**Note**: Token counting is not yet implemented, so the `usage` field in responses currently returns zeros. OpenAI-compatible error response format and specific error codes are planned for future releases.
 
 ### Example Usage
 
@@ -261,7 +260,7 @@ McpApiAdapter(xaibo: Xaibo)
 
 ### API Endpoints
 
-#### POST `/mcp`
+#### POST `/mcp/`
 
 Main MCP JSON-RPC 2.0 endpoint for all protocol communication.
 
@@ -477,7 +476,7 @@ For agents with multiple entry points, tools are named as `agent_id.entry_point`
 
 ```bash
 # Initialize connection
-curl -X POST http://localhost:8000/mcp \
+curl -X POST http://localhost:8000/mcp/ \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -490,7 +489,7 @@ curl -X POST http://localhost:8000/mcp \
   }'
 
 # List available tools
-curl -X POST http://localhost:8000/mcp \
+curl -X POST http://localhost:8000/mcp/ \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -500,7 +499,7 @@ curl -X POST http://localhost:8000/mcp \
   }'
 
 # Call an agent
-curl -X POST http://localhost:8000/mcp \
+curl -X POST http://localhost:8000/mcp/ \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -535,7 +534,7 @@ class MCPClient:
         }
         
         response = self.session.post(
-            f"{self.base_url}/mcp",
+            f"{self.base_url}/mcp/",
             json=payload,
             headers={"Content-Type": "application/json"}
         )
@@ -597,11 +596,11 @@ UiApiAdapter(xaibo: Xaibo)
 
 #### GET `/`
 
-Serves the debug UI web interface.
+Serves static UI files.
 
-**Response:** HTML page with agent debugging interface
+**Response:** Static files for the web interface
 
-#### POST `/graphql`
+#### POST `/api/ui/graphql`
 
 GraphQL endpoint for querying agent data and execution traces.
 
@@ -638,11 +637,10 @@ GraphQL endpoint for querying agent data and execution traces.
 ```graphql
 type Agent {
   id: String!
-  description: String
-  modules: [Module!]!
-  exchange: [Exchange!]!
 }
 ```
+
+**Note**: Currently only the `id` field is implemented. The `description`, `modules`, and `exchange` fields are planned for future releases.
 
 #### Module Type
 
@@ -667,17 +665,16 @@ type Exchange {
 }
 ```
 
-#### Trace Type
+#### DebugTrace Type
 
 ```graphql
-type Trace {
-  id: String!
-  timestamp: String!
-  agentId: String!
-  eventType: String!
-  data: JSON!
+type DebugTrace {
+  agent_id: String!
+  events: [Event!]!
 }
 ```
+
+**Note**: The `debug_log` query returns `DebugTrace` instead of `Trace`. The `Trace` type is not implemented.
 
 ### Example Queries
 
@@ -685,14 +682,8 @@ type Trace {
 
 ```graphql
 query GetAgents {
-  agents {
+  list_agents {
     id
-    description
-    modules {
-      id
-      module
-      config
-    }
   }
 }
 ```
@@ -700,10 +691,9 @@ query GetAgents {
 #### Get Agent Configuration
 
 ```graphql
-query GetAgent($id: String!) {
-  agent(id: $id) {
+query GetAgentConfig($agentId: String!) {
+  agent_config(agent_id: $agentId) {
     id
-    description
     modules {
       id
       module
@@ -715,22 +705,31 @@ query GetAgent($id: String!) {
       module
       protocol
       provider
-      fieldName
     }
   }
 }
 ```
 
-#### Get Execution Traces
+#### Get Debug Traces
 
 ```graphql
-query GetTraces($agentId: String, $limit: Int) {
-  traces(agentId: $agentId, limit: $limit) {
-    id
-    timestamp
-    agentId
-    eventType
-    data
+query GetDebugLog($agentId: String!) {
+  debug_log(agent_id: $agentId) {
+    agent_id
+    events {
+      agent_id
+      event_name
+      event_type
+      module_id
+      module_class
+      method_name
+      time
+      call_id
+      caller_id
+      arguments
+      result
+      exception
+    }
   }
 }
 ```

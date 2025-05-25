@@ -26,7 +26,7 @@ General-purpose memory system using vector embeddings for semantic search.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `memory_file_path` | `str` | `None` | Path to pickle file for storing memories |
+| `memory_file_path` | `str` | Required | Path to pickle file for storing memories |
 
 ### Example Configuration
 
@@ -144,15 +144,6 @@ Uses Sentence Transformers for text embeddings.
 | `model_name` | `str` | `"all-MiniLM-L6-v2"` | Sentence Transformer model name |
 | `model_kwargs` | `dict` | `{}` | Additional model constructor arguments |
 
-### Popular Models
-
-| Model | Dimensions | Performance | Speed | Description |
-|-------|------------|-------------|-------|-------------|
-| `all-MiniLM-L6-v2` | 384 | Good | Fast | Balanced performance and speed |
-| `all-mpnet-base-v2` | 768 | Best | Medium | Highest quality embeddings |
-| `all-MiniLM-L12-v2` | 384 | Better | Medium | Better than L6, slower |
-| `paraphrase-multilingual-MiniLM-L12-v2` | 384 | Good | Medium | Multilingual support |
-| `multi-qa-MiniLM-L6-cos-v1` | 384 | Good | Fast | Optimized for Q&A |
 
 ### Example Configuration
 
@@ -191,7 +182,7 @@ Leverages Hugging Face models for embeddings with multi-modal support.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `model_name` | `str` | `"sentence-transformers/all-MiniLM-L6-v2"` | Hugging Face model name |
-| `device` | `str` | `"auto"` | Device to run model on |
+| `device` | `str` | `"cuda" if available, else "cpu"` | Device to run model on |
 | `max_length` | `int` | `512` | Maximum sequence length |
 | `pooling_strategy` | `str` | `"mean"` | Token pooling strategy |
 | `audio_sampling_rate` | `int` | `16000` | Audio sampling rate |
@@ -217,7 +208,6 @@ modules:
       device: "cuda"
       max_length: 1024
       pooling_strategy: "mean"
-      audio_sampling_rate: 22050
 ```
 
 ### Features
@@ -244,19 +234,10 @@ Utilizes OpenAI's embedding models.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `model` | `str` | `"text-embedding-ada-002"` | OpenAI embedding model |
-| `api_key` | `str` | `None` | OpenAI API key (falls back to env var) |
+| `api_key` | `str` | `None` | OpenAI API key (falls back to OPENAI_API_KEY env var) |
 | `base_url` | `str` | `"https://api.openai.com/v1"` | OpenAI API base URL |
 | `timeout` | `float` | `60.0` | Request timeout in seconds |
-| `dimensions` | `int` | `None` | Embedding dimensions (for supported models) |
-| `encoding_format` | `str` | `"float"` | Encoding format |
 
-### Available Models
-
-| Model | Dimensions | Max Input | Cost per 1K tokens |
-|-------|------------|-----------|-------------------|
-| `text-embedding-3-large` | 3072 | 8191 | $0.00013 |
-| `text-embedding-3-small` | 1536 | 8191 | $0.00002 |
-| `text-embedding-ada-002` | 1536 | 8191 | $0.00010 |
 
 ### Example Configuration
 
@@ -266,7 +247,6 @@ modules:
     id: embedder
     config:
       model: "text-embedding-3-large"
-      dimensions: 1024  # Reduced dimensions for efficiency
       timeout: 30.0
 ```
 
@@ -293,7 +273,7 @@ Simple vector index using NumPy for storage and retrieval.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `storage_dir` | `str` | `None` | Directory for storing vector and attribute files |
+| `storage_dir` | `str` | Required | Directory for storing vector and attribute files |
 
 ### Example Configuration
 
@@ -311,9 +291,11 @@ The index stores data in the specified directory:
 
 ```
 vector_storage/
-├── vectors.npy          # Vector embeddings
-├── attributes.json      # Metadata attributes
-└── index_metadata.json # Index configuration
+├── vectors/             # Directory containing individual vector files
+│   ├── vector_0.npy     # Individual vector embeddings
+│   ├── vector_1.npy
+│   └── ...
+└── attributes.pkl       # Pickled metadata attributes
 ```
 
 ### Features
@@ -323,74 +305,67 @@ vector_storage/
 - **Cosine Similarity**: Uses cosine similarity for search
 - **Memory Efficient**: Loads vectors on demand
 
-## MemoryProvider
+## MemoryToolProvider
 
-High-level memory provider that combines multiple memory systems.
+Tool provider that exposes memory functionality through tools.
 
 **Source**: [`src/xaibo/primitives/modules/memory/memory_provider.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/memory/memory_provider.py)
 
-**Module Path**: `xaibo.primitives.modules.memory.MemoryProvider`
+**Module Path**: `xaibo.primitives.modules.memory.MemoryToolProvider`
 
 **Dependencies**: None
 
-**Protocols**: Provides [`MemoryProtocol`](../protocols/memory.md), Uses [`MemoryProtocol`](../protocols/memory.md) (list)
+**Protocols**: Provides [`ToolProviderProtocol`](../protocols/tools.md), Uses [`MemoryProtocol`](../protocols/memory.md)
 
 ### Constructor Dependencies
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `memories` | `List[MemoryProtocol]` | List of memory systems to aggregate |
+| `memory_provider` | `MemoryProtocol` | Memory system to expose through tools |
 
 ### Configuration
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `search_strategy` | `str` | `"merge"` | How to combine results from multiple memories |
-| `max_results_per_memory` | `int` | `10` | Maximum results from each memory system |
+| `config` | `dict` | `None` | Optional configuration dictionary |
 
-### Search Strategies
+### Available Tools
 
-| Strategy | Description |
-|----------|-------------|
-| `merge` | Merge and re-rank results from all memories |
-| `round_robin` | Alternate results from each memory |
-| `best_first` | Take best results from highest-scoring memory |
+| Tool Name | Description | Parameters |
+|-----------|-------------|------------|
+| `store_memory` | Store a new memory in the system | `text` (string), `attributes` (object, optional) |
+| `get_memory` | Retrieve a specific memory by ID | `memory_id` (string) |
+| `search_memory` | Search memories semantically using a text query | `query` (string), `k` (integer, default: 10) |
+| `list_memories` | List all stored memories | None |
+| `delete_memory` | Delete a memory by ID | `memory_id` (string) |
+| `update_memory` | Update an existing memory | `memory_id` (string), `text` (string), `attributes` (object, optional) |
 
 ### Example Configuration
 
 ```yaml
 modules:
-  # Short-term memory (recent conversations)
+  # Memory system
   - module: xaibo.primitives.modules.memory.VectorMemory
-    id: short_term_memory
+    id: memory_system
     config:
-      memory_file_path: "./short_term.pkl"
+      memory_file_path: "./memories.pkl"
   
-  # Long-term memory (knowledge base)
-  - module: xaibo.primitives.modules.memory.VectorMemory
-    id: long_term_memory
-    config:
-      memory_file_path: "./long_term.pkl"
-  
-  # Combined memory provider
-  - module: xaibo.primitives.modules.memory.MemoryProvider
-    id: memory
-    config:
-      search_strategy: "merge"
-      max_results_per_memory: 5
+  # Memory tool provider
+  - module: xaibo.primitives.modules.memory.MemoryToolProvider
+    id: memory_tools
 
 exchange:
-  - module: memory
+  - module: memory_tools
     protocol: MemoryProtocol
-    provider: [short_term_memory, long_term_memory]
+    provider: memory_system
 ```
 
 ### Features
 
-- **Multi-Memory**: Combines multiple memory systems
-- **Flexible Search**: Multiple search strategies
-- **Result Merging**: Intelligent result combination
-- **Load Balancing**: Distributes queries across memories
+- **Tool Integration**: Exposes memory operations as tools
+- **Complete API**: All memory operations available as tools
+- **Error Handling**: Proper error responses for tool failures
+- **Metadata Support**: Supports arbitrary metadata attributes
 
 ## Common Configuration Patterns
 
@@ -477,38 +452,50 @@ modules:
     id: memory
 ```
 
-### Hierarchical Memory
+### Memory with Tool Integration
 
 ```yaml
 modules:
-  # Working memory (small, fast)
-  - module: xaibo.primitives.modules.memory.VectorMemory
-    id: working_memory
+  # Core memory components
+  - module: xaibo.primitives.modules.memory.TokenChunker
+    id: chunker
     config:
-      memory_file_path: "./working.pkl"
+      window_size: 512
+      window_overlap: 50
   
-  # Episodic memory (medium, recent events)
-  - module: xaibo.primitives.modules.memory.VectorMemory
-    id: episodic_memory
+  - module: xaibo.primitives.modules.memory.SentenceTransformerEmbedder
+    id: embedder
     config:
-      memory_file_path: "./episodic.pkl"
+      model_name: "all-MiniLM-L6-v2"
   
-  # Semantic memory (large, knowledge base)
-  - module: xaibo.primitives.modules.memory.VectorMemory
-    id: semantic_memory
+  - module: xaibo.primitives.modules.memory.NumpyVectorIndex
+    id: vector_index
     config:
-      memory_file_path: "./semantic.pkl"
+      storage_dir: "./memory_index"
   
-  # Combined memory system
-  - module: xaibo.primitives.modules.memory.MemoryProvider
-    id: memory
+  # Memory system
+  - module: xaibo.primitives.modules.memory.VectorMemory
+    id: memory_system
     config:
-      search_strategy: "merge"
+      memory_file_path: "./memories.pkl"
+  
+  # Memory tool provider
+  - module: xaibo.primitives.modules.memory.MemoryToolProvider
+    id: memory_tools
 
 exchange:
-  - module: memory
+  - module: memory_system
+    protocol: ChunkingProtocol
+    provider: chunker
+  - module: memory_system
+    protocol: EmbeddingProtocol
+    provider: embedder
+  - module: memory_system
+    protocol: VectorIndexProtocol
+    provider: vector_index
+  - module: memory_tools
     protocol: MemoryProtocol
-    provider: [working_memory, episodic_memory, semantic_memory]
+    provider: memory_system
 ```
 
 ## Performance Considerations
@@ -533,42 +520,3 @@ exchange:
 2. **Overlap Strategy**: Balance context preservation with storage
 3. **Cleanup**: Implement memory cleanup for old entries
 4. **Compression**: Consider vector compression for storage
-
-## Monitoring and Debugging
-
-### Memory Metrics
-
-```python
-# Monitor memory usage
-memory_stats = await memory.get_stats()
-print(f"Total memories: {memory_stats['total_memories']}")
-print(f"Total chunks: {memory_stats['total_chunks']}")
-print(f"Index size: {memory_stats['index_size']}")
-```
-
-### Search Quality
-
-```python
-# Test search quality
-results = await memory.search_memory("test query", k=10)
-for result in results:
-    print(f"Score: {result.similarity_score:.3f}")
-    print(f"Content: {result.content[:100]}...")
-```
-
-### Performance Profiling
-
-```python
-import time
-
-# Profile embedding performance
-start_time = time.time()
-embedding = await embedder.text_to_embedding("test text")
-embedding_time = time.time() - start_time
-print(f"Embedding time: {embedding_time:.3f}s")
-
-# Profile search performance
-start_time = time.time()
-results = await memory.search_memory("test query")
-search_time = time.time() - start_time
-print(f"Search time: {search_time:.3f}s")

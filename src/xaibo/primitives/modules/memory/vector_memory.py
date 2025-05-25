@@ -233,7 +233,7 @@ class VectorMemory(MemoryProtocol):
         chunk_attributes = []
         
         for i, chunk in enumerate(chunks):
-            vector = self.embedder.text_to_embedding(chunk)
+            vector = await self.embedder.text_to_embedding(chunk)
             vectors.append(vector)
             
             # Create attributes for this chunk that link back to the original memory
