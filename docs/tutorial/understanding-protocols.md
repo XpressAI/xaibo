@@ -1,14 +1,14 @@
 # Understanding Protocols: How Xaibo Components Work Together
 
-In this lesson, you'll discover how Xaibo's protocol-based architecture enables the flexibility you've experienced. You'll learn to swap components, understand module communication, and see why this design makes Xaibo so powerful and extensible.
+In this lesson, you'll discover how Xaibo's [protocol-based architecture](../explanation/architecture/protocols.md) enables the flexibility you've experienced. You'll learn to swap components, understand module communication, and see why this design makes Xaibo so powerful and extensible.
 
 ## What You'll Learn
 
 Through hands-on experiments, you'll understand:
 
-- **How protocols define interfaces** between components
-- **Why modules can be easily swapped** without breaking your agent
-- **How the exchange system** connects modules together
+- **How [protocols](../reference/protocols/index.md) define interfaces** between components
+- **Why [modules can be easily swapped](../explanation/concepts/modules-vs-protocols.md)** without breaking your agent
+- **How the [exchange system](../explanation/concepts/exchange-system.md)** connects modules together
 - **How to modify your agent's behavior** by changing configurations
 
 ## Step 1: Understanding Your Current Agent
@@ -46,25 +46,27 @@ Each module implements specific **protocols**:
 - **Tool provider**: Implements [`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py)  
 - **Orchestrator**: Implements [`TextMessageHandlerProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/message_handlers.py)
 
-## Step 2: Experiment with Different LLM Models
+## Step 2: Switch from OpenAI to Anthropic
 
-Let's see how easy it is to change your agent's behavior by swapping the LLM model. Edit your agent configuration:
+Let's see how easy it is to change your agent's behavior by swapping LLM providers entirely. This demonstrates the power of protocol-based architecture - despite OpenAI and Anthropic having completely different APIs, the change is trivial. For more details on switching providers, see our [LLM provider switching guide](../how-to/llm/switch-providers.md).
+
+Edit your agent configuration:
 
 ```bash
 # Use your preferred editor
 nano agents/example.yml
-# or  
+# or
 code agents/example.yml
 ```
 
-Change the model from `gpt-4.1-nano` to `gpt-4`:
+Change from OpenAI to Anthropic:
 
 ```yaml
 modules:
-  - module: xaibo.primitives.modules.llm.OpenAILLM
+  - module: xaibo.primitives.modules.llm.AnthropicLLM  # Changed from OpenAILLM
     id: llm
     config:
-      model: gpt-4  # Changed from gpt-4.1-nano
+      model: claude-3-5-sonnet-20241022  # Changed from gpt-4.1-nano
 ```
 
 Restart your server:
@@ -73,7 +75,7 @@ Restart your server:
 uv run xaibo dev
 ```
 
-Test the same question with the new model:
+Test the same question with the new provider:
 
 ```bash
 curl -X POST http://127.0.0.1:9001/openai/chat/completions \
@@ -86,7 +88,7 @@ curl -X POST http://127.0.0.1:9001/openai/chat/completions \
   }'
 ```
 
-Notice how you get a different (likely more detailed) response, but your tools still work exactly the same way. This demonstrates **protocol-based modularity** - you changed the LLM implementation without affecting any other components.
+Notice how you get a different response style (Claude tends to be more structured), but your tools still work exactly the same way. This demonstrates **[protocol-based modularity](../explanation/design/modularity.md)** - you switched between completely different LLM providers with different APIs, yet no other components needed to change. The protocol interface made this swap trivial.
 
 ## Step 3: Understanding Protocol Interfaces
 
@@ -122,20 +124,24 @@ Edit the new file:
 nano agents/mock-example.yml
 ```
 
-Change the configuration to use a mock LLM:
+Change the configuration to use a mock LLM with proper response sequence:
 
 ```yaml
-id: mock-example
+id: example  # Keep the same agent ID
 description: An example agent using a mock LLM for testing
 modules:
   - module: xaibo.primitives.modules.llm.MockLLM
     id: llm
     config:
       responses:
-        - content: "I'm a mock LLM! I'll help you with that."
+        # First response: Make a tool call
+        - content: "I'll check the current time for you."
           tool_calls:
-            - function: current_time
+            - id: "call_1"
+              name: "current_time"
               arguments: {}
+        # Second response: Respond after tool execution
+        - content: "Based on the tool result, I can see the current time. The mock LLM is working perfectly with tools!"
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
@@ -160,14 +166,14 @@ Test the mock agent:
 curl -X POST http://127.0.0.1:9001/openai/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "mock-example",
+    "model": "example",
     "messages": [
-      {"role": "user", "content": "Any question at all"}
+      {"role": "user", "content": "What time is it?"}
     ]
   }'
 ```
 
-You'll see the mock response and it will still call the `current_time` tool! This demonstrates how:
+You'll see the mock response sequence: first it calls the `current_time` tool, then provides a final response! This demonstrates how:
 
 - **Protocols enable testing**: You can test your agent logic without real LLM costs
 - **Behavior is predictable**: Mock responses help verify your agent works correctly
@@ -175,7 +181,7 @@ You'll see the mock response and it will still call the `current_time` tool! Thi
 
 ## Step 5: Understanding the Exchange System
 
-The **exchange system** is what connects modules together. Let's make this explicit in your configuration. Edit your `agents/example.yml`:
+The **[exchange system](../explanation/concepts/exchange-system.md)** is what connects modules together. Let's make this explicit in your configuration. Edit your `agents/example.yml`:
 
 ```bash
 nano agents/example.yml
@@ -187,10 +193,10 @@ Add an explicit exchange section:
 id: example
 description: An example agent that uses tools
 modules:
-  - module: xaibo.primitives.modules.llm.OpenAILLM
+  - module: xaibo.primitives.modules.llm.AnthropicLLM
     id: llm
     config:
-      model: gpt-4.1-nano
+      model: claude-3-5-sonnet-20241022
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
@@ -214,9 +220,11 @@ exchange:
     provider: llm
   # Connect orchestrator to tools
   - module: orchestrator
-    protocol: ToolsProtocol
+    protocol: ToolProviderProtocol
     provider: python-tools
 ```
+
+<!-- TODO: Add screenshot of the configuration file showing the exchange system -->
 
 This makes explicit what Xaibo was doing automatically:
 
@@ -224,13 +232,13 @@ This makes explicit what Xaibo was doing automatically:
 - **LLM connection**: Orchestrator uses the LLM for language understanding
 - **Tool connection**: Orchestrator can access tools when needed
 
-## Step 6: Experiment with Multiple Tool Providers
+## Step 6: Experiment with Multiple Tool Providers Using Tool Collector
 
-Let's see how the exchange system enables multiple tool providers. First, create a new tool file:
+Let's see how the exchange system enables multiple tool providers using the [`ToolCollector`](../reference/modules/tools.md#toolcollector). First, create a new tool file:
 
-```bash
-# Create a new tool file
-cat > tools/math_tools.py << 'EOF'
+Create `tools/math_tools.py`:
+
+```python
 from xaibo.primitives.modules.tools.python_tool_provider import tool
 import math
 
@@ -253,25 +261,20 @@ def power(base: float, exponent: float):
     """
     result = math.pow(base, exponent)
     return f"{base}^{exponent} = {result}"
-EOF
 ```
 
-Now modify your agent to use both tool providers:
+For more information about creating Python tools, see our [Python tools guide](../how-to/tools/python-tools.md).
 
-```bash
-nano agents/example.yml
-```
-
-Update the modules and exchange sections:
+Now modify your agent to use the tool collector. Copy and paste this configuration:
 
 ```yaml
 id: example
 description: An example agent that uses multiple tool providers
 modules:
-  - module: xaibo.primitives.modules.llm.OpenAILLM
+  - module: xaibo.primitives.modules.llm.AnthropicLLM
     id: llm
     config:
-      model: gpt-4.1-nano
+      model: claude-3-5-sonnet-20241022
   - id: basic-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
@@ -280,6 +283,8 @@ modules:
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
       tool_packages: [tools.math_tools]
+  - module: xaibo.primitives.modules.tools.ToolCollector
+    id: all-tools
   - module: xaibo.primitives.modules.orchestrator.StressingToolUser
     id: orchestrator
     config:
@@ -294,10 +299,14 @@ exchange:
   - module: orchestrator
     protocol: LLMProtocol
     provider: llm
-  # Connect to multiple tool providers
+  # Connect the tool collector to multiple providers
+  - module: all-tools
+    protocol: ToolProviderProtocol
+    provider: [basic-tools, math-tools]
+  # Connect orchestrator to the aggregated tools
   - module: orchestrator
-    protocol: ToolsProtocol
-    provider: [basic-tools, math-tools]  # List of providers!
+    protocol: ToolProviderProtocol
+    provider: all-tools
 ```
 
 Restart and test:
@@ -319,39 +328,45 @@ curl -X POST http://127.0.0.1:9001/openai/chat/completions \
   }'
 ```
 
-Your agent now has access to tools from both providers! This demonstrates:
+Your agent now has access to tools from both providers through the tool collector! This demonstrates:
 
-- **Multiple providers**: One module can depend on multiple implementations
-- **Tool aggregation**: All tools appear as one unified set to the agent
-- **Flexible composition**: Easy to add or remove tool sets
+- **Tool aggregation**: The [`ToolCollector`](../reference/modules/tools.md#toolcollector) combines multiple tool providers
+- **Clean architecture**: Single connection point for all tools
+- **Easy management**: Add or remove tool providers by updating the collector configuration
 
 ## Step 7: Understanding Protocol Benefits
 
 Through your experiments, you've seen how protocols enable:
 
-**🔄 Easy Swapping**
+**🔄 Easy Provider Swapping**
 
-- Changed from GPT-3.5 to GPT-4 without touching other components
-- Switched to mock LLM for testing
-- All tools continued working unchanged
+- Switched from OpenAI to Anthropic with completely different APIs
+- Changed to mock LLM for testing with predictable responses
+- All tools continued working unchanged despite different LLM providers
 
-**🧩 Flexible Composition**  
+**🧩 Flexible Composition**
 
-- Added multiple tool providers
-- Connected components through exchanges
-- Mixed and matched implementations
+- Used [`ToolCollector`](../reference/modules/tools.md#toolcollector) to aggregate multiple tool providers
+- Connected components through explicit [exchange configurations](../explanation/concepts/exchange-system.md)
+- Mixed and matched implementations seamlessly
 
 **🧪 Better Testing**
 
-- Used mock LLM for predictable responses
-- Isolated components for testing
-- Verified behavior without external dependencies
+- Used mock LLM with configured response sequences
+- Isolated components for [testing](../explanation/design/testability.md) without external API costs
+- Verified tool calling behavior with predictable mock responses
 
 **📈 Extensibility**
 
-- Added new tools without changing existing code
-- Created new tool providers easily
-- Extended functionality through configuration
+- Added new math tools without changing existing code
+- Created new tool providers and aggregated them easily
+- Extended functionality purely through configuration changes
+
+**🏗️ Protocol-Based Architecture**
+
+- Each component implements well-defined [protocols](../reference/protocols/index.md)
+- Easy to substitute implementations (OpenAI ↔ Anthropic ↔ Mock)
+- Clean separation between interface and implementation
 
 ## Step 8: Exploring Other Protocols
 
@@ -398,19 +413,19 @@ Your experiments demonstrate Xaibo's core architectural principles:
 
 **Separation of Concerns**: Each module has a specific responsibility
 
-- LLM modules handle language understanding
-- Tool modules provide capabilities  
-- Orchestrators manage workflow
+- [LLM modules](../reference/modules/llm.md) handle language understanding
+- [Tool modules](../reference/modules/tools.md) provide capabilities
+- [Orchestrators](../reference/modules/orchestrator.md) manage workflow
 
-**Protocol-Based Interfaces**: Modules communicate through standardized protocols
+**Protocol-Based Interfaces**: Modules communicate through standardized [protocols](../reference/protocols/index.md)
 
 - Clear contracts between components
 - Easy to test and mock
 - Enables component substitution
 
-**Dependency Injection**: Modules declare what they need, not how to get it
+**[Dependency Injection](../explanation/architecture/dependency-injection.md)**: Modules declare what they need, not how to get it
 
-- Flexible wiring through exchanges
+- Flexible wiring through [exchanges](../explanation/concepts/exchange-system.md)
 - Easy to reconfigure
 - Supports multiple implementations
 
@@ -446,7 +461,16 @@ Now that you understand the fundamentals, explore:
 
 - **[Testing Agents](testing-agents.md)**: Learn to test your agents with dependency injection and event capture
 - **[How-to Guides](../how-to/index.md)**: Practical solutions for specific tasks
+  - [Switch LLM Providers](../how-to/llm/switch-providers.md)
+  - [Python Tools](../how-to/tools/python-tools.md)
+  - [MCP Tools](../how-to/tools/mcp-tools.md)
 - **[Reference Documentation](../reference/index.md)**: Detailed API and configuration reference
+  - [Protocols Overview](../reference/protocols/index.md)
+  - [Module Reference](../reference/modules/llm.md)
+- **[Architecture Explanations](../explanation/index.md)**: Deep dives into design concepts
+  - [Protocol Architecture](../explanation/architecture/protocols.md)
+  - [Exchange System](../explanation/concepts/exchange-system.md)
+  - [Modularity Design](../explanation/design/modularity.md)
 - **[Examples](https://github.com/xpressai/xaibo/tree/main/examples)**: Real-world agent implementations
 
 Ready to build something amazing with Xaibo? The framework's modular architecture gives you the flexibility to create agents that fit your exact needs!

@@ -5,11 +5,11 @@
       </h1>
       <p>A modular agent framework designed for building flexible AI systems with clean protocol-based interfaces</p>
       <div style="margin-top: 2rem;">
-        <a href="tutorial/" class="md-button md-button--primary" style="margin-right: 1rem;">
-          Get Started
-        </a>
-        <a href="https://github.com/xpressai/xaibo" class="md-button" style="background: rgba(255,255,255,0.2); color: white;">
+        <a href="https://github.com/xpressai/xaibo" class="md-button md-button--primary" style="margin-right: 1rem;">
           View on GitHub
+        </a>
+        <a href="tutorial/" class="md-button " style="background: rgba(255,255,255,0.2); color: white;">
+          Get Started
         </a>
       </div>
     </div>
