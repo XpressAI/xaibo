@@ -6,7 +6,7 @@ import subprocess, shlex, sys, os
 
 import questionary
 
-from xaibo import Xaibo
+from xaibo import Xaibo, __version__
 try:
     from xaibo.server.web import XaiboWebServer
 except ImportError as e:
@@ -288,6 +288,7 @@ def serve(args, extra_args=[]):
 
 def main():
     parser = argparse.ArgumentParser(description='Xaibo Command Line Interface', add_help=True)
+    parser.add_argument('--version', action='version', version=f'xaibo {__version__}')
     subparsers = parser.add_subparsers(dest="command")
 
     # 'init' command.
