@@ -1,6 +1,7 @@
 name: Website Documentation
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
@@ -15,7 +16,7 @@ jobs:
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           known_hosts: 'placeholder'
 
       - name: Adding Known Hosts
@@ -44,4 +45,4 @@ jobs:
         run: |
           uv run mkdocs build --strict
       - name: Copying to www.xaibo.ai
-        run: rsync -a -v -h build/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/xaibo.ai/ --delete
+        run: rsync -a -v -h build/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/var/www/xaibo.ai/ --delete
