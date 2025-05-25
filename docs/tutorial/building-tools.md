@@ -409,8 +409,6 @@ def get_weather(city: str, country: str = "US"):
 
 ## Tool Best Practices
 
-From your examples, notice these patterns:
-
 ✅ **Clear docstrings**: Help the agent understand when to use the tool  
 ✅ **Type hints**: Guide the agent on what data to provide  
 ✅ **Error handling**: Return helpful messages when things go wrong  

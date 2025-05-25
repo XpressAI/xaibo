@@ -43,14 +43,55 @@ modules:
 Each module implements specific **protocols**:
 
 - **LLM module**: Implements [`LLMProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/llm.py)
-- **Tool provider**: Implements [`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py)  
+- **Tool provider**: Implements [`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/tools.py)
 - **Orchestrator**: Implements [`TextMessageHandlerProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/protocols/message_handlers.py)
+
+Now let's run your agent to ensure you have a working system and see the current output:
+
+```bash
+uv run xaibo dev
+```
+
+Test your agent with a simple request:
+
+```bash
+curl -X POST http://127.0.0.1:9001/openai/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "example",
+    "messages": [
+      {"role": "user", "content": "What time is it?"}
+    ]
+  }'
+```
+
+You should see your agent respond using the `current_time` tool. This confirms your system is working correctly.
 
 ## Step 2: Switch from OpenAI to Anthropic
 
 Let's see how easy it is to change your agent's behavior by swapping LLM providers entirely. This demonstrates the power of protocol-based architecture - despite OpenAI and Anthropic having completely different APIs, the change is trivial. For more details on switching providers, see our [LLM provider switching guide](../how-to/llm/switch-providers.md).
 
-Edit your agent configuration:
+**First, you'll need to acquire an Anthropic API key** and set it up. You can either set it as an environment variable:
+
+```bash
+export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
+```
+
+Or add it to your `.env` file:
+
+```bash
+# Use your preferred editor
+nano .env
+# or
+code .env
+```
+
+Add this line to your `.env` file:
+```
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+```
+
+Now edit your agent configuration:
 
 ```bash
 # Use your preferred editor
@@ -83,7 +124,7 @@ curl -X POST http://127.0.0.1:9001/openai/chat/completions \
   -d '{
     "model": "example",
     "messages": [
-      {"role": "user", "content": "Explain quantum computing in simple terms"}
+      {"role": "user", "content": "What time is it?"}
     ]
   }'
 ```
