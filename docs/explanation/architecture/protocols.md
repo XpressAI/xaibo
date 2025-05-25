@@ -38,6 +38,8 @@ The [`ToolProviderProtocol`](https://github.com/xpressai/xaibo/blob/main/src/xai
 
 An orchestrator module can declare dependencies on all these protocols without knowing anything about their implementations. This creates a powerful separation of concerns: the orchestrator focuses on coordination logic, while specialized modules handle the details of language generation, tool execution, and memory management.
 
+The protocol system also enables sophisticated aggregation patterns, where modules like [`ToolCollector`](../../reference/modules/tools.md#toolcollector) can implement a protocol while internally coordinating multiple providers of the same protocol. This creates unified interfaces that hide complexity while maintaining the flexibility of the underlying protocol system.
+
 ## Flexibility Through Abstraction
 
 This protocol-driven approach enables remarkable flexibility. Want to switch from OpenAI to Anthropic? Simply swap the LLM module, no changes needed to the orchestrator or any other component. Need to add a new type of memory system? Implement the `MemoryProtocol` and the rest of the system automatically gains access to it.

@@ -67,7 +67,7 @@ This automatic wiring is more sophisticated than it might initially appear. The 
 
 **Type-based matching**: Dependencies are matched based on the protocol types they implement. If a module needs an `LLMProtocol` and only one module provides it, the connection is made automatically.
 
-**List dependencies**: Some modules need multiple implementations of the same protocol. The exchange system can inject lists of implementations, allowing modules like tool collectors to work with multiple tool providers.
+**List dependencies**: Some modules need multiple implementations of the same protocol. The exchange system can inject lists of implementations, enabling modules like [`ToolCollector`](../../reference/modules/tools.md#toolcollector) to aggregate multiple tool providers into a unified interface.
 
 **Dependency ordering**: The exchange system automatically determines the order in which modules should be instantiated, ensuring that dependencies are available before the modules that need them.
 

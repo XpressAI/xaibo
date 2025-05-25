@@ -14,7 +14,7 @@ The exchange system begins by analyzing the constructor signatures of all module
 
 This analysis happens automatically through Python's type annotation system. The exchange system uses introspection to examine each module's `__init__` method and extract the type information for each parameter. This approach means that dependencies are declared in the natural place, the constructor, rather than in separate configuration files or decorators.
 
-The dependency analysis also handles more complex scenarios. If a module declares a parameter like `tools: list[ToolsProtocol]`, the exchange system understands that this module needs a list of implementations, not just a single one. This enables modules like tool collectors that need to work with multiple tool providers simultaneously.
+The dependency analysis also handles more complex scenarios. If a module declares a parameter like `tools: list[ToolsProtocol]`, the exchange system understands that this module needs a list of implementations, not just a single one. This enables modules like [`ToolCollector`](../../reference/modules/tools.md#toolcollector) that aggregate multiple tool providers into a single interface, allowing orchestrators to access tools from different sources through one unified connection point.
 
 ## Automatic Resolution
 
@@ -33,14 +33,32 @@ exchange:
   - module: orchestrator
     protocol: LLMProtocol
     provider: llm
-  - module: orchestrator
-    protocol: ToolsProtocol
-    provider: [python-tools, mcp-tools]
 ```
 
 This explicit configuration overrides the automatic matching, allowing you to specify exactly which implementations should be used for which dependencies. This is particularly useful when you have multiple implementations of the same protocol and need to control which one goes where.
 
 The explicit configuration also supports more sophisticated scenarios, like providing different implementations to different modules, or creating complex dependency graphs that wouldn't be resolvable automatically.
+
+## Tool Aggregation Patterns
+
+The exchange system's handling of list dependencies enables sophisticated aggregation patterns, with [`ToolCollector`](../../reference/modules/tools.md#toolcollector) serving as the canonical example. This pattern demonstrates how the exchange system can compose multiple providers into unified interfaces, creating emergent capabilities that exceed the sum of their parts.
+
+When the exchange system encounters a module like `ToolCollector` that declares `tools: list[ToolProviderProtocol]`, it automatically collects all available tool providers and injects them as a list. The `ToolCollector` then creates a unified interface that aggregates tools from all providers, maintaining an internal cache that maps tool names to their originating providers.
+
+This aggregation pattern solves several architectural challenges simultaneously. It eliminates the need for orchestrators to manage multiple tool provider connections, provides a single point of tool discovery across the entire system, and enables dynamic tool ecosystems where providers can be added or removed without affecting consuming modules. This exemplifies the [modular design philosophy](../design/modularity.md#the-network-effect-of-modularity) where individual components create exponential value through composition.
+
+The exchange system's support for this pattern extends beyond simple list injection. The explicit configuration syntax allows fine-grained control over which providers are aggregated:
+
+```yaml
+exchange:
+  - module: tool-collector
+    protocol: ToolProviderProtocol
+    provider: [python-tools, mcp-tools, custom-tools]
+```
+
+This configuration creates a deliberate composition where the tool collector aggregates only the specified providers, enabling different tool collections for different parts of the system. The exchange system handles the complexity of ensuring all specified providers are available before instantiating the collector.
+
+The tool aggregation pattern also demonstrates the exchange system's role in enabling architectural evolution. As new tool providers are developed, they can be seamlessly integrated into existing systems by adding them to the collector's provider list. The consuming modules remain unchanged, benefiting from new capabilities without requiring modification.
 
 ## The Exchange as a Registry
 
@@ -70,7 +88,7 @@ The exchange system also provides tools for introspecting the dependency graph, 
 
 The exchange system includes sophisticated support for overriding dependencies, which is particularly important for testing. The [`ConfigOverrides`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/config.py) mechanism allows you to replace specific modules with alternative implementations without modifying the main configuration.
 
-This override capability is what makes Xaibo's testing story so compelling. You can create an exchange with mock implementations of external services, ensuring that tests are fast, reliable, and isolated from external dependencies. The override system handles all the complexity of rewiring dependencies while maintaining the same interface that production code expects.
+This override capability is what makes Xaibo's testing story so compelling. You can create an exchange with mock implementations of external services, ensuring that tests are fast, reliable, and isolated from external dependencies. The override system handles all the complexity of rewiring dependencies while maintaining the same interface that production code expects. This demonstrates how [dependency injection architecture](../architecture/dependency-injection.md#testing-through-injection) enables superior testing strategies through explicit dependency management.
 
 The override system also supports partial overrides, where only some dependencies are replaced while others use the standard configuration. This enables sophisticated testing scenarios where you might want to test real LLM integration while mocking tool execution, or vice versa.
 
