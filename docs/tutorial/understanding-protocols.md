@@ -168,7 +168,7 @@ nano agents/mock-example.yml
 Change the configuration to use a mock LLM with proper response sequence:
 
 ```yaml
-id: example  # Keep the same agent ID
+id: mock-example
 description: An example agent using a mock LLM for testing
 modules:
   - module: xaibo.primitives.modules.llm.MockLLM
@@ -207,7 +207,7 @@ Test the mock agent:
 curl -X POST http://127.0.0.1:9001/openai/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "example",
+    "model": "mock-example",
     "messages": [
       {"role": "user", "content": "What time is it?"}
     ]
@@ -267,7 +267,7 @@ exchange:
 
 <!-- TODO: Add screenshot of the configuration file showing the exchange system -->
 
-This makes explicit what Xaibo was doing automatically:
+This makes explicit what Xaibo was doing automatically, but doesn't change the behavior:
 
 - **Entry point**: Messages go to the orchestrator first
 - **LLM connection**: Orchestrator uses the LLM for language understanding
