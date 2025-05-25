@@ -28,8 +28,8 @@ modules:
     id: llm
     config:
       model: gpt-4.1-nano
-  - id: python-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
+  - module: xaibo.primitives.modules.tools.PythonToolProvider
+    id: python-tools
     config:
       tool_packages: [tools.example]
   - module: xaibo.primitives.modules.orchestrator.StressingToolUser
@@ -142,8 +142,8 @@ modules:
               arguments: {}
         # Second response: Respond after tool execution
         - content: "Based on the tool result, I can see the current time. The mock LLM is working perfectly with tools!"
-  - id: python-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
+  - module: xaibo.primitives.modules.tools.PythonToolProvider
+    id: python-tools
     config:
       tool_packages: [tools.example]
   - module: xaibo.primitives.modules.orchestrator.StressingToolUser
@@ -197,8 +197,8 @@ modules:
     id: llm
     config:
       model: claude-3-5-sonnet-20241022
-  - id: python-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
+  - module: xaibo.primitives.modules.tools.PythonToolProvider
+    id: python-tools
     config:
       tool_packages: [tools.example]
   - module: xaibo.primitives.modules.orchestrator.StressingToolUser
@@ -275,12 +275,12 @@ modules:
     id: llm
     config:
       model: claude-3-5-sonnet-20241022
-  - id: basic-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
+  - module: xaibo.primitives.modules.tools.PythonToolProvider
+    id: basic-tools
     config:
       tool_packages: [tools.example]
-  - id: math-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
+  - module: xaibo.primitives.modules.tools.PythonToolProvider
+    id: math-tools
     config:
       tool_packages: [tools.math_tools]
   - module: xaibo.primitives.modules.tools.ToolCollector
@@ -461,16 +461,22 @@ Now that you understand the fundamentals, explore:
 
 - **[Testing Agents](testing-agents.md)**: Learn to test your agents with dependency injection and event capture
 - **[How-to Guides](../how-to/index.md)**: Practical solutions for specific tasks
-  - [Switch LLM Providers](../how-to/llm/switch-providers.md)
-  - [Python Tools](../how-to/tools/python-tools.md)
-  - [MCP Tools](../how-to/tools/mcp-tools.md)
+
+    - [Switch LLM Providers](../how-to/llm/switch-providers.md)
+    - [Python Tools](../how-to/tools/python-tools.md)
+    - [MCP Tools](../how-to/tools/mcp-tools.md)
+
 - **[Reference Documentation](../reference/index.md)**: Detailed API and configuration reference
-  - [Protocols Overview](../reference/protocols/index.md)
-  - [Module Reference](../reference/modules/llm.md)
+
+    - [Protocols Overview](../reference/protocols/index.md)
+    - [Module Reference](../reference/modules/llm.md)
+
 - **[Architecture Explanations](../explanation/index.md)**: Deep dives into design concepts
-  - [Protocol Architecture](../explanation/architecture/protocols.md)
-  - [Exchange System](../explanation/concepts/exchange-system.md)
-  - [Modularity Design](../explanation/design/modularity.md)
+
+    - [Protocol Architecture](../explanation/architecture/protocols.md)
+    - [Exchange System](../explanation/concepts/exchange-system.md)
+    - [Modularity Design](../explanation/design/modularity.md)
+
 - **[Examples](https://github.com/xpressai/xaibo/tree/main/examples)**: Real-world agent implementations
 
 Ready to build something amazing with Xaibo? The framework's modular architecture gives you the flexibility to create agents that fit your exact needs!

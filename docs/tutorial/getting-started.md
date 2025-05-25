@@ -69,8 +69,8 @@ modules:
     id: llm
     config:
       model: gpt-4.1-nano
-  - id: python-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
+  - module: xaibo.primitives.modules.tools.PythonToolProvider
+    id: python-tools
     config:
       tool_packages: [tools.example]
   - module: xaibo.primitives.modules.orchestrator.StressingToolUser
@@ -83,7 +83,7 @@ modules:
 
 This configuration defines three **modules**:
 
-- **LLM module**: Connects to OpenAI's GPT-3.5 for language understanding
+- **LLM module**: Connects to OpenAI's GPT-4.1 nano for language understanding
 - **Tool provider**: Makes Python functions available as tools
 - **Orchestrator**: Manages the conversation and decides when to use tools
 

@@ -183,8 +183,8 @@ modules:
     id: llm
     config:
       model: {default_model}
-  - id: python-tools
-    module: xaibo.primitives.modules.tools.PythonToolProvider
+  - module: xaibo.primitives.modules.tools.PythonToolProvider
+    id: python-tools
     config:
       tool_packages: [tools.example]
   - module: xaibo.primitives.modules.orchestrator.StressingToolUser
