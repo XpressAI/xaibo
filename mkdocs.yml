@@ -1,6 +1,6 @@
 site_name: Xaibo - AI Agent Framework
 site_description: A modular agent framework designed for building flexible AI systems with clean protocol-based interfaces
-site_url: https://www.xaibo.ai
+site_url: https://xaibo.ai
 repo_url: https://github.com/xpressai/xaibo
 repo_name: xpressai/xaibo
 edit_uri: edit/main/docs/
