@@ -1,0 +1,186 @@
+/* XpressAI Branding - Custom CSS for MkDocs Material Theme */
+
+:root {
+  /* Primary brand colors */
+  --md-primary-fg-color: #7c3aed;
+  --md-primary-fg-color--light: #8b5cf6;
+  --md-primary-fg-color--dark: #6d28d9;
+  --md-accent-fg-color: #a855f7;
+  --md-accent-fg-color--transparent: rgba(168, 85, 247, 0.1);
+  
+  /* Custom gradient backgrounds */
+  --xpress-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  --xpress-gradient-light: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+}
+
+.md-header__button.md-logo img, .md-header__button.md-logo svg
+ {
+    fill: transparent;
+ }
+
+/* Header customization */
+.md-header {
+  background: var(--xpress-gradient);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.15);
+}
+
+/* Navigation tabs styling */
+.md-tabs {
+  background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%);
+}
+
+.md-tabs__item {
+  transition: all 0.3s ease;
+}
+
+.md-tabs__item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+
+/* Button styling */
+.md-button {
+  background: var(--xpress-gradient);
+  border: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.2);
+}
+
+.md-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+}
+
+/* Simple Admonition styling - Enhanced font sizes for better visibility */
+.md-typeset .admonition {
+  font-size: 1em;
+}
+
+.md-typeset .admonition > .admonition-title {
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.md-typeset .admonition.note {
+  border-color: var(--md-accent-fg-color);
+}
+
+.md-typeset .admonition.note > .admonition-title {
+  background: var(--xpress-gradient-light);
+  border-color: var(--md-accent-fg-color);
+}
+
+/* Search styling */
+.md-search__form {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* Footer styling */
+.md-footer {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+}
+
+/* Logo and branding */
+.md-header__title {
+  font-weight: 700;
+  font-size: 1.2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Table of contents */
+.md-nav__item--active > .md-nav__link {
+  color: var(--md-accent-fg-color);
+  font-weight: 600;
+}
+
+/* Custom hero section for homepage */
+.hero-section {
+  background: var(--xpress-gradient);
+  color: white;
+  padding: 4rem 2rem;
+  text-align: center;
+  margin: -1.5rem -1.5rem 2rem -1.5rem;
+  border-radius: 0 0 20px 20px;
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.hero-section p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Feature cards */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.feature-card {
+  background: var(--xpress-gradient-light);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.15);
+  border-color: var(--md-accent-fg-color);
+}
+
+.feature-card h3 {
+  color: var(--md-primary-fg-color);
+  margin-bottom: 1rem;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+  .hero-section h1 {
+    font-size: 2rem;
+  }
+  
+  .hero-section {
+    padding: 2rem 1rem;
+  }
+  
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Dark mode adjustments */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #8b5cf6;
+  --md-accent-fg-color: #a855f7;
+}
+
+[data-md-color-scheme="slate"] .md-header {
+  background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+}
+
+[data-md-color-scheme="slate"] .hero-section {
+  background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+}
+
+[data-md-color-scheme="slate"] .feature-card {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.3);
+}

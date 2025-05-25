@@ -7,7 +7,7 @@ export const config = {
 				id: 'llm',
 				provides: ['LLMProtocol'],
 				uses: null,
-				config: { model: 'gpt-3.5-turbo' }
+				config: { model: 'gpt-4.1-nano' }
 			},
 			{
 				module: 'xaibo.primitives.modules.tools.PythonToolProvider',
@@ -259,7 +259,7 @@ export const events = [
 			"arguments": {}
 		}],
 		"usage": {"prompt_tokens": 152, "completion_tokens": 19, "total_tokens": 171},
-		"vendor_specific": {"id": "chatcmpl-BBLSew5IjxezjHpvjrnMjgPMtwqyB", "model": "gpt-3.5-turbo-0125"}
+		"vendor_specific": {"id": "chatcmpl-BBLSew5IjxezjHpvjrnMjgPMtwqyB", "model": "gpt-4.1-nano-0125"}
 	},
 	"exception": null
 }, {
@@ -422,7 +422,7 @@ export const events = [
 			"arguments": {"date": "2025-03-15"}
 		}],
 		"usage": {"prompt_tokens": 200, "completion_tokens": 27, "total_tokens": 227},
-		"vendor_specific": {"id": "chatcmpl-BBLSfnKxktoiHpjwI3ZQcOIVbKb9n", "model": "gpt-3.5-turbo-0125"}
+		"vendor_specific": {"id": "chatcmpl-BBLSfnKxktoiHpjwI3ZQcOIVbKb9n", "model": "gpt-4.1-nano-0125"}
 	},
 	"exception": null
 }, {
@@ -603,7 +603,7 @@ export const events = [
 		"content": "Here's what's on your calendar for today, March 15, 2025:\n\n1. **Daily Standup**\n   - **Time:** 09:00 - 10:00 UTC\n   - **Participants:** Eduardo, Paul, Fahreza, Mansour\n\n2. **Breakfast**\n   - **Time:** 10:00 - 11:00 UTC\n\n3. **Focus Time**\n   - **Time:** 11:00 - 18:00 UTC\n   - **Description:** Do the work.",
 		"tool_calls": null,
 		"usage": {"prompt_tokens": 480, "completion_tokens": 112, "total_tokens": 592},
-		"vendor_specific": {"id": "chatcmpl-BBLSg2Pc8pBVslQqSfuJuGVS8xnUk", "model": "gpt-3.5-turbo-0125"}
+		"vendor_specific": {"id": "chatcmpl-BBLSg2Pc8pBVslQqSfuJuGVS8xnUk", "model": "gpt-4.1-nano-0125"}
 	},
 	"exception": null
 }, {

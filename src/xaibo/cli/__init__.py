@@ -6,7 +6,7 @@ import subprocess, shlex, sys, os
 
 import questionary
 
-from xaibo import Xaibo
+from xaibo import Xaibo, __version__
 try:
     from xaibo.server.web import XaiboWebServer
 except ImportError as e:
@@ -31,11 +31,117 @@ def universal_run(command, *, timeout=60, text=True, env=None, cwd=None):
                         env=env, cwd=cwd)
     return cp.stdout
 
+def get_default_model_for_provider(provider):
+    """
+    Get the default model for a given LLM provider.
+    
+    Args:
+        provider: The LLM provider name (e.g., 'openai', 'anthropic', 'google', 'bedrock')
+        
+    Returns:
+        Tuple of (provider_class_name, default_model)
+    """
+
+    provider_configs = {
+        'openai': ('OpenAILLM', 'gpt-4.1-nano'),  
+        'anthropic': ('AnthropicLLM', 'claude-3-5-sonnet-20241022'), 
+        'google': ('GoogleLLM', 'gemini-1.5-flash'),  
+        'bedrock': ('BedrockLLM', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+    }
+    
+    return provider_configs.get(provider, ('OpenAILLM', 'gpt-4o-mini'))
+
+def select_primary_llm_provider(modules):
+    """
+    Select the primary LLM provider from the list of modules.
+    Priority order: anthropic > google > bedrock > openai (default)
+    
+    Args:
+        modules: List of selected module names
+        
+    Returns:
+        Tuple of (provider_class_name, default_model)
+    """
+    # Define priority order (most capable/recommended first)
+    priority_order = ['anthropic', 'google', 'bedrock', 'openai']
+    
+    for provider in priority_order:
+        if provider in modules:
+            return get_default_model_for_provider(provider)
+    
+    # Default fallback to OpenAI
+    return get_default_model_for_provider('openai')
+
+def generate_env_content(selected_modules):
+    """
+    Generate .env file content with only the environment variables that are actually used.
+    
+    Args:
+        selected_modules: List of selected module names
+        
+    Returns:
+        String containing the .env file content
+    """
+    content = []
+    
+    # Header
+    content.append("# Xaibo Environment Configuration")
+    content.append("# Configure the API keys for your selected providers")
+    content.append("")
+    
+    # OpenAI Configuration - OPENAI_API_KEY is required by OpenAILLM and OpenAIEmbedder
+    if "openai" in selected_modules:
+        content.extend([
+            "# OpenAI Configuration",
+            "# Required for OpenAILLM and OpenAIEmbedder modules",
+            "OPENAI_API_KEY=your_openai_api_key_here",
+            ""
+        ])
+    
+    # Anthropic Configuration - ANTHROPIC_API_KEY is required by AnthropicLLM
+    if "anthropic" in selected_modules:
+        content.extend([
+            "# Anthropic Configuration",
+            "# Required for AnthropicLLM module",
+            "ANTHROPIC_API_KEY=your_anthropic_api_key_here",
+            ""
+        ])
+    
+    # Google Configuration - GOOGLE_API_KEY is used by GoogleLLM
+    if "google" in selected_modules:
+        content.extend([
+            "# Google AI Configuration",
+            "# Required for GoogleLLM module",
+            "GOOGLE_API_KEY=your_google_api_key_here",
+            ""
+        ])
+    
+    # AWS Bedrock Configuration - AWS credentials are required by BedrockLLM
+    if "bedrock" in selected_modules:
+        content.extend([
+            "# AWS Bedrock Configuration",
+            "# Required for BedrockLLM module",
+            "AWS_ACCESS_KEY_ID=your_aws_access_key_id_here",
+            "AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key_here",
+            "AWS_DEFAULT_REGION=us-east-1",
+            ""
+        ])
+    
+    # Footer with instructions
+    content.extend([
+        "# Instructions:",
+        "# 1. Replace the placeholder values above with your actual API keys",
+        "# 2. Keep your API keys secure and never commit them to version control",
+        "# 3. You can also set these as system environment variables instead"
+    ])
+    
+    return "\n".join(content)
+
 def init(args, extra_args=[]):
     """
     Initialize a Xaibo project folder from scratch.
     """
-    modules = ",".join(questionary.checkbox(
+    modules = questionary.checkbox(
         "What dependencies do you want to include?", choices=[
             questionary.Choice(title="Webserver", value="webserver", description="The dependencies for running xaibo serve and xaibo dev", checked=True),
             questionary.Choice(title="OpenAI", value="openai", description="Allows using OpenAILLM and OpenAIEmbedder modules and RelayLLM module", checked=False),
@@ -43,14 +149,13 @@ def init(args, extra_args=[]):
             questionary.Choice(title="Google", value="google", description="Allows using GoogleLLM module", checked=False),
             questionary.Choice(title="Bedrock", value="bedrock", description="Allows using BedrockLLM module", checked=False),
             questionary.Choice(title="Local", value="local", description="Allows using local embeddings and memory modules", checked=False),
-
         ]
-    ).ask())
+    ).ask()
     project_name = args.project_name
     curdir = Path(os.getcwd())
     project_dir = curdir / project_name
     universal_run(f"uv init {project_name}", cwd=curdir)
-    universal_run(f"uv add xaibo xaibo[{modules}] pytest", cwd=project_dir)
+    universal_run(f"uv add xaibo xaibo[{",".join(modules)}] pytest", cwd=project_dir)
 
     (project_dir / "agents").mkdir()
     (project_dir / "modules").mkdir()
@@ -59,16 +164,13 @@ def init(args, extra_args=[]):
 
     (project_dir / "main.py").unlink()
 
-    llm_provider = 'OpenAILLM'
-    if 'anthropic' in modules:
-        llm_provider = 'AnthropicLLM'
-    if 'bedrock' in modules:
-        llm_provider = 'BedrockLLM'
-    if 'google' in modules:
-        llm_provider = 'GoogleLLM'
+    # Determine LLM provider and appropriate default model
+    llm_provider, default_model = select_primary_llm_provider(modules)
 
-    with (project_dir / ".env" ).open("w", encoding="utf-8") as f:
-        f.write("# Put your environment variables here.")
+    # Generate comprehensive .env file based on selected dependencies
+    env_content = generate_env_content(modules)
+    with (project_dir / ".env").open("w", encoding="utf-8") as f:
+        f.write(env_content)
 
 
     with (project_dir / "agents" / "example.yml").open("w", encoding="utf-8") as f:
@@ -80,7 +182,7 @@ modules:
   - module: xaibo.primitives.modules.llm.{llm_provider}
     id: llm
     config:
-      model: gpt-3.5-turbo
+      model: {default_model}
   - id: python-tools
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
@@ -186,6 +288,7 @@ def serve(args, extra_args=[]):
 
 def main():
     parser = argparse.ArgumentParser(description='Xaibo Command Line Interface', add_help=True)
+    parser.add_argument('--version', action='version', version=f'xaibo {__version__}')
     subparsers = parser.add_subparsers(dest="command")
 
     # 'init' command.

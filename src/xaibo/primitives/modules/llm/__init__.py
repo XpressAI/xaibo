@@ -14,11 +14,6 @@ except ImportError:
     GoogleLLM = None
 
 try:
-    from .relay import RelayLLM
-except ImportError:
-    RelayLLM = None
-
-try:
     from .mock import MockLLM
 except ImportError:
     MockLLM = None

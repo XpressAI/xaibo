@@ -1,0 +1,180 @@
+site_name: Xaibo - AI Agent Framework
+site_description: A modular agent framework designed for building flexible AI systems with clean protocol-based interfaces
+site_url: https://www.xaibo.ai
+repo_url: https://github.com/xpressai/xaibo
+repo_name: xpressai/xaibo
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - toc.follow
+    - toc.integrate
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - content.action.view
+    - content.tabs.link
+  logo: images/logo.svg
+  favicon: images/favicon.png
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+  custom_dir: docs/overrides
+
+plugins:
+  - search:
+      lang: en
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - mermaid2
+  - social
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+        # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 2
+
+nav:
+  - Home: index.md
+  - Tutorial:
+    - tutorial/index.md
+    - Getting Started: tutorial/getting-started.md
+    - Building Tools: tutorial/building-tools.md
+    - Understanding Protocols: tutorial/understanding-protocols.md
+    - Testing Agents: tutorial/testing-agents.md
+  - How-to Guides:
+    - how-to/index.md
+    - Getting Started:
+      - Installation: how-to/installation.md
+    - Tools:
+      - Python Tools: how-to/tools/python-tools.md
+      - MCP Tools: how-to/tools/mcp-tools.md
+    - LLM Integration:
+      - Switch Providers: how-to/llm/switch-providers.md
+    - Memory:
+      - Setup Vector Memory: how-to/memory/setup-vector-memory.md
+    - Deployment:
+      - OpenAI API: how-to/deployment/openai-api.md
+      - MCP Server: how-to/deployment/mcp-server.md
+  - Reference:
+    - reference/index.md
+    - Configuration:
+      - Agent Configuration: reference/agent-config.md
+      - CLI Commands: reference/cli.md
+    - Protocols:
+      - reference/protocols/index.md
+      - LLM Protocol: reference/protocols/llm.md
+      - Tools Protocol: reference/protocols/tools.md
+      - Memory Protocol: reference/protocols/memory.md
+      - Response Protocol: reference/protocols/response.md
+    - Modules:
+      - LLM Modules: reference/modules/llm.md
+      - Tool Modules: reference/modules/tools.md
+      - Memory Modules: reference/modules/memory.md
+      - Orchestrator Modules: reference/modules/orchestrator.md
+    - API Reference:
+      - Web Server: reference/api/server.md
+      - API Adapters: reference/api/adapters.md
+    - Troubleshooting: reference/troubleshooting.md
+  - Explanation:
+    - explanation/index.md
+    - Architecture:
+      - Protocol-Driven Architecture: explanation/architecture/protocols.md
+      - Dependency Injection: explanation/architecture/dependency-injection.md
+      - Transparent Proxies: explanation/architecture/transparent-proxies.md
+    - Core Concepts:
+      - Modules vs Protocols: explanation/concepts/modules-vs-protocols.md
+      - Exchange System: explanation/concepts/exchange-system.md
+      - Event System: explanation/concepts/event-system.md
+    - Design Decisions:
+      - Modularity: explanation/design/modularity.md
+      - Testability: explanation/design/testability.md
+      - Extensibility: explanation/design/extensibility.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/xpressai/xaibo
+      name: GitHub Repository
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/uASMzSSVKe
+      name: Join our Discord
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/xpressai
+      name: Follow us on Twitter
+    - icon: fontawesome/solid/globe
+      link: https://xpress.ai
+      name: XpressAI Website
+  generator: false
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: >-
+            Thanks for your feedback! Help us improve this page by
+            <a href="https://github.com/xpressai/xaibo/issues/new/?title=[Docs Feedback] {title} - {url}" target="_blank" rel="noopener">telling us what you found lacking</a>.
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+copyright: Copyright &copy; 2025 XpressAI - Building the future of AI agents
