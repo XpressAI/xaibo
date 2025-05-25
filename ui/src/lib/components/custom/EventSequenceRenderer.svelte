@@ -14,7 +14,7 @@
     import {BoundingBox} from "$lib/components/reactivity";
     import * as Breadcrumb from '$lib/components/ui/breadcrumb';
     import {Button} from "$lib/components/ui/button";
-    import { JSONEditor } from 'svelte-jsoneditor'
+    import { JSONEditor, Mode } from 'svelte-jsoneditor'
     import * as Dialog from "$lib/components/ui/dialog";
 
 
@@ -353,7 +353,7 @@
             {#if selectedEventIdx !== undefined}
                 {@const selectedEvent = eventGroups[selectedEventIdx]}
                 {@const parentChain = getParentCallChain(selectedEvent)}
-                <div class="p-4 @container flex-1" >
+                <div class="p-4 @container flex-1 overflow-auto" >
                     <div class="flex flex-col gap-4">
                         <div class="flex flex-col">
                             <div class="flex justify-between items-center">
@@ -446,14 +446,14 @@
                                         </Button>
                                     </div>
                                     <div class="flex-1 overflow-auto max-h-[30vh]">
-                                        <JSONEditor content={{text: undefined, json: selectedEvent.call.arguments}} readOnly navigationBar={false}/>
+                                        <JSONEditor mode={Mode.text} content={{text: undefined, json: selectedEvent.call.arguments}} readOnly navigationBar={false}/>
                                     </div>
                                 </div>
                             {/if}
                         </div>
 
                         {#if selectedEvent.response || selectedEvent.exception}
-                            <div class="grid grid-cols-1 gap-4">
+                            <div class="grid grid-cols-1 gap-4s">
                                 {#if selectedEvent.response}
                                     <div class="flex flex-col gap-2">
                                         <div class="flex gap-2 items-center">
@@ -463,7 +463,7 @@
                                             </Button>
                                         </div>
                                         <div class="overflow-auto max-h-[45vh]">
-                                            <JSONEditor content={{text: undefined, json: selectedEvent.response.result}} readOnly navigationBar={false}/>
+                                            <JSONEditor mode={Mode.text} content={{text: undefined, json: selectedEvent.response.result}} readOnly navigationBar={false}/>
                                         </div>
                                     </div>
                                 {:else if selectedEvent.exception}
