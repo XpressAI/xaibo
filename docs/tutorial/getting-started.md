@@ -198,11 +198,28 @@ You should see a response like:
 
 ## Step 8: Explore the Debug UI
 
-Open your web browser and go to http://127.0.0.1:9000. You'll see the Xaibo debug interface showing:
+Open your web browser and go to http://127.0.0.1:9000. You'll see an empty dashboard (as of v0.1.2), with a navigation on the right. 
+Click on **example** and you'll see the Xaibo debug interface showing:
 
 - **Sequence diagram**: Visual representation of how your agent processed the request
 - **Module interactions**: How the LLM, tools, and orchestrator worked together
 - **Timing information**: How long each operation took
+
+<div style="display: flex; gap: 10px; margin: 20px 0;">
+  <div style="flex: 1;">
+    <img src="/images/sequence-diagram.png" alt="Xaibo Debug UI - Sequence Diagram Overview" width="100%">
+    <p><em>Sequence Diagram Overview</em></p>
+  </div>
+  <div style="flex: 1;">
+    <img src="/images/detail-view.png" alt="Xaibo Debug UI - Detail View" width="100%">
+    <p><em>Detail View of Component Interactions</em></p>
+  </div>
+</div>
+
+To get the detail view of any one event, simply click on that event either in the sequence diagram or in the list of events on the left.
+
+The detail view shows you all the information that is being captured for that particular call: When it happend, what module was called 
+and what module triggered it. The arguments and the results are available in a convenient JSON view, where you can switch between text, tree and table view, depending on what exactly you need to see.
 
 This visualization helps you understand exactly what your agent is doing.
 
