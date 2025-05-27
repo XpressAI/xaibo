@@ -1196,6 +1196,18 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-asciinema-player"
+version = "0.17.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mkdocs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/00/5f/f4e136fc5fec35bc3579664d97eb508e9ffe948bbbe8748c00bd9ccabc6d/mkdocs_asciinema_player-0.17.0.tar.gz", hash = "sha256:0f887fd49be35512fdd6fbe60165eb705295a62392ed1c4fa0a2134071801405", size = 89897, upload-time = "2025-04-28T14:11:12.458Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/d3/e558da3abe3bcc5bf54b2bcde0fe9e86651b9284f67eaecac6eae921478f/mkdocs_asciinema_player-0.17.0-py3-none-any.whl", hash = "sha256:08eb1fccaee22711e90a8df0a19e52521436cac230c3aeb9d1eb08b611bd3c83", size = 92551, upload-time = "2025-04-28T14:11:11.283Z" },
+]
+
+[[package]]
 name = "mkdocs-get-deps"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3080,6 +3092,7 @@ webserver = [
 dev = [
     { name = "coverage" },
     { name = "devtools" },
+    { name = "mkdocs-asciinema-player" },
     { name = "mkdocs-git-revision-date-localized-plugin" },
     { name = "mkdocs-material", extra = ["imaging"] },
     { name = "mkdocs-mermaid2-plugin" },
@@ -3116,6 +3129,7 @@ provides-extras = ["webserver", "openai", "anthropic", "google", "bedrock", "loc
 dev = [
     { name = "coverage", specifier = ">=7.8.0" },
     { name = "devtools", specifier = ">=0.12.2" },
+    { name = "mkdocs-asciinema-player", specifier = ">=0.17.0" },
     { name = "mkdocs-git-revision-date-localized-plugin", specifier = ">=1.4.5" },
     { name = "mkdocs-material", extras = ["imaging"], specifier = ">=9.6.14" },
     { name = "mkdocs-mermaid2-plugin", specifier = ">=1.2.1" },

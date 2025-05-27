@@ -112,12 +112,11 @@ uv run xaibo dev
 
 You should see:
 ```
-✓ Loaded agent: example
-✓ Found 2 tools in tools.example
-Server running on http://127.0.0.1:9001
+INFO:     Started server process [283833]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9001 (Press CTRL+C to quit)
 ```
-
-Notice it now shows "2 tools" instead of 1!
 
 Test the weather tool:
 
@@ -332,7 +331,10 @@ uv run xaibo dev
 
 You should see:
 ```
-✓ Found 4 tools in tools.example
+INFO:     Started server process [283833]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9001 (Press CTRL+C to quit)
 ```
 
 Now test each tool:

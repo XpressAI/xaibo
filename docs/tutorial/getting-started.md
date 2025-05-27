@@ -14,8 +14,12 @@ pip install uv
 
 You should see output similar to:
 ```
-Successfully installed uv-0.x.x
+Installing collected packages: uv                                               
+Successfully installed uv-0.7.8                                                
 ```
+
+!!! tip
+    There are other installation options for `uv`: [uv getting started documentation](https://docs.astral.sh/uv/getting-started/installation/)
 
 ## Step 2: Create Your First Project
 
@@ -25,14 +29,17 @@ Now create a new Xaibo project. This command sets up everything you need:
 uvx xaibo init my_first_agent
 ```
 
-You'll see Xaibo creating your project structure:
-```
-Creating project structure...
-✓ Created my_first_agent/
-✓ Created agents/example.yml
-✓ Created tools/example.py
-✓ Created .env file
-Project initialized successfully!
+You will be asked to select the functionality you want, and then you'll see Xaibo creating your project structure and installing dependencies.
+Make sure you select both `webserver` and `openai`. 
+
+```asciinema-player
+{
+  "file": "casts/init-xaibo.cast",
+  "mkap_theme": "none",
+  "rows": 12,
+  "auto_play": true,
+  "fit": "none"
+}
 ```
 
 Let's look at what was created:
@@ -142,11 +149,10 @@ uv run xaibo dev
 
 You should see output like:
 ```
-Starting Xaibo development server...
-✓ Loaded agent: example
-✓ Web UI available at: http://127.0.0.1:9000
-✓ OpenAI API available at: http://127.0.0.1:9001/openai
-Server running on http://127.0.0.1:9001
+INFO:     Started server process [283833]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9001 (Press CTRL+C to quit)
 ```
 
 Your agent is now running! The server provides:

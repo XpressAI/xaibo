@@ -58,6 +58,8 @@ plugins:
       enable_creation_date: true
   - mermaid2
   - social
+  - asciinema-player
+
 
 markdown_extensions:
   - admonition

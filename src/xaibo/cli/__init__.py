@@ -144,7 +144,7 @@ def init(args, extra_args=[]):
     modules = questionary.checkbox(
         "What dependencies do you want to include?", choices=[
             questionary.Choice(title="Webserver", value="webserver", description="The dependencies for running xaibo serve and xaibo dev", checked=True),
-            questionary.Choice(title="OpenAI", value="openai", description="Allows using OpenAILLM and OpenAIEmbedder modules and RelayLLM module", checked=False),
+            questionary.Choice(title="OpenAI", value="openai", description="Allows using OpenAILLM and OpenAIEmbedder modules", checked=False),
             questionary.Choice(title="Anthropic", value="anthropic", description="Allows using AnthropicLLM module", checked=False),
             questionary.Choice(title="Google", value="google", description="Allows using GoogleLLM module", checked=False),
             questionary.Choice(title="Bedrock", value="bedrock", description="Allows using BedrockLLM module", checked=False),
