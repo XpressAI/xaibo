@@ -23,6 +23,7 @@ How-to guides provide step-by-step instructions for solving specific problems wi
 
 - [How to deploy with OpenAI-compatible API](deployment/openai-api.md) - Expose your agents through an OpenAI-compatible REST API
 - [How to deploy as an MCP server](deployment/mcp-server.md) - Make your agents available as MCP tools for other applications
+- [How to start the OpenAI Responses API (Quickstart)](api/openai-responses-quickstart.md) - Get the OpenAI Responses API running in 2 minutes
 
 ## Getting Help
 

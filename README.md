@@ -595,6 +595,207 @@ server = XaiboWebServer(
 server.run(host="0.0.0.0", port=8000)
 ```
 
+### OpenAI Responses API Adapter
+
+The OpenAI Responses API adapter provides an implementation of OpenAI's Responses API, which differs from the standard Chat Completions API by offering stateful conversation management, response storage, and enhanced streaming capabilities. This adapter enables more sophisticated conversational workflows with persistent state and response tracking.
+
+#### What is the OpenAI Responses API Adapter?
+
+The OpenAI Responses API adapter implements the [OpenAI Responses API specification](https://platform.openai.com/docs/api-reference/responses), providing:
+
+- **Stateful Conversations**: Maintains conversation history across multiple requests using [`previous_response_id`](src/xaibo/server/adapters/openai_responses.py:300)
+- **Response Storage**: Persistent storage of responses, input items, and conversation history in SQLite database
+- **Streaming Support**: Real-time streaming responses with detailed event sequences
+- **Response Management**: Create, retrieve, delete, and cancel responses
+- **Input Item Tracking**: Store and retrieve input items associated with each response
+- **Background Processing**: Support for background response processing with cancellation capabilities
+
+#### Key Features
+
+- **Conversation Continuity**: Link responses together using [`previous_response_id`](src/xaibo/server/adapters/openai_responses.py:300) to maintain conversation state
+- **Flexible Input Formats**: Support for both simple text strings and complex array-based input structures
+- **Comprehensive Storage**: SQLite database stores responses, input items, and conversation history
+- **Event-Driven Streaming**: Detailed streaming events including [`response.created`](src/xaibo/server/adapters/openai_responses.py:377), [`response.output_text.delta`](src/xaibo/server/adapters/openai_responses.py:404), and [`response.completed`](src/xaibo/server/adapters/openai_responses.py:572)
+- **Response Lifecycle Management**: Full CRUD operations on stored responses
+- **Metadata Support**: Attach custom metadata to responses for tracking and organization
+
+#### Available Endpoints
+
+The adapter provides the following REST endpoints under the `/openai` prefix:
+
+- **POST `/openai/responses`**: Create a new response (streaming or non-streaming)
+- **GET `/openai/responses/{response_id}`**: Retrieve a stored response
+- **DELETE `/openai/responses/{response_id}`**: Delete a response and its associated data
+- **POST `/openai/responses/{response_id}/cancel`**: Cancel a background response
+- **GET `/openai/responses/{response_id}/input_items`**: List input items for a response
+
+#### Usage Examples
+
+##### Command Line Usage
+
+Start the Xaibo server with the OpenAI Responses adapter:
+
+```bash
+# Start server with OpenAI Responses adapter
+python -m xaibo.server.web \
+  --agent-dir ./agents \
+  --adapter xaibo.server.adapters.OpenAiResponsesApiAdapter \
+  --host 127.0.0.1 \
+  --port 8000
+```
+
+##### Programmatic Usage
+
+```python
+from xaibo import Xaibo
+from xaibo.server import XaiboWebServer
+from xaibo.server.adapters.openai_responses import OpenAiResponsesApiAdapter
+
+# Initialize Xaibo and register your agents
+xaibo = Xaibo()
+xaibo.register_agent(my_agent_config)
+
+# Create a web server with the OpenAI Responses adapter
+server = XaiboWebServer(
+    xaibo=xaibo,
+    adapters=[OpenAiResponsesApiAdapter(xaibo, responses_dir="./responses")]
+)
+
+# Start the server
+server.start()
+```
+
+##### API Usage Examples
+
+**Create a simple response:**
+
+```bash
+curl -X POST http://127.0.0.1:8000/openai/responses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "my-agent",
+    "input": "Hello, how are you today?"
+  }'
+```
+
+**Create a streaming response:**
+
+```bash
+curl -X POST http://127.0.0.1:8000/openai/responses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "my-agent",
+    "input": "Tell me a story",
+    "stream": true
+  }'
+```
+
+**Continue a conversation:**
+
+```bash
+curl -X POST http://127.0.0.1:8000/openai/responses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "my-agent",
+    "input": "What did I just ask you?",
+    "previous_response_id": "resp_abc123"
+  }'
+```
+
+**Create a response with metadata:**
+
+```bash
+curl -X POST http://127.0.0.1:8000/openai/responses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "my-agent",
+    "input": "Analyze this data",
+    "metadata": {
+      "user_id": "user123",
+      "session_id": "session456"
+    },
+    "instructions": "You are a data analysis expert."
+  }'
+```
+
+**Retrieve a response:**
+
+```bash
+curl -X GET http://127.0.0.1:8000/openai/responses/resp_abc123
+```
+
+**Get input items for a response:**
+
+```bash
+curl -X GET http://127.0.0.1:8000/openai/responses/resp_abc123/input_items
+```
+
+#### Configuration Options
+
+The [`OpenAiResponsesApiAdapter`](src/xaibo/server/adapters/openai_responses.py:22) constructor accepts the following parameters:
+
+- **`xaibo`**: The Xaibo instance containing registered agents
+- **`streaming_timeout`**: Timeout in seconds for streaming responses (default: 10)
+- **`responses_dir`**: Directory path for storing response database and files (default: "./responses")
+
+#### Response Object Structure
+
+Responses follow the OpenAI Responses API format:
+
+```json
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created_at": 1640995200,
+  "status": "completed",
+  "model": "my-agent",
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_def456",
+      "status": "completed",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Hello! I'm doing well, thank you for asking.",
+          "annotations": []
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 12,
+    "output_tokens": 15,
+    "total_tokens": 27
+  },
+  "metadata": {},
+  "previous_response_id": null
+}
+```
+
+#### Streaming Events
+
+When [`stream: true`](src/xaibo/server/adapters/openai_responses.py:357) is specified, the adapter sends Server-Sent Events:
+
+- **`response.created`**: Response object created
+- **`response.in_progress`**: Response processing started
+- **`response.output_item.added`**: New output item added
+- **`response.content_part.added`**: Content part added to output
+- **`response.output_text.delta`**: Incremental text content
+- **`response.content_part.done`**: Content part completed
+- **`response.output_text.done`**: Text output completed
+- **`response.output_item.done`**: Output item completed
+- **`response.completed`**: Response fully completed
+
+#### Important Notes
+
+- **Database Storage**: The adapter uses SQLite for persistent storage in the specified [`responses_dir`](src/xaibo/server/adapters/openai_responses.py:26)
+- **Conversation State**: Use [`previous_response_id`](src/xaibo/server/adapters/openai_responses.py:300) to maintain conversation continuity across requests
+- **Agent Mapping**: The [`model`](src/xaibo/server/adapters/openai_responses.py:290) parameter maps to registered Xaibo agent IDs
+- **Entry Points**: Agents with multiple entry points can be accessed using `agent_id/entry_point` format
+- **Background Responses**: Only responses created with [`background: true`](src/xaibo/server/adapters/openai_responses.py:351) can be cancelled
+
 ### MCP (Model Context Protocol) Adapter
 
 The MCP adapter exposes Xaibo agents as MCP tools, allowing them to be used by any MCP-compatible client. This enables seamless integration with MCP-enabled applications and development environments.

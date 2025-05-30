@@ -108,7 +108,8 @@ nav:
     - Memory:
       - Setup Vector Memory: how-to/memory/setup-vector-memory.md
     - Deployment:
-      - OpenAI API: how-to/deployment/openai-api.md
+      - OpenAI Chat Completions API: how-to/deployment/openai-api.md
+      - OpenAI Responses API: how-to/api/openai-responses-quickstart.md
       - MCP Server: how-to/deployment/mcp-server.md
   - Reference:
     - reference/index.md

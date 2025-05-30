@@ -2,6 +2,12 @@
 
 This guide shows you how to deploy your Xaibo agents as an OpenAI-compatible REST API, allowing any OpenAI client to interact with your agents.
 
+!!! info "Available OpenAI Adapters"
+    Xaibo provides two OpenAI-compatible adapters:
+    
+    - **[OpenAI API Adapter](../../reference/api/adapters.md#openaiapiadapter)** - Basic OpenAI Chat Completions API compatibility (covered in this guide)
+    - **[OpenAI Responses Adapter](../../reference/api/openai-responses-adapter.md)** - Advanced response management with conversation history and persistence
+
 ## Install web server dependencies
 
 Install the required web server dependencies:

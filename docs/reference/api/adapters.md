@@ -2,6 +2,13 @@
 
 API adapters provide protocol-specific interfaces for interacting with Xaibo agents. They translate external API requests into Xaibo agent calls and format responses according to the target protocol specifications.
 
+## Available Adapters
+
+- **[OpenAiApiAdapter](#openaiapiadapter)** - OpenAI Chat Completions API compatibility
+- **[OpenAiResponsesApiAdapter](openai-responses-adapter.md)** - OpenAI Responses API with conversation management
+- **[McpApiAdapter](#mcpapiadapter)** - Model Context Protocol (MCP) server functionality
+- **[UiApiAdapter](#uiapiadapter)** - GraphQL API for web interface
+
 ## OpenAiApiAdapter
 
 Provides OpenAI Chat Completions API compatibility for Xaibo agents.
