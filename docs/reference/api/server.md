@@ -243,6 +243,7 @@ for adapter in adapters:
 | Adapter | Description | Path | Endpoints |
 |---------|-------------|------|-----------|
 | OpenAI API | OpenAI Chat Completions compatibility | `xaibo.server.adapters.OpenAiApiAdapter` | `/openai/models`, `/openai/chat/completions` |
+| OpenAI Responses API | OpenAI Responses API with conversation management | `xaibo.server.adapters.OpenAiResponsesApiAdapter` | `/openai/responses` |
 | MCP API | Model Context Protocol server | `xaibo.server.adapters.McpApiAdapter` | `/mcp/` |
 | UI API | Debug UI and GraphQL API | `xaibo.server.adapters.UiApiAdapter` | `/api/ui/graphql`, `/` (static files) |
 

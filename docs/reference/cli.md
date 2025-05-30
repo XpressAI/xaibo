@@ -100,6 +100,7 @@ python -m xaibo.server.web [options]
 | Adapter | Description |
 |---------|-------------|
 | `xaibo.server.adapters.OpenAiApiAdapter` | OpenAI Chat Completions API compatibility |
+| `xaibo.server.adapters.OpenAiResponsesApiAdapter` | OpenAI Responses API with conversation management |
 | `xaibo.server.adapters.McpApiAdapter` | Model Context Protocol (MCP) server |
 | `xaibo.server.adapters.UiApiAdapter` | Debug UI and GraphQL API |
 
