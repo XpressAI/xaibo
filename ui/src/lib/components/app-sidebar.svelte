@@ -26,10 +26,10 @@
 						title: x.id,
 						url: `/agents/${x.id}`,
 						subItems: [
-							/*{
+							{
 								title: 'Configuration',
 								url: `/agents/${x.id}/config`,
-							},
+							}/*,
 							{
 								title: 'Monitoring',
 								url: `/agents/${x.id}/monitoring`,
