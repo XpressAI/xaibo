@@ -61,7 +61,7 @@
 </script>
 
 {#if config}
-<div class="container mx-auto p-6">
+<div class="container mx-auto max-w-full p-6">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-3xl font-bold">Agent Configuration: {config.id}</h1>
         <Button variant="default" onclick={() => console.log('Save config')}>

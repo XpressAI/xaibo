@@ -135,37 +135,73 @@
 
 	function applyHierarchicalLayout(nodes: NodeType[], links: LinkType[]) {
 		// Find entry points (nodes that are only providers, not consumers)
+		// Entry nodes are those that don't consume anything (not targets of any link)
 		const entryNodes = nodes.filter((node) => {
-			return node.isEntry || !links.some((link) => link.source === node.id);
+			return node.isEntry || !links.some((link) => link.target === node.id);
 		});
 
-		// Assign levels through BFS
-		const visited = new Set<string>();
-		const queue: { node: NodeType; level: number }[] = entryNodes.map((node) => ({
-			node,
+		// Initialize all node levels to track maximum level reached
+		const nodeLevels = new Map<string, number>();
+		
+		// Assign levels through BFS, following data flow from source to target
+		const queue: { nodeId: string; level: number }[] = entryNodes.map((node) => ({
+			nodeId: node.id,
 			level: 0
 		}));
 
 		while (queue.length > 0) {
-			const { node, level } = queue.shift()!;
+			const { nodeId, level } = queue.shift()!;
 
-			if (visited.has(node.id)) {
-				// If we've seen this node before, update its level to the maximum
-				node.level = Math.max(node.level || 0, level);
-				continue;
+			// Update node level to maximum level reached (handles multiple paths)
+			const currentLevel = nodeLevels.get(nodeId) || -1;
+			if (level <= currentLevel) {
+				continue; // Skip if we've already processed this node at a higher or equal level
 			}
+			
+			nodeLevels.set(nodeId, level);
 
-			visited.add(node.id);
-			node.level = level;
-
-			// Find all nodes that this node connects to
-			const outgoingLinks = links.filter((link) => link.target === node.id);
+			// Find all nodes that this node provides to (outgoing links)
+			const outgoingLinks = links.filter((link) => link.source === nodeId);
 			for (const link of outgoingLinks) {
-				const targetNode = nodes.find((n) => n.id === link.source);
+				const targetNode = nodes.find((n) => n.id === link.target);
 				if (targetNode) {
-					queue.push({ node: targetNode, level: level + 1 });
+					queue.push({ nodeId: targetNode.id, level: level + 1 });
 				}
 			}
+		}
+
+		// Apply the calculated levels to the nodes
+		for (const node of nodes) {
+			node.level = nodeLevels.get(node.id) || 0;
+		}
+
+		// Validation pass: ensure no target node has a lower level than its source
+		let changed = true;
+		while (changed) {
+			changed = false;
+			for (const link of links) {
+				const sourceNode = nodes.find(n => n.id === link.source);
+				const targetNode = nodes.find(n => n.id === link.target);
+				
+				if (sourceNode && targetNode) {
+					const sourceLevel = sourceNode.level || 0;
+					const targetLevel = targetNode.level || 0;
+					const requiredTargetLevel = sourceLevel + 1;
+					if (targetLevel < requiredTargetLevel) {
+						targetNode.level = requiredTargetLevel;
+						changed = true;
+					}
+				}
+			}
+		}
+
+		// Post-processing step: reverse the level order
+		// Find the maximum level
+		const maxLevel = Math.max(...nodes.map(node => node.level || 0));
+		
+		// Reverse the levels so that the highest level becomes 0
+		for (const node of nodes) {
+			node.level = maxLevel - (node.level || 0);
 		}
 	}
 
