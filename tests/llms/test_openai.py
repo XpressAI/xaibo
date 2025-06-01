@@ -240,3 +240,60 @@ async def test_openai_image_content():
     assert response.content is not None
     assert "Hello Xaibo" in response.content
 
+
+def test_openai_array_schema_generation():
+    """Test that array type parameters include required items property in schema"""
+    # Initialize the LLM (no API key needed for schema generation test)
+    llm = OpenAILLM({
+        "api_key": "test-key",  # Dummy key for testing
+        "model": "gpt-4.1-nano"
+    })
+    
+    # Define a function with array parameter
+    test_function = Tool(
+        name="process_items",
+        description="Process a list of items",
+        parameters={
+            "items": ToolParameter(
+                type="list",
+                description="List of items to process",
+                required=True
+            ),
+            "options": ToolParameter(
+                type="string",
+                description="Processing options",
+                required=False
+            )
+        }
+    )
+    
+    # Create options with the function
+    options = LLMOptions(functions=[test_function])
+    
+    # Generate the function schema
+    functions = llm._prepare_functions(options)
+    
+    # Verify the schema structure
+    assert functions is not None
+    assert len(functions) == 1
+    
+    function_def = functions[0]
+    assert function_def["type"] == "function"
+    assert function_def["function"]["name"] == "process_items"
+    
+    # Check the parameters schema
+    parameters = function_def["function"]["parameters"]
+    assert parameters["type"] == "object"
+    
+    # Verify the array parameter has the required items property
+    items_param = parameters["properties"]["items"]
+    assert items_param["type"] == "array"
+    assert "items" in items_param, "Array type parameter must include 'items' property"
+    assert items_param["items"]["type"] == "string", "Array items should default to string type"
+    
+    # Verify non-array parameter doesn't have items property
+    options_param = parameters["properties"]["options"]
+    assert options_param["type"] == "string"
+    assert "items" not in options_param, "Non-array parameters should not have 'items' property"
+    
+    print("✅ Array schema generation test passed - items property is correctly included")

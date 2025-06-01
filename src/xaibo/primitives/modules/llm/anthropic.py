@@ -143,6 +143,32 @@ class AnthropicLLM(LLMProtocol):
                 }
             }
     
+    def _build_parameter_schema(self, param) -> Dict[str, Any]:
+        """Build JSON Schema for a parameter, handling array types properly"""
+        # Map Python types to JSON Schema types
+        def map_type_to_json_schema(python_type: str) -> str:
+            type_mapping = {
+                "str": "string",
+                "int": "integer",
+                "float": "number",
+                "bool": "boolean",
+                "list": "array",
+                "dict": "object",
+                "None": "null",
+                # Add any other type mappings as needed
+            }
+            return type_mapping.get(python_type, python_type)
+        
+        schema_type = map_type_to_json_schema(param.type)
+        schema: Dict[str, Any] = {"type": schema_type}
+        
+        # For array types, add the required items property
+        if schema_type == "array":
+            # Since ToolParameter doesn't specify item types, use string as default
+            schema["items"] = {"type": "string"}
+        
+        return schema
+
     def _prepare_tools(self, options: LLMOptions) -> Optional[List[Dict[str, Any]]]:
         """Prepare tool calling if needed"""
         if not options.functions:
@@ -156,7 +182,7 @@ class AnthropicLLM(LLMProtocol):
                     "type": "object",
                     "properties": {
                         param_name: {
-                            "type": param.type,
+                            **self._build_parameter_schema(param),
                             "description": param.description + (f" Default: {param.default}" if param.default is not None else ""),
                             **({"enum": param.enum} if param.enum else {})
                         }

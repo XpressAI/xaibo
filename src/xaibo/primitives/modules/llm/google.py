@@ -119,6 +119,38 @@ class GoogleLLM(LLMProtocol):
                 mime_type = 'image/webp'
             return types.Part.from_uri(file_uri=image, mime_type=mime_type)
 
+    def _build_parameter_schema(self, param) -> Dict[str, Any]:
+        """Build schema for a parameter, handling array types properly"""
+        # Map Python types to Google Schema types
+        def map_type_to_google_schema(python_type: str) -> str:
+            type_mapping = {
+                "str": "STRING",
+                "int": "INTEGER",
+                "float": "NUMBER",
+                "bool": "BOOLEAN",
+                "list": "ARRAY",
+                "dict": "OBJECT",
+                "None": "NULL",
+                # Add any other type mappings as needed
+            }
+            return type_mapping.get(python_type, python_type.upper())
+        
+        schema_type = map_type_to_google_schema(param.type)
+        schema_dict = {
+            "type": schema_type,
+            "description": param.description,
+        }
+        
+        # Add enum if present
+        if param.enum:
+            schema_dict["enum"] = param.enum
+            
+        # Add default if present
+        if param.default is not None:
+            schema_dict["default"] = param.default
+        
+        return schema_dict
+
     def _prepare_config(self, options: Optional[LLMOptions]) -> types.GenerateContentConfig:
         """Prepare configuration for the API request"""
         if not options:
@@ -140,20 +172,22 @@ class GoogleLLM(LLMProtocol):
         if options.functions:
             tools = []
             for function in options.functions:
+                properties = {}
+                for param_name, param in function.parameters.items():
+                    schema_dict = self._build_parameter_schema(param)
+                    # For array types, add items property
+                    if schema_dict["type"] == "ARRAY":
+                        # Create a simple items schema for arrays
+                        schema_dict["items"] = {"type": "STRING"}
+                    
+                    properties[param_name] = types.Schema(**schema_dict)
+                
                 function_declaration = types.FunctionDeclaration(
                     name=function.name,
                     description=function.description,
                     parameters=types.Schema(
                         type='OBJECT',
-                        properties={
-                            param_name: types.Schema(
-                                type=param.type,
-                                description=param.description,
-                                enum=param.enum,
-                                default=param.default
-                            )
-                            for param_name, param in function.parameters.items()
-                        }
+                        properties=properties
                     )
                 )
                 tools.append(types.Tool(function_declarations=[function_declaration]))

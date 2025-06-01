@@ -111,11 +111,9 @@ class OpenAILLM(LLMProtocol):
                 prepared_messages.append(message)
             
         return prepared_messages
-    def _prepare_functions(self, options: LLMOptions) -> Optional[List[Dict[str, Any]]]:
-        """Prepare function calling if needed"""
-        if not options.functions:
-            return None
-            
+    
+    def _build_parameter_schema(self, param) -> Dict[str, Any]:
+        """Build JSON Schema for a parameter, handling array types properly"""
         # Map Python types to JSON Schema types
         def map_type_to_json_schema(python_type: str) -> str:
             type_mapping = {
@@ -129,6 +127,21 @@ class OpenAILLM(LLMProtocol):
                 # Add any other type mappings as needed
             }
             return type_mapping.get(python_type, python_type)
+        
+        schema_type = map_type_to_json_schema(param.type)
+        schema = {"type": schema_type}
+        
+        # For array types, add the required items property
+        if schema_type == "array":
+            # Since ToolParameter doesn't specify item types, use string as default
+            schema["items"] = {"type": "string"}
+        
+        return schema
+    
+    def _prepare_functions(self, options: LLMOptions) -> Optional[List[Dict[str, Any]]]:
+        """Prepare function calling if needed"""
+        if not options.functions:
+            return None
             
         return [
             {
@@ -140,7 +153,7 @@ class OpenAILLM(LLMProtocol):
                         "type": "object",
                         "properties": {
                             param_name: {
-                                "type": map_type_to_json_schema(param.type),
+                                **self._build_parameter_schema(param),
                                 "description": (param.description or "") + (f" Default: {param.default}" if param.default is not None else ""),
                                 **({} if param.enum is None else {"enum": param.enum})
                             }

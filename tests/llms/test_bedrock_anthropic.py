@@ -241,3 +241,67 @@ async def test_bedrock_anthropic_image_content():
     # Verify the response mentions the text from the image
     assert response.content is not None
     assert "Hello Xaibo" in response.content
+
+def test_bedrock_array_schema_generation():
+    """Test that array type parameters include required items property in schema"""
+    # Initialize the LLM (no AWS credentials needed for schema generation test)
+    try:
+        llm = BedrockLLM({
+            "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+            "region_name": "us-east-1",
+            "aws_access_key_id": "test-key",  # Dummy credentials for testing
+            "aws_secret_access_key": "test-secret"
+        })
+    except Exception:
+        # If boto3 is not available or other issues, skip the test
+        pytest.skip("Unable to initialize BedrockLLM for testing")
+    
+    # Define a function with array parameter
+    test_function = Tool(
+        name="process_items",
+        description="Process a list of items",
+        parameters={
+            "items": ToolParameter(
+                type="list",
+                description="List of items to process",
+                required=True
+            ),
+            "options": ToolParameter(
+                type="string",
+                description="Processing options",
+                required=False
+            )
+        }
+    )
+    
+    # Create options with the function
+    options = LLMOptions(functions=[test_function])
+    
+    # Generate the function schema by calling the internal method
+    messages = [LLMMessage.user("test")]
+    bedrock_messages, system_content, tool_config = llm._prepare_messages(messages, options)
+    
+    # Verify the schema structure
+    assert tool_config is not None
+    assert "tools" in tool_config
+    assert len(tool_config["tools"]) == 1
+    
+    tool_def = tool_config["tools"][0]
+    assert tool_def["toolSpec"]["name"] == "process_items"
+    
+    # Check the parameters schema
+    input_schema = tool_def["toolSpec"]["inputSchema"]["json"]
+    assert input_schema["type"] == "object"
+    
+    # Verify the array parameter has the required items property
+    items_param = input_schema["properties"]["items"]
+    assert items_param["type"] == "array"
+    assert "items" in items_param, "Array type parameter must include 'items' property"
+    assert items_param["items"]["type"] == "string", "Array items should default to string type"
+    
+    # Verify non-array parameter doesn't have items property
+    options_param = input_schema["properties"]["options"]
+    assert options_param["type"] == "string"
+    assert "items" not in options_param, "Non-array parameters should not have 'items' property"
+    
+    print("✅ Bedrock array schema generation test passed - items property is correctly included")

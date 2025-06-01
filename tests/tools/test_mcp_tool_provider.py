@@ -453,15 +453,15 @@ class TestMCPToolProvider:
             assert len(tools) >= 4  # At least 2 from each server
             
             # Check for tools from first stdio server
-            stdio_tools1 = [t for t in tools if t.name.startswith("provider_stdio1.")]
+            stdio_tools1 = [t for t in tools if t.name.startswith("provider_stdio1--")]
             assert len(stdio_tools1) >= 2
             
             # Check for tools from second stdio server
-            stdio_tools2 = [t for t in tools if t.name.startswith("provider_stdio2.")]
+            stdio_tools2 = [t for t in tools if t.name.startswith("provider_stdio2--")]
             assert len(stdio_tools2) >= 2
             
             # Verify tool structure
-            test_tool = next((t for t in tools if t.name.endswith(".test_tool")), None)
+            test_tool = next((t for t in tools if t.name.endswith("--test_tool")), None)
             assert test_tool is not None
             assert test_tool.description == "A test tool for stdio server"
             assert "param1" in test_tool.parameters
@@ -495,7 +495,7 @@ class TestMCPToolProvider:
         provider = MCPToolProvider(single_server_setup)
         
         try:
-            result = await provider.execute_tool("single_stdio.test_tool", {"param1": "test_value"})
+            result = await provider.execute_tool("single_stdio--test_tool", {"param1": "test_value"})
             
             assert result.success is True
             assert "test_value" in result.result
@@ -510,8 +510,8 @@ class TestMCPToolProvider:
         
         try:
             # Use echo_tool to test multiple calls
-            result1 = await provider.execute_tool("single_stdio.echo_tool", {"message": "first"})
-            result2 = await provider.execute_tool("single_stdio.echo_tool", {"message": "second"})
+            result1 = await provider.execute_tool("single_stdio--echo_tool", {"message": "first"})
+            result2 = await provider.execute_tool("single_stdio--echo_tool", {"message": "second"})
             
             assert result1.success is True
             assert result2.success is True
@@ -540,7 +540,7 @@ class TestMCPToolProvider:
         provider = MCPToolProvider(config)
         
         try:
-            result = await provider.execute_tool("no_content_test.no_content_tool", {"status": "ok"})
+            result = await provider.execute_tool("no_content_test--no_content_tool", {"status": "ok"})
             
             assert result.success is True
             # Should return the raw result when no content field
@@ -572,7 +572,7 @@ class TestMCPToolProvider:
         provider = MCPToolProvider(single_server_setup)
         
         try:
-            result = await provider.execute_tool("nonexistent.tool", {})
+            result = await provider.execute_tool("nonexistent--tool", {})
             
             assert result.success is False
             assert "MCP server 'nonexistent' not found" in result.error
@@ -586,7 +586,7 @@ class TestMCPToolProvider:
         provider = MCPToolProvider(single_server_setup)
         
         try:
-            result = await provider.execute_tool("single_stdio.nonexistent_tool", {})
+            result = await provider.execute_tool("single_stdio--nonexistent_tool", {})
             
             assert result.success is False
             assert "Tool not found" in result.error
@@ -645,7 +645,7 @@ class TestMCPToolProvider:
         
         tool = provider._convert_mcp_tool_to_xaibo_tool(mcp_tool, "test-server")
         
-        assert tool.name == "test-server.test_tool"
+        assert tool.name == "test-server--test_tool"
         assert tool.description == "A test tool for conversion"
         assert len(tool.parameters) == 3
         
@@ -683,7 +683,7 @@ class TestMCPToolProvider:
         
         tool = provider._convert_mcp_tool_to_xaibo_tool(mcp_tool, "server")
         
-        assert tool.name == "server.minimal_tool"
+        assert tool.name == "server--minimal_tool"
         assert tool.description == ""
         assert len(tool.parameters) == 0
     
@@ -701,7 +701,7 @@ class TestMCPToolProvider:
         
         tool = provider._convert_mcp_tool_to_xaibo_tool(mcp_tool, "server")
         
-        assert tool.name == "server.simple_tool"
+        assert tool.name == "server--simple_tool"
         assert tool.description == "Simple tool"
         assert len(tool.parameters) == 0
 

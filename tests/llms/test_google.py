@@ -246,3 +246,64 @@ async def test_google_image_content():
     assert response.content is not None
     assert "Hello Xaibo" in response.content
 
+
+def test_google_array_schema_generation():
+    """Test that array type parameters include required items property in schema"""
+    # Initialize the LLM (no API key needed for schema generation test)
+    llm = GoogleLLM({
+        "api_key": "test-key",  # Dummy key for testing
+        "model": "gemini-2.0-flash-001"
+    })
+    
+    # Define a function with array parameter
+    test_function = Tool(
+        name="process_items",
+        description="Process a list of items",
+        parameters={
+            "items": ToolParameter(
+                type="list",
+                description="List of items to process",
+                required=True
+            ),
+            "options": ToolParameter(
+                type="string",
+                description="Processing options",
+                required=False
+            )
+        }
+    )
+    
+    # Create options with the function
+    options = LLMOptions(functions=[test_function])
+    
+    # Generate the function schema
+    config = llm._prepare_config(options)
+    
+    # Verify the schema structure
+    assert config is not None
+    assert hasattr(config, 'tools')
+    assert len(config.tools) == 1
+    
+    tool = config.tools[0]
+    assert len(tool.function_declarations) == 1
+    
+    function_declaration = tool.function_declarations[0]
+    assert function_declaration.name == "process_items"
+    
+    # Check the parameters schema
+    parameters = function_declaration.parameters
+    assert parameters.type == "OBJECT"
+    
+    # Verify the array parameter has the required items property
+    items_param = parameters.properties["items"]
+    assert items_param.type == "ARRAY"
+    assert hasattr(items_param, 'items'), "Array type parameter must include 'items' property"
+    assert items_param.items is not None, "Array type parameter must have non-null 'items' property"
+    assert items_param.items.type == "STRING", "Array items should default to string type"
+    
+    # Verify non-array parameter has null items property
+    options_param = parameters.properties["options"]
+    assert options_param.type == "STRING"
+    assert options_param.items is None, "Non-array parameters should have null 'items' property"
+    
+    print("✅ Google array schema generation test passed - items property is correctly included")

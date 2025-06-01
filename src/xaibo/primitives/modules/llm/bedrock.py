@@ -178,7 +178,7 @@ class BedrockLLM(LLMProtocol):
                 
                 for param_name, param in function.parameters.items():
                     tool["toolSpec"]["inputSchema"]["json"]["properties"][param_name] = {
-                        "type": param.type,
+                        **self._build_parameter_schema(param),
                         "description": param.description
                     }
                     if param.required:
@@ -192,6 +192,33 @@ class BedrockLLM(LLMProtocol):
             }
         
         return bedrock_messages, system_content, tool_config
+
+    def _build_parameter_schema(self, param) -> Dict[str, Any]:
+        """Build JSON Schema for a parameter, handling array types properly"""
+        # Map Python types to JSON Schema types
+        def map_type_to_json_schema(python_type: str) -> str:
+            type_mapping = {
+                "str": "string",
+                "int": "integer",
+                "float": "number",
+                "bool": "boolean",
+                "list": "array",
+                "dict": "object",
+                "None": "null",
+                # Add any other type mappings as needed
+            }
+            return type_mapping.get(python_type, python_type)
+        
+        schema_type = map_type_to_json_schema(param.type)
+        schema: Dict[str, Any] = {"type": schema_type}
+        
+        # For array types, add the required items property
+        if schema_type == "array":
+            # Since ToolParameter doesn't specify item types, use string as default
+            schema["items"] = {"type": "string"}
+        
+        return schema
+
     def _extract_content(self, response_body: Dict[str, Any]) -> str:
         if "output" in response_body and "message" in response_body["output"]:
             content_items = response_body["output"]["message"].get("content", [])

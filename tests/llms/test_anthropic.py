@@ -240,3 +240,59 @@ async def test_anthropic_image_content():
     assert response.content is not None
     assert "Hello Xaibo" in response.content
 
+
+def test_anthropic_array_schema_generation():
+    """Test that array type parameters include required items property in schema"""
+    # Initialize the LLM (no API key needed for schema generation test)
+    llm = AnthropicLLM({
+        "api_key": "test-key",  # Dummy key for testing
+        "model": "claude-3-haiku-20240307"
+    })
+    
+    # Define a function with array parameter
+    test_function = Tool(
+        name="process_items",
+        description="Process a list of items",
+        parameters={
+            "items": ToolParameter(
+                type="list",
+                description="List of items to process",
+                required=True
+            ),
+            "options": ToolParameter(
+                type="string",
+                description="Processing options",
+                required=False
+            )
+        }
+    )
+    
+    # Create options with the function
+    options = LLMOptions(functions=[test_function])
+    
+    # Generate the function schema
+    tools = llm._prepare_tools(options)
+    
+    # Verify the schema structure
+    assert tools is not None
+    assert len(tools) == 1
+    
+    tool_def = tools[0]
+    assert tool_def["name"] == "process_items"
+    
+    # Check the parameters schema
+    input_schema = tool_def["input_schema"]
+    assert input_schema["type"] == "object"
+    
+    # Verify the array parameter has the required items property
+    items_param = input_schema["properties"]["items"]
+    assert items_param["type"] == "array"
+    assert "items" in items_param, "Array type parameter must include 'items' property"
+    assert items_param["items"]["type"] == "string", "Array items should default to string type"
+    
+    # Verify non-array parameter doesn't have items property
+    options_param = input_schema["properties"]["options"]
+    assert options_param["type"] == "string"
+    assert "items" not in options_param, "Non-array parameters should not have 'items' property"
+    
+    print("✅ Anthropic array schema generation test passed - items property is correctly included")
