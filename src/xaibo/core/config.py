@@ -267,7 +267,11 @@ class AgentConfig(BaseModel):
                             if param_name in type_hints:
                                 param_type = type_hints[param_name]
                                 # Get the name of the type for protocol matching
-                                if hasattr(param_type, "__name__"):
+                                if hasattr(param_type, "__args__"):
+                                    type_name = ",".join(x.__name__ for x in param_type.__args__)
+
+                                    requirements[param_name] = type_name
+                                elif hasattr(param_type, "__name__"):
                                     type_name = param_type.__name__
                                     requirements[param_name] = type_name
                                 elif hasattr(param_type, "_name"):
