@@ -94,8 +94,19 @@ class Query:
             events = [Event(**json.loads(line)) for line in lines]
         return DebugTrace(agent_id=agent_id, events=events)
 
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def clear_log(self, agent_id: str) -> DebugTrace:
+        target_path = Path("./debug") / f"{agent_id}.jsonl"
+        events = []
+        if target_path.exists():
+            target_path.unlink()
+        return DebugTrace(agent_id=agent_id, events=events)
+
 schema = strawberry.Schema(
-    query=Query            
+    query=Query,
+    mutation=Mutation,
 )
 
 class UiApiAdapter:

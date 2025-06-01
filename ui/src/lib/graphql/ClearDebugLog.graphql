@@ -1,0 +1,5 @@
+mutation ClearDebugLog($agentId: String!) {
+    clearLog(agentId: $agentId) {
+        agentId
+    }
+}

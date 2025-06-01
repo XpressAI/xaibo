@@ -180,8 +180,8 @@
 		while (changed) {
 			changed = false;
 			for (const link of links) {
-				const sourceNode = nodes.find(n => n.id === link.source);
-				const targetNode = nodes.find(n => n.id === link.target);
+				const sourceNode = nodes.find(n => n.id === link.target);
+				const targetNode = nodes.find(n => n.id === link.source);
 				
 				if (sourceNode && targetNode) {
 					const sourceLevel = sourceNode.level || 0;
@@ -197,7 +197,14 @@
 
 		// Post-processing step: reverse the level order
 		// Find the maximum level
-		const maxLevel = Math.max(...nodes.map(node => node.level || 0));
+		let maxLevel = Math.max(...nodes.map(node => node.level || 0));
+		
+		// Reverse the levels so that the highest level becomes 0
+		for (const node of nodes) {
+			node.level = maxLevel - (node.level || 0);
+		}
+
+		maxLevel = Math.max(...nodes.map(node => node.level || 0));
 		
 		// Reverse the levels so that the highest level becomes 0
 		for (const node of nodes) {

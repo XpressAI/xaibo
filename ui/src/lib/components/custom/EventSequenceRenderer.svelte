@@ -18,8 +18,9 @@
     import * as Dialog from "$lib/components/ui/dialog";
 
 
-    let {events = $bindable([])} = $props<{
+    let {events = $bindable([]), onClear = undefined} = $props<{
         events: Event[];
+        onClear: () => void | undefined;
     }>();
 
     interface NodeType {
@@ -255,7 +256,9 @@
         <div class="overflow-hidden flex">
             <div class="h-full overflow-auto {selectedEventIdx !== undefined? 'block w-fit' :'grid w-full grid-cols-[auto_1fr]'} relative">
                 <div class="flex flex-col gap-0 border-r border-gray-200 dark:border-gray-700 pr-2">
-                    <div class="h-24 bg-white"></div>
+                    <div class="h-24 bg-white">
+                        <Button onclick={onClear}>Clear Log</Button>
+                    </div>
                     {#each eventGroups as group, i (i)}
                         {@const node = nodesById[group.call.module_id]}
                         {@const parentChain = getParentChain(group)}

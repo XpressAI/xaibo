@@ -29,7 +29,7 @@ type Event {
 }
 
 type ExchangeConfig {
-  module: String!
+  module: String
   fieldName: String
   protocol: String!
   provider: JSON!
@@ -46,6 +46,10 @@ type ModuleConfig {
   provides: [String!]
   uses: [String!]
   config: JSON
+}
+
+type Mutation {
+  clearLog(agentId: String!): DebugTrace!
 }
 
 type Query {
