@@ -17,12 +17,20 @@ This includes the MCP adapter and JSON-RPC 2.0 support.
 Use the built-in CLI for quick MCP deployment:
 
 ```bash
-# Deploy as MCP server
+# Deploy as MCP server (no authentication)
 python -m xaibo.server.web \
   --agent-dir ./agents \
   --adapter xaibo.server.adapters.McpApiAdapter \
   --host 127.0.0.1 \
   --port 8000
+
+# Deploy with API key authentication
+python -m xaibo.server.web \
+  --agent-dir ./agents \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --host 127.0.0.1 \
+  --port 8000 \
+  --mcp-api-key your-secret-key-here
 ```
 
 ## Create an MCP server deployment
@@ -32,24 +40,24 @@ Create a deployment script for your MCP server:
 ```python
 # mcp_deploy.py
 from xaibo import Xaibo
-from xaibo.server import XaiboWebServer
-from xaibo.server.adapters.mcp import McpApiAdapter
+from xaibo.server.web import XaiboWebServer
 
 def main():
     # Initialize Xaibo
     xaibo = Xaibo()
     
-    # Register your agents from the agents directory
-    xaibo.register_agents_from_directory("./agents")
-    
-    # Create web server with MCP adapter
+    # Create web server with MCP adapter and API key
     server = XaiboWebServer(
         xaibo=xaibo,
-        adapters=[McpApiAdapter(xaibo)]
+        adapters=["xaibo.server.adapters.McpApiAdapter"],
+        agent_dir="./agents",
+        host="127.0.0.1",
+        port=8000,
+        mcp_api_key="your-secret-key-here"  # Optional authentication
     )
     
     # Start the server
-    server.run(host="127.0.0.1", port=8000)
+    server.start()
 
 if __name__ == "__main__":
     main()
@@ -59,6 +67,8 @@ if __name__ == "__main__":
 ## Test your MCP server
 
 Test the MCP server with curl:
+
+### Without Authentication
 
 ```bash
 # Initialize MCP connection
@@ -103,11 +113,61 @@ curl -X POST http://127.0.0.1:8000/mcp \
   }'
 ```
 
+### With Authentication
+
+```bash
+# Initialize MCP connection with API key
+curl -X POST http://127.0.0.1:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key-here" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": {
+        "name": "test-client",
+        "version": "1.0.0"
+      }
+    }
+  }'
+
+# List available tools with API key
+curl -X POST http://127.0.0.1:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key-here" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+
+# Call an agent with API key
+curl -X POST http://127.0.0.1:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key-here" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "your-agent-id",
+      "arguments": {
+        "message": "Hello from MCP client!"
+      }
+    }
+  }'
+```
+
 ## Use with MCP clients
 
 Connect your MCP server to various MCP clients:
 
 ### Claude Desktop
+
+#### Without Authentication
 Add to your Claude Desktop MCP configuration:
 
 ```json
@@ -124,7 +184,33 @@ Add to your Claude Desktop MCP configuration:
 }
 ```
 
+#### With Authentication
+```json
+{
+  "mcpServers": {
+    "xaibo-agents": {
+      "command": "python",
+      "args": [
+        "-m",
+        "xaibo.server.web",
+        "--agent-dir",
+        "./agents",
+        "--adapter",
+        "xaibo.server.adapters.McpApiAdapter",
+        "--mcp-api-key",
+        "your-secret-key-here"
+      ],
+      "headers": {
+        "Authorization": "Bearer your-secret-key-here"
+      }
+    }
+  }
+}
+```
+
 ### Cline (VS Code Extension)
+
+#### Without Authentication
 Configure Cline to use your Xaibo MCP server:
 
 ```json
@@ -228,6 +314,68 @@ python stdio_mcp_server.py
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | python stdio_mcp_server.py
 ```
 
+## API Key Configuration
+
+!!! tip "Detailed Authentication Setup"
+    For comprehensive authentication setup including troubleshooting and security best practices, see the [authentication guide](../authentication.md).
+
+### Environment Variables
+
+The recommended approach is to use environment variables for API key configuration:
+
+```bash
+# Set environment variable
+export MCP_API_KEY="your-secret-key-here"
+
+# Start server (API key automatically detected)
+python -m xaibo.server.web \
+  --agent-dir ./agents \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --host 127.0.0.1 \
+  --port 8000
+```
+
+### Command Line Arguments
+
+Alternatively, provide API keys via command line arguments:
+
+```bash
+# API key via command line (overrides environment variable)
+python -m xaibo.server.web \
+  --agent-dir ./agents \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --host 127.0.0.1 \
+  --port 8000 \
+  --mcp-api-key your-secret-key-here
+```
+
+### Docker Deployment
+
+```dockerfile
+# Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+# Use environment variable for API key
+ENV MCP_API_KEY=""
+
+CMD ["python", "-m", "xaibo.server.web", \
+     "--agent-dir", "./agents", \
+     "--adapter", "xaibo.server.adapters.McpApiAdapter", \
+     "--host", "0.0.0.0", \
+     "--port", "8000"]
+```
+
+```bash
+# Run with Docker
+docker run -e MCP_API_KEY=your-secret-key-here -p 8000:8000 your-xaibo-image
+```
+
 ## Best practices
 
 ### Agent design for MCP
@@ -239,7 +387,9 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | python stdio
 ### Security
 - Validate all input parameters
 - Implement rate limiting for production
-- Use authentication for sensitive operations
+- Always use authentication for production environments
+- Use environment variables for secrets
+- Rotate API keys regularly
 - Monitor for unusual usage patterns
 
 ### Performance

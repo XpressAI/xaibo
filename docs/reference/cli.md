@@ -94,6 +94,8 @@ python -m xaibo.server.web [options]
 | `--host` | `str` | `127.0.0.1` | Host address to bind the server |
 | `--port` | `int` | `8000` | Port number for the server |
 | `--debug-ui` | `bool` | `false` | Enable debug UI and event tracing |
+| `--openai-api-key` | `str` | `None` | API key for OpenAI adapter authentication (optional) |
+| `--mcp-api-key` | `str` | `None` | API key for MCP adapter authentication (optional) |
 
 ### Available Adapters
 
@@ -120,6 +122,18 @@ python -m xaibo.server.web \
 python -m xaibo.server.web \
   --adapter xaibo.server.adapters.OpenAiApiAdapter \
   --debug-ui true
+
+# Start with API key authentication
+python -m xaibo.server.web \
+  --adapter xaibo.server.adapters.OpenAiApiAdapter \
+  --openai-api-key sk-your-secret-key-here
+
+# Start with both adapters and API keys
+python -m xaibo.server.web \
+  --adapter xaibo.server.adapters.OpenAiApiAdapter \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --openai-api-key sk-your-openai-key \
+  --mcp-api-key your-mcp-secret-key
 
 # Custom configuration
 python -m xaibo.server.web \
@@ -154,13 +168,15 @@ curl -X POST http://127.0.0.1:9001/openai/chat/completions \
 ### Production Deployment
 
 ```bash
-# Start production server
+# Start production server with API key authentication
 python -m xaibo.server.web \
   --agent-dir ./production-agents \
   --host 0.0.0.0 \
   --port 8000 \
   --adapter xaibo.server.adapters.OpenAiApiAdapter \
-  --adapter xaibo.server.adapters.McpApiAdapter
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --openai-api-key "${CUSTOM_OPENAI_API_KEY}" \
+  --mcp-api-key "${MCP_API_KEY}"
 ```
 
 ### MCP Server Setup
@@ -171,8 +187,93 @@ python -m xaibo.server.web \
   --adapter xaibo.server.adapters.McpApiAdapter \
   --port 8000
 
-# Use with MCP client
+# Start with API key authentication
+python -m xaibo.server.web \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --mcp-api-key your-secret-key \
+  --port 8000
+
+# Use with MCP client (no authentication)
 curl -X POST http://localhost:8000/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
+
+# Use with MCP client (with authentication)
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
 ```
+
+## Environment Variables
+
+API keys can be provided via environment variables instead of command line arguments:
+
+| Environment Variable | Description | Corresponding CLI Option |
+|---------------------|-------------|-------------------------|
+| `CUSTOM_OPENAI_API_KEY` | API key for OpenAI adapter authentication | `--openai-api-key` |
+| `MCP_API_KEY` | API key for MCP adapter authentication | `--mcp-api-key` |
+
+### Environment Variable Examples
+
+```bash
+# Set environment variables
+export CUSTOM_OPENAI_API_KEY="sk-your-openai-key"
+export MCP_API_KEY="your-mcp-secret-key"
+
+# Start server (API keys automatically detected)
+python -m xaibo.server.web \
+  --adapter xaibo.server.adapters.OpenAiApiAdapter \
+  --adapter xaibo.server.adapters.McpApiAdapter
+
+# Command line arguments override environment variables
+python -m xaibo.server.web \
+  --adapter xaibo.server.adapters.OpenAiApiAdapter \
+  --openai-api-key "different-key"  # Overrides CUSTOM_OPENAI_API_KEY
+```
+
+## Authentication
+
+### OpenAI Adapter Authentication
+
+When an API key is configured for the OpenAI adapter, all requests must include a valid `Authorization` header:
+
+```bash
+# Without authentication (no API key configured)
+curl -X POST http://localhost:8000/openai/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "agent-id", "messages": [{"role": "user", "content": "Hello"}]}'
+
+# With authentication (API key configured)
+curl -X POST http://localhost:8000/openai/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your-openai-key" \
+  -d '{"model": "agent-id", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+**Authentication Errors:**
+
+- `401 Unauthorized` - Missing or invalid API key
+- `WWW-Authenticate: Bearer` header included in error responses
+
+### MCP Adapter Authentication
+
+When an API key is configured for the MCP adapter, all JSON-RPC requests must include a valid `Authorization` header:
+
+```bash
+# Without authentication (no API key configured)
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
+
+# With authentication (API key configured)
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-mcp-secret-key" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
+```
+
+**Authentication Errors:**
+
+- JSON-RPC error response with code `-32001` for authentication failures
+- Error messages: "Missing Authorization header", "Invalid Authorization header format", "Invalid API key"

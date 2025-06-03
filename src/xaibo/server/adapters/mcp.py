@@ -2,6 +2,7 @@ import json
 import time
 import logging
 import uuid
+import os
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, Request, HTTPException, APIRouter
@@ -15,13 +16,15 @@ logger = logging.getLogger(__name__)
 class McpApiAdapter:
     """MCP (Model Context Protocol) adapter that exposes Xaibo agents as MCP tools"""
     
-    def __init__(self, xaibo: Xaibo):
+    def __init__(self, xaibo: Xaibo, api_key: Optional[str] = None):
         """Initialize the MCP adapter
         
         Args:
             xaibo: The Xaibo instance containing registered agents
+            api_key: Optional API key for authentication
         """
         self.xaibo = xaibo
+        self.api_key = api_key or os.getenv('MCP_API_KEY')
         self.router = APIRouter()
         
         # Register MCP protocol routes
@@ -45,6 +48,22 @@ class McpApiAdapter:
             JSON-RPC 2.0 response
         """
         try:
+            # Verify API key if configured
+            if self.api_key:
+                auth_header = request.headers.get("authorization")
+                if not auth_header:
+                    logger.warning("MCP API request missing Authorization header")
+                    return self._create_error_response(None, -32001, "Missing Authorization header")
+                
+                if not auth_header.startswith("Bearer "):
+                    logger.warning("MCP API request with invalid Authorization header format")
+                    return self._create_error_response(None, -32001, "Invalid Authorization header format")
+                
+                provided_key = auth_header[7:]  # Remove "Bearer " prefix
+                if provided_key != self.api_key:
+                    logger.warning("MCP API request with invalid API key")
+                    return self._create_error_response(None, -32001, "Invalid API key")
+            
             data = await request.json()
             
             # Handle JSON-RPC 2.0 request

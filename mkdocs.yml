@@ -100,6 +100,7 @@ nav:
     - how-to/index.md
     - Getting Started:
       - Installation: how-to/installation.md
+      - Authentication: how-to/authentication.md
     - Tools:
       - Python Tools: how-to/tools/python-tools.md
       - MCP Tools: how-to/tools/mcp-tools.md
@@ -130,6 +131,7 @@ nav:
     - API Reference:
       - Web Server: reference/api/server.md
       - API Adapters: reference/api/adapters.md
+      - OpenAI Responses Adapter: reference/api/openai-responses-adapter.md
     - Troubleshooting: reference/troubleshooting.md
   - Explanation:
     - explanation/index.md

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from typing import Type
+from typing import Type, Optional
 import importlib
 import uvicorn
 import asyncio
@@ -20,7 +20,7 @@ def get_class_by_path(path: str) -> Type:
     return clazz
 
 class XaiboWebServer:
-    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000, debug: bool = False) -> None:
+    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000, debug: bool = False, openai_api_key: Optional[str] = None, mcp_api_key: Optional[str] = None) -> None:
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             self.watcher_task = asyncio.create_task(self.watch_config_files())
@@ -32,7 +32,7 @@ class XaiboWebServer:
                 pass
 
 
-        self.xaibo = xaibo        
+        self.xaibo = xaibo
         self.app = FastAPI(title="XaiboWebServer", lifespan=lifespan)
         self.app.add_middleware(
             CORSMiddleware,
@@ -46,6 +46,8 @@ class XaiboWebServer:
         self.port = port
         self.configs = {}
         self.watcher_task = None
+        self.openai_api_key = openai_api_key
+        self.mcp_api_key = mcp_api_key
 
         if debug:
             from xaibo.server.adapters.ui import UIDebugTraceEventListener
@@ -55,7 +57,14 @@ class XaiboWebServer:
 
         for adapter in adapters:
             clazz = get_class_by_path(adapter)
-            instance = clazz(self.xaibo)
+            # Pass API keys to appropriate adapters based on class name
+            class_name = clazz.__name__
+            if class_name == "OpenAiApiAdapter":
+                instance = clazz(self.xaibo, api_key=self.openai_api_key)
+            elif class_name == "McpApiAdapter":
+                instance = clazz(self.xaibo, api_key=self.mcp_api_key)
+            else:
+                instance = clazz(self.xaibo)
             instance.adapt(self.app)
 
         # Initial load of configs
@@ -99,10 +108,14 @@ if __name__ == "__main__":
                         help="Port to run the server on")
     parser.add_argument("--debug-ui", dest="debug", default=False, type=bool, action="store",
                         help="Enable writing debug traces and start web ui")
+    parser.add_argument("--openai-api-key", dest="openai_api_key", default=None, action="store",
+                        help="API key for OpenAI adapter authentication (optional)")
+    parser.add_argument("--mcp-api-key", dest="mcp_api_key", default=None, action="store",
+                        help="API key for MCP adapter authentication (optional)")
 
     args = parser.parse_args()
 
     xaibo = Xaibo()
 
-    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir, args.host, args.port, args.debug)
+    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir, args.host, args.port, args.debug, args.openai_api_key, args.mcp_api_key)
     server.start()

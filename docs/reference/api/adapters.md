@@ -2,6 +2,9 @@
 
 API adapters provide protocol-specific interfaces for interacting with Xaibo agents. They translate external API requests into Xaibo agent calls and format responses according to the target protocol specifications.
 
+!!! tip "Authentication Setup Guide"
+    For step-by-step authentication setup instructions, see the [authentication how-to guide](../../how-to/authentication.md).
+
 ## Available Adapters
 
 - **[OpenAiApiAdapter](#openaiapiadapter)** - OpenAI Chat Completions API compatibility
@@ -20,7 +23,7 @@ Provides OpenAI Chat Completions API compatibility for Xaibo agents.
 ### Constructor
 
 ```python
-OpenAiApiAdapter(xaibo: Xaibo, streaming_timeout=10)
+OpenAiApiAdapter(xaibo: Xaibo, streaming_timeout=10, api_key: Optional[str] = None)
 ```
 
 #### Parameters
@@ -29,12 +32,20 @@ OpenAiApiAdapter(xaibo: Xaibo, streaming_timeout=10)
 |-----------|------|-------------|
 | `xaibo` | `Xaibo` | Xaibo instance containing registered agents |
 | `streaming_timeout` | `int` | Timeout in seconds for streaming responses (default: 10) |
+| `api_key` | `Optional[str]` | API key for authentication. If provided, all requests must include valid Authorization header. Falls back to `OPENAI_API_KEY` environment variable if not specified. |
 
 ### API Endpoints
 
 #### GET `/openai/models`
 
 Returns list of available agents as OpenAI-compatible models.
+
+**Authentication:** Required if API key is configured.
+
+**Request Headers:**
+```http
+Authorization: Bearer sk-your-api-key  # Required if authentication enabled
+```
 
 **Response Format:**
 
@@ -56,6 +67,14 @@ Returns list of available agents as OpenAI-compatible models.
 
 OpenAI-compatible chat completions endpoint.
 
+**Authentication:** Required if API key is configured.
+
+**Request Headers:**
+```http
+Content-Type: application/json
+Authorization: Bearer sk-your-api-key  # Required if authentication enabled
+```
+
 **Request Format:**
 
 ```json
@@ -67,7 +86,7 @@ OpenAI-compatible chat completions endpoint.
       "content": "You are a helpful assistant."
     },
     {
-      "role": "user", 
+      "role": "user",
       "content": "Hello, how are you?"
     }
   ],
@@ -182,7 +201,29 @@ Function call support is planned for future releases:
 
 ### Error Handling
 
-Basic error handling is implemented. Full OpenAI-compatible error response format and specific error codes are not yet fully implemented.
+#### Authentication Errors
+
+When API key authentication is enabled:
+
+**Missing Authorization Header:**
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer
+
+{
+  "detail": "Missing Authorization header"
+}
+```
+
+**Invalid API Key:**
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer
+
+{
+  "detail": "Invalid API key"
+}
+```
 
 #### Agent Not Found
 
@@ -192,12 +233,13 @@ Basic error handling is implemented. Full OpenAI-compatible error response forma
 }
 ```
 
-**Note**: Token counting is not yet implemented, so the `usage` field in responses currently returns zeros. OpenAI-compatible error response format and specific error codes are planned for future releases.
+**Note**: Token counting is not yet implemented, so the `usage` field in responses currently returns zeros. Full OpenAI-compatible error response format and specific error codes are planned for future releases.
 
 ### Example Usage
 
 #### cURL
 
+**Without Authentication:**
 ```bash
 curl -X POST http://localhost:8000/openai/chat/completions \
   -H "Content-Type: application/json" \
@@ -210,14 +252,49 @@ curl -X POST http://localhost:8000/openai/chat/completions \
   }'
 ```
 
+**With Authentication:**
+```bash
+curl -X POST http://localhost:8000/openai/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -d '{
+    "model": "my-agent",
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ],
+    "temperature": 0.7
+  }'
+```
+
 #### Python (OpenAI SDK)
 
+**Without Authentication:**
 ```python
 import openai
 
 client = openai.OpenAI(
     base_url="http://localhost:8000/openai",
-    api_key="not-needed"  # Xaibo doesn't require API keys
+    api_key="not-needed"  # No authentication required
+)
+
+response = client.chat.completions.create(
+    model="my-agent",
+    messages=[
+        {"role": "user", "content": "Hello!"}
+    ],
+    temperature=0.7
+)
+
+print(response.choices[0].message.content)
+```
+
+**With Authentication:**
+```python
+import openai
+
+client = openai.OpenAI(
+    base_url="http://localhost:8000/openai",
+    api_key="sk-your-api-key"  # Use your configured API key
 )
 
 response = client.chat.completions.create(
@@ -256,7 +333,7 @@ Implements Model Context Protocol (MCP) server functionality.
 ### Constructor
 
 ```python
-McpApiAdapter(xaibo: Xaibo)
+McpApiAdapter(xaibo: Xaibo, api_key: Optional[str] = None)
 ```
 
 #### Parameters
@@ -264,12 +341,21 @@ McpApiAdapter(xaibo: Xaibo)
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `xaibo` | `Xaibo` | Xaibo instance containing registered agents |
+| `api_key` | `Optional[str]` | API key for authentication. If provided, all requests must include valid Authorization header. Falls back to `MCP_API_KEY` environment variable if not specified. |
 
 ### API Endpoints
 
 #### POST `/mcp/`
 
 Main MCP JSON-RPC 2.0 endpoint for all protocol communication.
+
+**Authentication:** Required if API key is configured.
+
+**Request Headers:**
+```http
+Content-Type: application/json
+Authorization: Bearer your-api-key  # Required if authentication enabled
+```
 
 **Request Format:**
 
@@ -307,6 +393,19 @@ Main MCP JSON-RPC 2.0 endpoint for all protocol communication.
     "code": -32600,
     "message": "Invalid Request",
     "data": "Additional error information"
+  }
+}
+```
+
+**Authentication Error Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "error": {
+    "code": -32001,
+    "message": "Missing Authorization header"
   }
 }
 ```
@@ -476,11 +575,13 @@ For agents with multiple entry points, tools are named as `agent_id.entry_point`
 | `-32601` | Method not found | Unsupported MCP method |
 | `-32602` | Invalid params | Missing agent or arguments |
 | `-32603` | Internal error | Agent execution failure |
+| `-32001` | Authentication error | Missing, invalid, or malformed Authorization header |
 
 ### Example Usage
 
 #### cURL
 
+**Without Authentication:**
 ```bash
 # Initialize connection
 curl -X POST http://localhost:8000/mcp/ \
@@ -519,17 +620,66 @@ curl -X POST http://localhost:8000/mcp/ \
   }'
 ```
 
+**With Authentication:**
+```bash
+# Initialize connection
+curl -X POST http://localhost:8000/mcp/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": {"name": "test-client", "version": "1.0.0"}
+    }
+  }'
+
+# List available tools
+curl -X POST http://localhost:8000/mcp/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+
+# Call an agent
+curl -X POST http://localhost:8000/mcp/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "my-agent",
+      "arguments": {"message": "Hello!"}
+    }
+  }'
+```
+
 #### Python (MCP Client)
 
+**Without Authentication:**
 ```python
 import json
 import requests
 
 class MCPClient:
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, api_key: str = None):
         self.base_url = base_url
         self.session = requests.Session()
         self.request_id = 0
+        
+        # Set up authentication if API key provided
+        if api_key:
+            self.session.headers.update({
+                "Authorization": f"Bearer {api_key}"
+            })
     
     def _call(self, method: str, params: dict = None):
         self.request_id += 1
@@ -563,8 +713,26 @@ class MCPClient:
             "arguments": arguments
         })
 
-# Usage
+# Usage without authentication
 client = MCPClient("http://localhost:8000")
+
+# Initialize
+init_response = client.initialize()
+print("Initialized:", init_response)
+
+# List tools
+tools_response = client.list_tools()
+print("Available tools:", tools_response["result"]["tools"])
+
+# Call agent
+result = client.call_tool("my-agent", {"message": "Hello!"})
+print("Agent response:", result["result"]["content"])
+```
+
+**With Authentication:**
+```python
+# Usage with authentication
+client = MCPClient("http://localhost:8000", api_key="your-api-key")
 
 # Initialize
 init_response = client.initialize()
