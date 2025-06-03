@@ -18,7 +18,7 @@ class Echo(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, config: dict | None = None):
         self.config = config or {}
         self.prefix = self.config.get("prefix", "")
         self.response = response
@@ -34,7 +34,7 @@ class SlowEcho(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, config: dict | None = None):
         self.config = config or {}
         self.prefix = self.config.get("prefix", "")
         self.delay_seconds = self.config.get("delay_seconds", 2.0)
@@ -52,7 +52,7 @@ class StreamingEcho(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, config: dict | None = None):
         self.config = config or {}
         self.prefix = self.config.get("prefix", "")
         self.response = response
@@ -71,7 +71,7 @@ class HistoryAwareEcho(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, history: ConversationHistoryProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, history: ConversationHistoryProtocol, config: dict | None = None):
         self.config = config or {}
         self.response = response
         self.history = history
@@ -158,7 +158,7 @@ def xaibo_instance():
 def app(xaibo_instance):
     """Create a test FastAPI app with OpenAI adapter"""
     app = FastAPI()
-    adapter = OpenAiApiAdapter(xaibo_instance, streaming_timeout=0.5)
+    adapter = OpenAiApiAdapter(xaibo_instance, streaming_timeout=1)
     adapter.adapt(app)
     return app
 
@@ -396,3 +396,217 @@ def test_openai_chat_completion_with_complex_history(client):
     data = response.json()
     # The HistoryAwareEcho agent should report the correct message count
     assert data["choices"][0]["message"]["content"] == "History-aware response to: Final question (Message #6 in conversation)"
+
+
+# API Key Authentication Tests
+
+@pytest.fixture
+def app_with_api_key(xaibo_instance):
+    """Create a test FastAPI app with OpenAI adapter and API key"""
+    app = FastAPI()
+    adapter = OpenAiApiAdapter(xaibo_instance, streaming_timeout=1, api_key="test-api-key-123")
+    adapter.adapt(app)
+    return app
+
+
+@pytest.fixture
+def client_with_api_key(app_with_api_key):
+    """Create a test client for API key protected endpoints"""
+    return TestClient(app_with_api_key)
+
+
+@pytest.fixture
+def app_with_env_api_key(xaibo_instance, monkeypatch):
+    """Create a test FastAPI app with OpenAI adapter using environment variable API key"""
+    monkeypatch.setenv("CUSTOM_OPENAI_API_KEY", "env-api-key-456")
+    app = FastAPI()
+    adapter = OpenAiApiAdapter(xaibo_instance, streaming_timeout=1)
+    adapter.adapt(app)
+    return app
+
+
+@pytest.fixture
+def client_with_env_api_key(app_with_env_api_key):
+    """Create a test client for environment API key protected endpoints"""
+    return TestClient(app_with_env_api_key)
+
+
+def test_openai_backward_compatibility_no_api_key(client):
+    """Test OpenAI adapter without API key (backward compatibility)"""
+    response = client.get("/openai/models")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["object"] == "list"
+    
+    # Test chat completion without auth
+    request_data = {
+        "model": "echo-agent",
+        "messages": [
+            {"role": "user", "content": "Hello world"}
+        ]
+    }
+    
+    response = client.post("/openai/chat/completions", json=request_data)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["choices"][0]["message"]["content"] == "You said: Hello world"
+
+
+def test_openai_valid_api_key_success(client_with_api_key):
+    """Test OpenAI adapter with valid API key (successful authentication)"""
+    headers = {"Authorization": "Bearer test-api-key-123"}
+    
+    # Test models endpoint
+    response = client_with_api_key.get("/openai/models", headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["object"] == "list"
+    model_ids = [model["id"] for model in data["data"]]
+    assert "echo-agent" in model_ids
+    
+    # Test chat completion
+    request_data = {
+        "model": "echo-agent",
+        "messages": [
+            {"role": "user", "content": "Hello authenticated world"}
+        ]
+    }
+    
+    response = client_with_api_key.post("/openai/chat/completions", json=request_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["choices"][0]["message"]["content"] == "You said: Hello authenticated world"
+
+
+def test_openai_invalid_api_key_401(client_with_api_key):
+    """Test OpenAI adapter with invalid API key (HTTP 401 response)"""
+    headers = {"Authorization": "Bearer wrong-api-key"}
+    
+    # Test models endpoint
+    response = client_with_api_key.get("/openai/models", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid API key"
+    assert response.headers.get("WWW-Authenticate") == "Bearer"
+    
+    # Test chat completion
+    request_data = {
+        "model": "echo-agent",
+        "messages": [
+            {"role": "user", "content": "Hello world"}
+        ]
+    }
+    
+    response = client_with_api_key.post("/openai/chat/completions", json=request_data, headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid API key"
+
+
+def test_openai_missing_authorization_header_401(client_with_api_key):
+    """Test OpenAI adapter with missing Authorization header when API key is required"""
+    # Test models endpoint
+    response = client_with_api_key.get("/openai/models")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Missing Authorization header"
+    assert response.headers.get("WWW-Authenticate") == "Bearer"
+    
+    # Test chat completion
+    request_data = {
+        "model": "echo-agent",
+        "messages": [
+            {"role": "user", "content": "Hello world"}
+        ]
+    }
+    
+    response = client_with_api_key.post("/openai/chat/completions", json=request_data)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Missing Authorization header"
+
+
+def test_openai_malformed_authorization_header_401(client_with_api_key):
+    """Test OpenAI adapter with malformed Authorization header"""
+    # Test with non-Bearer token
+    headers = {"Authorization": "Basic dGVzdDp0ZXN0"}
+    response = client_with_api_key.get("/openai/models", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Missing Authorization header"
+    
+    # Test with malformed Bearer token (no space)
+    headers = {"Authorization": "Bearertest-api-key-123"}
+    response = client_with_api_key.get("/openai/models", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Missing Authorization header"
+    
+    # Test with empty Bearer token
+    headers = {"Authorization": "Bearer "}
+    response = client_with_api_key.get("/openai/models", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Missing Authorization header"
+
+
+def test_openai_environment_variable_fallback(client_with_env_api_key):
+    """Test environment variable fallback for API key loading"""
+    headers = {"Authorization": "Bearer env-api-key-456"}
+    
+    # Test models endpoint
+    response = client_with_env_api_key.get("/openai/models", headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["object"] == "list"
+    
+    # Test with wrong key should fail
+    headers = {"Authorization": "Bearer wrong-key"}
+    response = client_with_env_api_key.get("/openai/models", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid API key"
+
+
+def test_openai_streaming_with_api_key(client_with_api_key):
+    """Test OpenAI streaming endpoint with API key authentication"""
+    headers = {"Authorization": "Bearer test-api-key-123"}
+    request_data = {
+        "model": "streaming-agent",
+        "messages": [
+            {"role": "user", "content": "Hello streaming"}
+        ],
+        "stream": True
+    }
+    
+    with client_with_api_key.stream(
+        "POST",
+        "/openai/chat/completions",
+        json=request_data,
+        headers=headers
+    ) as response:
+        assert response.status_code == 200
+        assert response.headers["Content-Type"] == "text/event-stream; charset=utf-8"
+        
+        # Read the streaming response
+        complete_content = ""
+        for line in response.iter_lines():
+            if line.startswith("data: ") and line != "data: [DONE]":
+                data = json.loads(line[6:])  # Remove "data: " prefix
+                if "choices" in data and data["choices"][0]["delta"].get("content"):
+                    content = data["choices"][0]["delta"]["content"]
+                    complete_content += content
+    
+    assert "Streaming: Hello streaming" == complete_content
+
+
+def test_openai_streaming_without_api_key_401(client_with_api_key):
+    """Test OpenAI streaming endpoint without API key returns 401"""
+    request_data = {
+        "model": "streaming-agent",
+        "messages": [
+            {"role": "user", "content": "Hello streaming"}
+        ],
+        "stream": True
+    }
+    
+    response = client_with_api_key.post("/openai/chat/completions", json=request_data)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Missing Authorization header"

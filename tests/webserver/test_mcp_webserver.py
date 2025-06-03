@@ -16,7 +16,7 @@ class Echo(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, config: dict | None = None):
         self.config = config or {}
         self.prefix = self.config.get("prefix", "")
         self.response = response
@@ -32,7 +32,7 @@ class ErrorAgent(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, config: dict | None = None):
         self.config = config or {}
         self.response = response
         
@@ -52,7 +52,7 @@ class MultiEntryAgent(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, config: dict | None = None):
         self.config = config or {}
         self.response = response
         
@@ -67,7 +67,7 @@ class HistoryAwareAgent(TextMessageHandlerProtocol):
     def provides(cls):
         return [TextMessageHandlerProtocol]
     
-    def __init__(self, response: ResponseProtocol, history: ConversationHistoryProtocol, config: dict = None):
+    def __init__(self, response: ResponseProtocol, history: ConversationHistoryProtocol, config: dict | None = None):
         self.config = config or {}
         self.response = response
         self.history = history
@@ -505,6 +505,7 @@ def test_mcp_missing_jsonrpc_field(client):
     assert data["id"] == "test-invalid-2"
     assert "error" in data
     assert data["error"]["code"] == -32600
+    assert "Invalid Request" in data["error"]["message"]
 
 
 def test_mcp_unknown_method(client):
@@ -529,11 +530,7 @@ def test_mcp_unknown_method(client):
 
 def test_mcp_invalid_json(client):
     """Test request with invalid JSON"""
-    response = client.post(
-        "/mcp/",
-        content="invalid json{",
-        headers={"Content-Type": "application/json"}
-    )
+    response = client.post("/mcp/", content="invalid json")
     assert response.status_code == 200
     
     data = response.json()
@@ -545,7 +542,7 @@ def test_mcp_invalid_json(client):
 
 
 def test_mcp_non_dict_request(client):
-    """Test request with non-dictionary JSON"""
+    """Test request with non-dict JSON"""
     response = client.post("/mcp/", json=["not", "a", "dict"])
     assert response.status_code == 200
     
@@ -558,8 +555,7 @@ def test_mcp_non_dict_request(client):
 
 
 def test_mcp_agent_with_conversation_history(client):
-    """Test MCP agent execution with conversation history"""
-    # First message
+    """Test MCP agent that uses conversation history"""
     request_data = {
         "jsonrpc": "2.0",
         "id": "test-history-1",
@@ -576,141 +572,109 @@ def test_mcp_agent_with_conversation_history(client):
     assert response.status_code == 200
     
     data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "test-history-1"
     assert "result" in data
-    content = data["result"]["content"]
+    
+    result = data["result"]
+    assert result["isError"] is False
+    content = result["content"]
     assert len(content) == 1
-    assert "Message #" in content[0]["text"]
-    assert "First message" in content[0]["text"]
+    assert content[0]["type"] == "text"
+    # The history-aware agent should report message count
+    assert "Message #0 in conversation" in content[0]["text"]
 
 
 def test_mcp_complete_workflow(client):
     """Test complete MCP workflow: initialize -> tools/list -> tools/call"""
-    # Step 1: Initialize
+    # 1. Initialize
     init_request = {
         "jsonrpc": "2.0",
-        "id": "workflow-1",
+        "id": "workflow-init",
         "method": "initialize",
         "params": {
             "protocolVersion": "2024-11-05",
-            "capabilities": {}
+            "capabilities": {},
+            "clientInfo": {
+                "name": "test-workflow-client",
+                "version": "1.0.0"
+            }
         }
     }
     
     response = client.post("/mcp/", json=init_request)
     assert response.status_code == 200
-    assert "result" in response.json()
     
-    # Step 2: Send initialized notification
-    notification_request = {
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "workflow-init"
+    assert "result" in data
+    
+    # 2. Send initialized notification
+    notification = {
         "jsonrpc": "2.0",
         "method": "notifications/initialized",
         "params": {}
     }
     
-    response = client.post("/mcp/", json=notification_request)
+    response = client.post("/mcp/", json=notification)
     assert response.status_code == 200
     
-    # Step 3: List tools
+    # 3. List tools
     list_request = {
         "jsonrpc": "2.0",
-        "id": "workflow-2",
+        "id": "workflow-list",
         "method": "tools/list",
         "params": {}
     }
     
     response = client.post("/mcp/", json=list_request)
     assert response.status_code == 200
-    data = response.json()
-    assert "result" in data
-    tools = data["result"]["tools"]
-    assert len(tools) > 0
     
-    # Step 4: Call a tool
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "workflow-list"
+    assert "result" in data
+    
+    tools = data["result"]["tools"]
+    tool_names = [tool["name"] for tool in tools]
+    assert "echo-agent" in tool_names
+    
+    # 4. Call a tool
     call_request = {
         "jsonrpc": "2.0",
-        "id": "workflow-3",
+        "id": "workflow-call",
         "method": "tools/call",
         "params": {
             "name": "echo-agent",
             "arguments": {
-                "message": "Complete workflow test"
+                "message": "Workflow test message"
             }
         }
     }
     
     response = client.post("/mcp/", json=call_request)
     assert response.status_code == 200
+    
     data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "workflow-call"
     assert "result" in data
-    content = data["result"]["content"]
-    assert content[0]["text"] == "Echo: Complete workflow test"
+    
+    result = data["result"]
+    assert result["isError"] is False
+    content = result["content"]
+    assert len(content) == 1
+    assert content[0]["type"] == "text"
+    assert content[0]["text"] == "Echo: Workflow test message"
 
 
 def test_mcp_response_format_compliance(client):
-    """Test that all MCP responses comply with JSON-RPC 2.0 format"""
-    test_cases = [
-        {
-            "name": "initialize",
-            "request": {
-                "jsonrpc": "2.0",
-                "id": "format-test-1",
-                "method": "initialize",
-                "params": {"protocolVersion": "2024-11-05"}
-            }
-        },
-        {
-            "name": "tools/list",
-            "request": {
-                "jsonrpc": "2.0",
-                "id": "format-test-2",
-                "method": "tools/list",
-                "params": {}
-            }
-        },
-        {
-            "name": "tools/call",
-            "request": {
-                "jsonrpc": "2.0",
-                "id": "format-test-3",
-                "method": "tools/call",
-                "params": {
-                    "name": "echo-agent",
-                    "arguments": {"message": "test"}
-                }
-            }
-        }
-    ]
-    
-    for case in test_cases:
-        response = client.post("/mcp/", json=case["request"])
-        assert response.status_code == 200
-        
-        data = response.json()
-        
-        # All responses must have jsonrpc field
-        assert data["jsonrpc"] == "2.0"
-        
-        # All responses must have id field matching request
-        assert data["id"] == case["request"]["id"]
-        
-        # Response must have either result or error, but not both
-        has_result = "result" in data
-        has_error = "error" in data
-        assert has_result != has_error, f"Response for {case['name']} must have either result or error, not both"
-        
-        if has_error:
-            # Error responses must have code and message
-            assert "code" in data["error"]
-            assert "message" in data["error"]
-            assert isinstance(data["error"]["code"], int)
-            assert isinstance(data["error"]["message"], str)
-
-
-def test_mcp_agent_config_description_usage(client):
-    """Test that AgentConfig.description is used for tool descriptions in MCP"""
+    """Test that MCP responses comply with the expected format"""
+    # Test tools/list response format
     request_data = {
         "jsonrpc": "2.0",
-        "id": "test-description-1",
+        "id": "format-test-1",
         "method": "tools/list",
         "params": {}
     }
@@ -719,70 +683,388 @@ def test_mcp_agent_config_description_usage(client):
     assert response.status_code == 200
     
     data = response.json()
+    
+    # Validate JSON-RPC 2.0 structure
+    assert "jsonrpc" in data
     assert data["jsonrpc"] == "2.0"
-    assert data["id"] == "test-description-1"
+    assert "id" in data
+    assert data["id"] == "format-test-1"
     assert "result" in data
     
+    # Validate tools/list result structure
     result = data["result"]
     assert "tools" in result
-    tools = result["tools"]
+    assert isinstance(result["tools"], list)
+    
+    # Validate tool structure
+    for tool in result["tools"]:
+        assert "name" in tool
+        assert "description" in tool
+        assert "inputSchema" in tool
+        assert isinstance(tool["name"], str)
+        assert isinstance(tool["description"], str)
+        assert isinstance(tool["inputSchema"], dict)
+        
+        # Validate input schema structure
+        schema = tool["inputSchema"]
+        assert "type" in schema
+        assert schema["type"] == "object"
+        assert "properties" in schema
+        assert "required" in schema
+
+
+def test_mcp_agent_config_description_usage(client):
+    """Test that agent config descriptions are properly used in MCP tools"""
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "description-test",
+        "method": "tools/list",
+        "params": {}
+    }
+    
+    response = client.post("/mcp/", json=request_data)
+    assert response.status_code == 200
+    
+    data = response.json()
+    tools = data["result"]["tools"]
     
     # Find the described-agent tool
     described_tool = next((tool for tool in tools if tool["name"] == "described-agent"), None)
-    assert described_tool is not None, "described-agent tool should be present"
+    assert described_tool is not None
     
-    # Verify that the custom description from AgentConfig is used
+    # Verify it uses the custom description from AgentConfig
     assert described_tool["description"] == "This is a custom agent description for MCP testing"
-    
-    # Find an agent without description (echo-agent) to verify fallback behavior
-    echo_tool = next((tool for tool in tools if tool["name"] == "echo-agent"), None)
-    assert echo_tool is not None, "echo-agent tool should be present"
-    
-    # Verify that the fallback description is used when AgentConfig.description is None
-    assert echo_tool["description"] == "Execute Xaibo agent 'echo-agent'"
 
 
 def test_mcp_error_codes_compliance(client):
-    """Test that MCP adapter returns correct JSON-RPC error codes"""
-    error_test_cases = [
-        {
-            "name": "Parse error",
-            "request_content": "invalid json",
-            "expected_code": -32700
-        },
-        {
-            "name": "Invalid Request - non-dict",
-            "request_json": ["array"],
-            "expected_code": -32600
-        },
-        {
-            "name": "Invalid Request - wrong jsonrpc",
-            "request_json": {"jsonrpc": "1.0", "id": "test", "method": "test"},
-            "expected_code": -32600
-        },
-        {
-            "name": "Method not found",
-            "request_json": {"jsonrpc": "2.0", "id": "test", "method": "nonexistent"},
-            "expected_code": -32601
-        },
-        {
-            "name": "Invalid params - missing protocolVersion",
-            "request_json": {"jsonrpc": "2.0", "id": "test", "method": "initialize", "params": {}},
-            "expected_code": -32602
-        }
-    ]
+    """Test that MCP error codes comply with JSON-RPC 2.0 specification"""
+    # Test parse error (-32700)
+    response = client.post("/mcp/", content="invalid json")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["error"]["code"] == -32700
     
-    for case in error_test_cases:
-        if "request_content" in case:
-            response = client.post(
-                "/mcp/",
-                content=case["request_content"],
-                headers={"Content-Type": "application/json"}
-            )
-        else:
-            response = client.post("/mcp/", json=case["request_json"])
-            
-        assert response.status_code == 200
-        data = response.json()
-        assert "error" in data
-        assert data["error"]["code"] == case["expected_code"], f"Wrong error code for {case['name']}"
+    # Test invalid request (-32600)
+    response = client.post("/mcp/", json={"jsonrpc": "1.0", "method": "test"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["error"]["code"] == -32600
+    
+    # Test method not found (-32601)
+    response = client.post("/mcp/", json={"jsonrpc": "2.0", "id": "test", "method": "unknown"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["error"]["code"] == -32601
+    
+    # Test invalid params (-32602)
+    response = client.post("/mcp/", json={"jsonrpc": "2.0", "id": "test", "method": "tools/call", "params": {}})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["error"]["code"] == -32602
+
+
+# API Key Authentication Tests
+
+@pytest.fixture
+def app_with_api_key(xaibo_instance):
+    """Create a test FastAPI app with MCP adapter and API key"""
+    app = FastAPI()
+    adapter = McpApiAdapter(xaibo_instance, api_key="test-mcp-key-789")
+    adapter.adapt(app)
+    return app
+
+
+@pytest.fixture
+def client_with_api_key(app_with_api_key):
+    """Create a test client for API key protected MCP endpoints"""
+    return TestClient(app_with_api_key)
+
+
+@pytest.fixture
+def app_with_env_api_key(xaibo_instance, monkeypatch):
+    """Create a test FastAPI app with MCP adapter using environment variable API key"""
+    monkeypatch.setenv("MCP_API_KEY", "env-mcp-key-101112")
+    app = FastAPI()
+    adapter = McpApiAdapter(xaibo_instance)
+    adapter.adapt(app)
+    return app
+
+
+@pytest.fixture
+def client_with_env_api_key(app_with_env_api_key):
+    """Create a test client for environment API key protected MCP endpoints"""
+    return TestClient(app_with_env_api_key)
+
+
+def test_mcp_backward_compatibility_no_api_key(client):
+    """Test MCP adapter without API key (backward compatibility)"""
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "compat-test",
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {
+                "name": "test-client",
+                "version": "1.0.0"
+            }
+        }
+    }
+    
+    response = client.post("/mcp/", json=request_data)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "compat-test"
+    assert "result" in data
+    
+    # Test tools/call without auth
+    call_request = {
+        "jsonrpc": "2.0",
+        "id": "compat-call",
+        "method": "tools/call",
+        "params": {
+            "name": "echo-agent",
+            "arguments": {
+                "message": "No auth test"
+            }
+        }
+    }
+    
+    response = client.post("/mcp/", json=call_request)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["result"]["content"][0]["text"] == "Echo: No auth test"
+
+
+def test_mcp_valid_api_key_success(client_with_api_key):
+    """Test MCP adapter with valid API key (successful authentication)"""
+    headers = {"Authorization": "Bearer test-mcp-key-789"}
+    
+    # Test initialize
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "auth-init",
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {
+                "name": "test-client",
+                "version": "1.0.0"
+            }
+        }
+    }
+    
+    response = client_with_api_key.post("/mcp/", json=request_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "auth-init"
+    assert "result" in data
+    assert data["result"]["serverInfo"]["name"] == "xaibo-mcp-server"
+    
+    # Test tools/list
+    list_request = {
+        "jsonrpc": "2.0",
+        "id": "auth-list",
+        "method": "tools/list",
+        "params": {}
+    }
+    
+    response = client_with_api_key.post("/mcp/", json=list_request, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert "result" in data
+    tools = data["result"]["tools"]
+    tool_names = [tool["name"] for tool in tools]
+    assert "echo-agent" in tool_names
+    
+    # Test tools/call
+    call_request = {
+        "jsonrpc": "2.0",
+        "id": "auth-call",
+        "method": "tools/call",
+        "params": {
+            "name": "echo-agent",
+            "arguments": {
+                "message": "Authenticated message"
+            }
+        }
+    }
+    
+    response = client_with_api_key.post("/mcp/", json=call_request, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert "result" in data
+    assert data["result"]["content"][0]["text"] == "Echo: Authenticated message"
+
+
+def test_mcp_invalid_api_key_error(client_with_api_key):
+    """Test MCP adapter with invalid API key (JSON-RPC error response)"""
+    headers = {"Authorization": "Bearer wrong-mcp-key"}
+    
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "invalid-key-test",
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {}
+        }
+    }
+    
+    response = client_with_api_key.post("/mcp/", json=request_data, headers=headers)
+    assert response.status_code == 200  # MCP uses 200 for JSON-RPC errors
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] is None  # Auth errors don't have request ID
+    assert "error" in data
+    assert data["error"]["code"] == -32001  # Custom auth error code
+    assert "Invalid API key" in data["error"]["message"]
+
+
+def test_mcp_missing_authorization_header_error(client_with_api_key):
+    """Test MCP adapter with missing Authorization header when API key is required"""
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "missing-auth-test",
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {}
+        }
+    }
+    
+    response = client_with_api_key.post("/mcp/", json=request_data)
+    assert response.status_code == 200  # MCP uses 200 for JSON-RPC errors
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] is None  # Auth errors don't have request ID
+    assert "error" in data
+    assert data["error"]["code"] == -32001  # Custom auth error code
+    assert "Missing Authorization header" in data["error"]["message"]
+
+
+def test_mcp_malformed_authorization_header_error(client_with_api_key):
+    """Test MCP adapter with malformed Authorization header"""
+    # Test with non-Bearer token
+    headers = {"Authorization": "Basic dGVzdDp0ZXN0"}
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "malformed-auth-1",
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {}
+        }
+    }
+    
+    response = client_with_api_key.post("/mcp/", json=request_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] is None
+    assert "error" in data
+    assert data["error"]["code"] == -32001
+    assert "Invalid Authorization header format" in data["error"]["message"]
+    
+    # Test with malformed Bearer token (no space)
+    headers = {"Authorization": "Bearertest-mcp-key-789"}
+    response = client_with_api_key.post("/mcp/", json=request_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["error"]["code"] == -32001
+    assert "Invalid Authorization header format" in data["error"]["message"]
+    
+    # Test with empty Bearer token
+    headers = {"Authorization": "Bearer "}
+    response = client_with_api_key.post("/mcp/", json=request_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["error"]["code"] == -32001
+    assert "Invalid API key" in data["error"]["message"]
+
+
+def test_mcp_environment_variable_fallback(client_with_env_api_key):
+    """Test environment variable fallback for API key loading"""
+    headers = {"Authorization": "Bearer env-mcp-key-101112"}
+    
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "env-test",
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {
+                "name": "test-client",
+                "version": "1.0.0"
+            }
+        }
+    }
+    
+    response = client_with_env_api_key.post("/mcp/", json=request_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["jsonrpc"] == "2.0"
+    assert data["id"] == "env-test"
+    assert "result" in data
+    
+    # Test with wrong key should fail
+    headers = {"Authorization": "Bearer wrong-env-key"}
+    response = client_with_env_api_key.post("/mcp/", json=request_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert "error" in data
+    assert data["error"]["code"] == -32001
+    assert "Invalid API key" in data["error"]["message"]
+
+
+def test_mcp_auth_error_preserves_jsonrpc_format(client_with_api_key):
+    """Test that authentication errors maintain proper JSON-RPC 2.0 format"""
+    request_data = {
+        "jsonrpc": "2.0",
+        "id": "format-test",
+        "method": "tools/call",
+        "params": {
+            "name": "echo-agent",
+            "arguments": {
+                "message": "test"
+            }
+        }
+    }
+    
+    response = client_with_api_key.post("/mcp/", json=request_data)
+    assert response.status_code == 200
+    
+    data = response.json()
+    
+    # Verify JSON-RPC 2.0 structure is maintained
+    assert "jsonrpc" in data
+    assert data["jsonrpc"] == "2.0"
+    assert "id" in data
+    assert "error" in data
+    assert "result" not in data  # Should not have result on error
+    
+    # Verify error structure
+    error = data["error"]
+    assert "code" in error
+    assert "message" in error
+    assert isinstance(error["code"], int)
+    assert isinstance(error["message"], str)

@@ -147,6 +147,9 @@ exchange:
 - `401 Unauthorized` responses
 - Missing API key errors
 
+!!! note "Server Authentication vs LLM Provider Authentication"
+    This section covers authentication with LLM providers (OpenAI, Anthropic, etc.). For securing your Xaibo server with API keys, see the [authentication guide](../how-to/authentication.md).
+
 **Resolution:**
 
 1. Create `.env` file in project root:

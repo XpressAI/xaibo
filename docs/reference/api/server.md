@@ -17,7 +17,9 @@ XaiboWebServer(
     agent_dir: str,
     host: str = "127.0.0.1",
     port: int = 8000,
-    debug: bool = False
+    debug: bool = False,
+    openai_api_key: Optional[str] = None,
+    mcp_api_key: Optional[str] = None
 )
 ```
 
@@ -31,6 +33,8 @@ XaiboWebServer(
 | `host` | `str` | `"127.0.0.1"` | Host address to bind the server |
 | `port` | `int` | `8000` | Port number for the server |
 | `debug` | `bool` | `False` | Enable debug mode with UI and event tracing |
+| `openai_api_key` | `Optional[str]` | `None` | API key for OpenAI adapter authentication |
+| `mcp_api_key` | `Optional[str]` | `None` | API key for MCP adapter authentication |
 
 #### Example
 
@@ -41,7 +45,7 @@ from xaibo.server.web import XaiboWebServer
 # Initialize Xaibo
 xaibo = Xaibo()
 
-# Create server with multiple adapters
+# Create server with multiple adapters and API keys
 server = XaiboWebServer(
     xaibo=xaibo,
     adapters=[
@@ -51,7 +55,9 @@ server = XaiboWebServer(
     agent_dir="./agents",
     host="0.0.0.0",
     port=9000,
-    debug=True
+    debug=True,
+    openai_api_key="sk-your-openai-key",
+    mcp_api_key="your-mcp-secret-key"
 )
 ```
 
@@ -179,6 +185,8 @@ python -m xaibo.server.web [options]
 | `--host` | `str` | `"127.0.0.1"` | Host address to bind |
 | `--port` | `int` | `8000` | Port number |
 | `--debug-ui` | `bool` | `False` | Enable writing debug traces and start web ui |
+| `--openai-api-key` | `str` | `None` | API key for OpenAI adapter authentication |
+| `--mcp-api-key` | `str` | `None` | API key for MCP adapter authentication |
 
 ### Examples
 
@@ -229,12 +237,19 @@ def get_class_by_path(path: str) -> Type:
 
 ### Adapter Instantiation
 
-Each adapter is instantiated with the Xaibo instance:
+Each adapter is instantiated with the Xaibo instance and appropriate API keys:
 
 ```python
 for adapter in adapters:
     clazz = get_class_by_path(adapter)
-    instance = clazz(self.xaibo)
+    # Pass API keys to appropriate adapters based on class name
+    class_name = clazz.__name__
+    if class_name == "OpenAiApiAdapter":
+        instance = clazz(self.xaibo, api_key=self.openai_api_key)
+    elif class_name == "McpApiAdapter":
+        instance = clazz(self.xaibo, api_key=self.mcp_api_key)
+    else:
+        instance = clazz(self.xaibo)
     instance.adapt(self.app)
 ```
 
@@ -318,3 +333,157 @@ ValidationError: "Agent configuration validation failed"
 - Isolated agent execution contexts
 - Resource limits per agent
 - Error containment between agents
+
+## Authentication
+
+The web server supports optional API key authentication for OpenAI and MCP adapters.
+
+### Environment Variables
+
+API keys can be provided via environment variables:
+
+| Environment Variable | Description | Adapter |
+|---------------------|-------------|---------|
+| `CUSTOM_OPENAI_API_KEY` | API key for OpenAI adapter authentication | [`OpenAiApiAdapter`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/server/adapters/openai.py) |
+| `MCP_API_KEY` | API key for MCP adapter authentication | [`McpApiAdapter`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/server/adapters/mcp.py) |
+
+### OpenAI Adapter Authentication
+
+When `openai_api_key` is configured, the OpenAI adapter requires Bearer token authentication:
+
+#### Request Format
+
+```http
+POST /openai/chat/completions
+Authorization: Bearer sk-your-openai-key
+Content-Type: application/json
+
+{
+  "model": "agent-id",
+  "messages": [{"role": "user", "content": "Hello"}]
+}
+```
+
+#### Authentication Verification
+
+**Source**: [`src/xaibo/server/adapters/openai.py:41`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/server/adapters/openai.py#L41)
+
+```python
+async def _verify_api_key(self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+    """Verify API key for protected endpoints"""
+    if not self.api_key:
+        return  # No API key configured, allow access
+        
+    if not credentials:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing Authorization header",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+        
+    if credentials.credentials != self.api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+```
+
+#### Error Responses
+
+| Status Code | Description | Response Headers |
+|-------------|-------------|------------------|
+| `401` | Missing Authorization header | `WWW-Authenticate: Bearer` |
+| `401` | Invalid API key | `WWW-Authenticate: Bearer` |
+
+### MCP Adapter Authentication
+
+When `mcp_api_key` is configured, the MCP adapter requires Bearer token authentication:
+
+#### Request Format
+
+```http
+POST /mcp
+Authorization: Bearer your-mcp-secret-key
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list"
+}
+```
+
+#### Authentication Verification
+
+**Source**: [`src/xaibo/server/adapters/mcp.py:52`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/server/adapters/mcp.py#L52)
+
+```python
+# Verify API key if configured
+if self.api_key:
+    auth_header = request.headers.get("authorization")
+    if not auth_header:
+        return self._create_error_response(None, -32001, "Missing Authorization header")
+    
+    if not auth_header.startswith("Bearer "):
+        return self._create_error_response(None, -32001, "Invalid Authorization header format")
+    
+    provided_key = auth_header[7:]  # Remove "Bearer " prefix
+    if provided_key != self.api_key:
+        return self._create_error_response(None, -32001, "Invalid API key")
+```
+
+#### Error Responses
+
+JSON-RPC 2.0 error responses with HTTP status `200`:
+
+| Error Code | Description |
+|------------|-------------|
+| `-32001` | Missing Authorization header |
+| `-32001` | Invalid Authorization header format |
+| `-32001` | Invalid API key |
+
+#### Example Error Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "error": {
+    "code": -32001,
+    "message": "Invalid API key"
+  }
+}
+```
+
+### Security Best Practices
+
+#### API Key Management
+
+- Store API keys in environment variables, not in code
+- Use different API keys for different environments
+- Rotate API keys regularly
+- Monitor API key usage for unusual patterns
+
+#### Network Security
+
+- Use HTTPS in production environments
+- Configure restrictive CORS policies for production
+- Implement rate limiting for public endpoints
+- Use reverse proxies for additional security layers
+
+#### Example Production Configuration
+
+```bash
+# Set environment variables
+export CUSTOM_OPENAI_API_KEY="sk-prod-key-$(date +%s)"
+export MCP_API_KEY="mcp-prod-key-$(date +%s)"
+
+# Start server with authentication
+python -m xaibo.server.web \
+  --agent-dir ./production-agents \
+  --adapter xaibo.server.adapters.OpenAiApiAdapter \
+  --adapter xaibo.server.adapters.McpApiAdapter \
+  --host 0.0.0.0 \
+  --port 8000
+```

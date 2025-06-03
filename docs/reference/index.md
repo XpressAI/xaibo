@@ -24,3 +24,6 @@ This section provides comprehensive technical documentation for Xaibo's APIs, mo
 - **[Web Server API](api/server.md)** - Web server configuration and lifecycle
 - **[API Adapters](api/adapters.md)** - OpenAI and MCP adapter specifications
 - **[OpenAI Responses Adapter](api/openai-responses-adapter.md)** - Advanced OpenAI-compatible response management with conversation persistence
+
+### Troubleshooting
+- **[Troubleshooting Reference](troubleshooting.md)** - Systematic solutions for common issues including authentication, configuration, and integration problems

@@ -6,6 +6,10 @@ How-to guides provide step-by-step instructions for solving specific problems wi
 
 - [How to install Xaibo with different dependency groups](installation.md) - Install Xaibo with only the dependencies you need
 
+## Security
+
+- [How to set up authentication](authentication.md) - Secure your Xaibo server with API key authentication for OpenAI and MCP adapters
+
 ## Tools Integration
 
 - [How to create and integrate Python tools](tools/python-tools.md) - Add custom Python functions as agent tools

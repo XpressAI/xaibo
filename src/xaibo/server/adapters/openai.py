@@ -1,10 +1,13 @@
 import json
 import time
 import logging
+import os
 from uuid import uuid4
+from typing import Optional
 
-from fastapi import FastAPI, Request, HTTPException, APIRouter
+from fastapi import FastAPI, Request, HTTPException, APIRouter, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from xaibo import Xaibo, ConfigOverrides, ExchangeConfig
 from xaibo.primitives.modules.conversation.conversation import SimpleConversation
@@ -15,17 +18,48 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAiApiAdapter:
-    def __init__(self, xaibo: Xaibo, streaming_timeout=10):
+    def __init__(self, xaibo: Xaibo, streaming_timeout=10, api_key: Optional[str] = None):
         self.xaibo = xaibo
         self.streaming_timeout = streaming_timeout
+        self.api_key = api_key or os.getenv('CUSTOM_OPENAI_API_KEY')
         self.router = APIRouter()
+        
+        # Set up security if API key is configured
+        self.security = HTTPBearer(auto_error=False) if self.api_key else None
 
-        # Register routes
-        self.router.add_api_route("/models", self.get_models, methods=["GET"])
-        self.router.add_api_route("/chat/completions", self.completion_request, methods=["POST"])
+        # Register routes with optional authentication
+        if self.api_key:
+            self.router.add_api_route("/models", self.get_models, methods=["GET"], dependencies=[Depends(self._verify_api_key)])
+            self.router.add_api_route("/chat/completions", self.completion_request, methods=["POST"], dependencies=[Depends(self._verify_api_key)])
+        else:
+            self.router.add_api_route("/models", self.get_models, methods=["GET"])
+            self.router.add_api_route("/chat/completions", self.completion_request, methods=["POST"])
 
     def adapt(self, app: FastAPI):
         app.include_router(self.router, prefix="/openai")
+    
+    async def _verify_api_key(self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+        """Verify API key for protected endpoints"""
+        if not self.api_key:
+            return  # No API key configured, allow access
+            
+        if not credentials:
+            logger.warning("OpenAI API request missing Authorization header")
+            raise HTTPException(
+                status_code=401,
+                detail="Missing Authorization header",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+            
+        if credentials.credentials != self.api_key:
+            logger.warning("OpenAI API request with invalid API key")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid API key",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        
+        return credentials
 
     async def get_models(self):
         ids = []
