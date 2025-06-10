@@ -15,6 +15,10 @@ How-to guides provide step-by-step instructions for solving specific problems wi
 - [How to create and integrate Python tools](tools/python-tools.md) - Add custom Python functions as agent tools
 - [How to integrate MCP (Model Context Protocol) tools](tools/mcp-tools.md) - Connect external MCP servers to your agents
 
+## Integrations
+
+- [How to use Xaibo agents in LiveKit voice assistants](integrations/livekit-voice-assistant.md) - Create real-time conversational AI applications with LiveKit
+
 ## LLM Configuration
 
 - [How to switch between different LLM providers](llm/switch-providers.md) - Configure agents to use OpenAI, Anthropic, Google, or AWS Bedrock

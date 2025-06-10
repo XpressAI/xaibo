@@ -25,5 +25,8 @@ This section provides comprehensive technical documentation for Xaibo's APIs, mo
 - **[API Adapters](api/adapters.md)** - OpenAI and MCP adapter specifications
 - **[OpenAI Responses Adapter](api/openai-responses-adapter.md)** - Advanced OpenAI-compatible response management with conversation persistence
 
+### Integration Reference
+- **[LiveKit Integration](integrations/livekit.md)** - Complete API reference for using Xaibo agents in LiveKit voice assistants
+
 ### Troubleshooting
 - **[Troubleshooting Reference](troubleshooting.md)** - Systematic solutions for common issues including authentication, configuration, and integration problems

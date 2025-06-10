@@ -1,6 +1,7 @@
 [project]
 name = "xaibo"
 version = "0.0.0.dev0"  # Development version, will be replaced during CI/CD
+authors = [{ name = "Xpress AI", email = "hello@xpress.ai"}]
 description = "Xaibo is a framework for building powerful, transparent, and modular AI agents."
 keywords = ["AI", "agent", "framework", "modular"]
 readme = "README.md"
@@ -15,6 +16,19 @@ dependencies = [
     "numpy>=2.2.5",
     "aiohttp>=3.8.0",
     "websockets>=11.0.0",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
 ]
 
 [project.scripts]
@@ -74,6 +88,9 @@ local = [
     "soundfile>=0.13.1",
     "tiktoken>=0.9.0",
     "transformers>=4.51.3",
+]
+livekit = [
+    "livekit-agents>=1.0.22"
 ]
 
 [dependency-groups]
