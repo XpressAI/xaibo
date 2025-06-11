@@ -166,9 +166,9 @@ chat(
 
 #### [`XaiboLLMStream`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/integrations/livekit/llm.py:170)
 
-Xaibo LLM stream implementation that handles streaming responses from Xaibo agents.
+Xaibo LLM stream implementation that handles real-time streaming responses from Xaibo agents.
 
-Works with Xaibo agents that have conversation history injected via ConfigOverrides. Extracts the last user message for text-based processing while the agent can access the full conversation history through conversation-aware modules.
+Provides true streaming output by using a queue-based system that streams chunks the moment they become available from the Xaibo agent. The implementation creates an agent with both conversation history and streaming response handler injected via ConfigOverrides, enabling real-time response streaming rather than simulated streaming.
 
 **Constructor:**
 ```python
@@ -178,7 +178,9 @@ XaiboLLMStream(
     chat_ctx: ChatContext,
     tools: list[FunctionTool | RawFunctionTool],
     conn_options: APIConnectOptions,
-    agent,
+    xaibo: Xaibo,
+    agent_id: str,
+    conversation: SimpleConversation,
 ) -> None
 ```
 
@@ -189,7 +191,36 @@ Initialize the Xaibo LLM stream.
 - `chat_ctx` (ChatContext): The chat context to process
 - `tools` (list[FunctionTool | RawFunctionTool]): Available function tools
 - `conn_options` (APIConnectOptions): Connection options
-- `agent`: The Xaibo agent instance that already has conversation history injected
+- `xaibo` ([`Xaibo`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/xaibo.py)): The Xaibo instance
+- `agent_id` (str): The agent ID to use
+- `conversation` ([`SimpleConversation`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/conversation/conversation.py)): The conversation history
+
+**Methods:**
+
+##### [`_create_streaming_response_handler(chunk_queue: Queue)`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/integrations/livekit/llm.py:257)
+
+Create a streaming response handler that puts chunks into a queue.
+
+**Parameters:**
+- `chunk_queue` (Queue): The queue to put streaming chunks into
+
+**Returns:**
+- StreamingResponse: A response handler that streams to the queue
+
+##### [`_stream_chunks_from_queue(chunk_queue: Queue, agent_task) -> None`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/integrations/livekit/llm.py:270)
+
+Stream chunks from the queue as they become available.
+
+**Parameters:**
+- `chunk_queue` (Queue): The queue containing streaming text chunks
+- `agent_task`: The background task running the agent
+
+##### [`_send_final_usage_chunk(total_content: str) -> None`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/integrations/livekit/llm.py:310)
+
+Send the final usage chunk with token information.
+
+**Parameters:**
+- `total_content` (str): The complete response content for token counting
 
 ### Functions
 

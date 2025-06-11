@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 from typing import Any
+from asyncio import Queue, create_task, wait_for, TimeoutError
 
 from livekit.agents import llm
 from livekit.agents.llm import (
@@ -81,26 +82,14 @@ class XaiboLLM(llm.LLM):
         # Convert LiveKit ChatContext to Xaibo conversation
         conversation = self._convert_chat_context_to_conversation(chat_ctx)
         
-        # Create agent with conversation history injected
-        agent_with_conversation = self._xaibo.get_agent_with(
-            self._agent_id,
-            ConfigOverrides(
-                instances={
-                    '__conversation_history__': conversation
-                },
-                exchange=[ExchangeConfig(
-                    protocol='ConversationHistoryProtocol',
-                    provider='__conversation_history__'
-                )]
-            )
-        )
-        
         return XaiboLLMStream(
             llm=self,
             chat_ctx=chat_ctx,
             tools=tools or [],
             conn_options=conn_options,
-            agent=agent_with_conversation,
+            xaibo=self._xaibo,
+            agent_id=self._agent_id,
+            conversation=conversation,
         )
 
     def _convert_chat_context_to_conversation(self, chat_ctx: ChatContext) -> SimpleConversation:
@@ -183,7 +172,9 @@ class XaiboLLMStream(llm.LLMStream):
         chat_ctx: ChatContext,
         tools: list[FunctionTool | RawFunctionTool],
         conn_options: APIConnectOptions,
-        agent,
+        xaibo: Xaibo,
+        agent_id: str,
+        conversation: SimpleConversation,
     ) -> None:
         """
         Initialize the Xaibo LLM stream.
@@ -193,39 +184,73 @@ class XaiboLLMStream(llm.LLMStream):
             chat_ctx: The chat context to process
             tools: Available function tools
             conn_options: Connection options
-            agent: The Xaibo agent instance that already has conversation history injected
+            xaibo: The Xaibo instance
+            agent_id: The agent ID to use
+            conversation: The conversation history
         """
         super().__init__(llm, chat_ctx=chat_ctx, tools=tools, conn_options=conn_options)
-        self._agent = agent
+        self._xaibo = xaibo
+        self._agent_id = agent_id
+        self._conversation = conversation
         self._request_id = str(uuid.uuid4())
+        self._streaming_timeout = 10.0  # Timeout for waiting for chunks
 
     async def _run(self) -> None:
         """
         Main execution method that processes the chat context and streams responses.
         
         This method:
-        1. Uses the agent that already has conversation history injected
-        2. Extracts the last user message for text-based processing
-        3. Sends the text to the Xaibo agent
-        4. Processes the response and converts it to ChatChunk format
-        5. Handles both streaming and non-streaming responses
+        1. Creates a streaming response handler with a queue
+        2. Creates the agent with both conversation history and streaming handler
+        3. Runs the agent in a background task
+        4. Streams chunks from the queue as they become available
+        5. Converts chunks to LiveKit ChatChunk format in real-time
         """
         try:
             # Extract the last user message for text-based processing
-            # The agent already has full conversation history via ConfigOverrides
             text_input = self._convert_chat_context_to_text(self._chat_ctx)
             
             logger.debug(
-                f"Sending text to Xaibo agent {self._agent.id}: {text_input[:100]}..."
+                f"Sending text to Xaibo agent {self._agent_id}: {text_input[:100]}..."
             )
 
-            # Send text to Xaibo agent and get response
-            # The agent will use both the conversation history (for conversation-aware modules)
-            # and the text input (for text-based processing)
-            response: Response = await self._agent.handle_text(text_input)
+            # Create streaming queue and response handler
+            chunk_queue = Queue()
+            streaming_response = self._create_streaming_response_handler(chunk_queue)
             
-            # Process the response
-            await self._process_response(response)
+            # Create agent with both conversation history and streaming response handler
+            agent = self._xaibo.get_agent_with(
+                self._agent_id,
+                ConfigOverrides(
+                    instances={
+                        '__conversation_history__': self._conversation,
+                        '__response__': streaming_response
+                    },
+                    exchange=[
+                        ExchangeConfig(
+                            protocol='ConversationHistoryProtocol',
+                            provider='__conversation_history__'
+                        )
+                    ]
+                )
+            )
+            
+            # Start agent processing in background task
+            agent_task = create_task(agent.handle_text(text_input))
+            
+            # Send initial empty chunk to establish the stream
+            initial_chunk = ChatChunk(
+                id=self._request_id,
+                delta=ChoiceDelta(
+                    role="assistant",
+                    content="",
+                    tool_calls=[],
+                ),
+            )
+            self._event_ch.send_nowait(initial_chunk)
+            
+            # Stream chunks as they become available
+            await self._stream_chunks_from_queue(chunk_queue, agent_task)
 
         except Exception as e:
             logger.error(f"Error in XaiboLLMStream._run: {e}", exc_info=True)
@@ -254,53 +279,96 @@ class XaiboLLMStream(llm.LLMStream):
         
         return last_user_message
 
-    async def _process_response(self, response: Response) -> None:
+    def _create_streaming_response_handler(self, chunk_queue: Queue):
         """
-        Process a Xaibo Response and convert it to LiveKit ChatChunk format.
+        Create a streaming response handler that puts chunks into a queue.
         
         Args:
-            response: The response from the Xaibo agent
+            chunk_queue: The queue to put streaming chunks into
+            
+        Returns:
+            StreamingResponse: A response handler that streams to the queue
         """
-        if response.text:
-            # Simulate streaming by breaking the response into words
-            words = response.text.split()
-            total_tokens = len(words)
-            
-            # Send chunks word by word to simulate streaming
-            for i, word in enumerate(words):
-                # Create a chat chunk with incremental content
-                chunk = ChatChunk(
-                    id=self._request_id,
-                    delta=ChoiceDelta(
-                        role="assistant" if i == 0 else None,  # Only set role on first chunk
-                        content=word + (" " if i < len(words) - 1 else ""),
-                        tool_calls=[],
-                    ),
-                )
-                
-                # Send the chunk through the event channel
-                self._event_ch.send_nowait(chunk)
-                
-                # Small delay to simulate streaming
-                await asyncio.sleep(0.01)
-            
-            logger.debug(f"Sent {len(words)} streaming chunks for response: {response.text[:100]}...")
-            
-            # Send final usage chunk
-            usage_chunk = ChatChunk(
-                id=self._request_id,
-                delta=None,
-                usage=CompletionUsage(
-                    completion_tokens=total_tokens,
-                    prompt_tokens=0,  # We don't have this info from Xaibo
-                    total_tokens=total_tokens,
-                ),
-            )
-            self._event_ch.send_nowait(usage_chunk)
+        class StreamingResponse:
+            async def respond_text(self, text: str) -> None:
+                """Handle streaming text chunks from the agent"""
+                await chunk_queue.put(text)
+
+            async def get_response(self):
+                """Return None as we handle streaming via respond_text"""
+                return None
+
+        return StreamingResponse()
+    
+    async def _stream_chunks_from_queue(self, chunk_queue: Queue, agent_task) -> None:
+        """
+        Stream chunks from the queue as they become available.
         
-        # Handle file attachments if present
-        if response.attachments:
-            logger.warning(
-                f"Xaibo response contains {len(response.attachments)} attachments, "
-                "but file attachments are not yet supported in LiveKit LLM integration"
-            )
+        Args:
+            chunk_queue: The queue containing streaming text chunks
+            agent_task: The background task running the agent
+        """
+        total_content = ""
+        
+        while True:
+            try:
+                # Check if agent task is done
+                if agent_task.done():
+                    # Check for agent task exceptions
+                    if agent_task.exception():
+                        logger.error(f"Agent task failed: {agent_task.exception()}")
+                        raise agent_task.exception()
+                    
+                    # Send final usage chunk and exit
+                    await self._send_final_usage_chunk(total_content)
+                    break
+
+                # Wait for next chunk with timeout
+                try:
+                    chunk_text = await wait_for(chunk_queue.get(), timeout=self._streaming_timeout)
+                    
+                    # Create and send chat chunk
+                    chunk = ChatChunk(
+                        id=self._request_id,
+                        delta=ChoiceDelta(
+                            role=None,  # Role already set in initial chunk
+                            content=chunk_text,
+                            tool_calls=[],
+                        ),
+                    )
+                    
+                    self._event_ch.send_nowait(chunk)
+                    total_content += chunk_text
+                    
+                    logger.debug(f"Sent streaming chunk: {chunk_text[:50]}...")
+                    
+                except TimeoutError:
+                    # Continue checking if agent is done on timeout
+                    continue
+                    
+            except Exception as e:
+                logger.error(f"Error in streaming loop: {e}", exc_info=True)
+                raise
+    
+    async def _send_final_usage_chunk(self, total_content: str) -> None:
+        """
+        Send the final usage chunk with token information.
+        
+        Args:
+            total_content: The complete response content for token counting
+        """
+        # Estimate tokens (rough approximation)
+        estimated_tokens = len(total_content.split())
+        
+        usage_chunk = ChatChunk(
+            id=self._request_id,
+            delta=None,
+            usage=CompletionUsage(
+                completion_tokens=estimated_tokens,
+                prompt_tokens=0,  # We don't have this info from Xaibo
+                total_tokens=estimated_tokens,
+            ),
+        )
+        self._event_ch.send_nowait(usage_chunk)
+        
+        logger.debug(f"Sent final usage chunk with {estimated_tokens} estimated tokens")
