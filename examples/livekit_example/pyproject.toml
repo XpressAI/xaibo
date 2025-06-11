@@ -1,0 +1,12 @@
+[project]
+name = "voice-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "livekit>=1.0.8",
+    "livekit-agents[openai,silero]~=1.0",
+    "pytest>=8.4.0",
+    "xaibo[openai,webserver]>=0.1.7",
+]
