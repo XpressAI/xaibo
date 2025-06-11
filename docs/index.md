@@ -3,7 +3,8 @@
       <svg xmlns="http://www.w3.org/2000/svg" style="margin-bottom: -8px" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot-icon lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
        Xaibo
       </h1>
-      <p>A modular agent framework designed for building flexible AI systems with clean protocol-based interfaces</p>
+      <h2 style="margin-top: -1rem">The Modular AI Agent Framework</h2>
+      <p>Build robust, production-ready AI agents that are easy to test and maintain. Stop fighting complexity, start shipping with clean, protocol-based design.</p>
       <div style="margin-top: 2rem;">
         <a href="https://github.com/xpressai/xaibo" class="md-button md-button--primary" style="margin-right: 1rem;">
           View on GitHub
@@ -14,21 +15,6 @@
       </div>
     </div>
 
-<div class="feature-grid">
-  <div class="feature-card">
-    <h3>🧩 Modular Architecture</h3>
-    <p>Easily swap components without changing other parts of the system. Want to switch from OpenAI to Anthropic? Just change the configuration.</p>
-  </div>
-  <div class="feature-card">
-    <h3>🔌 Protocol-Based Design</h3>
-    <p>Components communicate through well-defined interfaces, creating clean boundaries and enabling superior testing capabilities.</p>
-  </div>
-  <div class="feature-card">
-    <h3>🔍 Complete Observability</h3>
-    <p>Every component interaction is captured with transparent proxies, providing detailed runtime insights and automatic test case generation.</p>
-  </div>
-</div>
-
 ## What is Xaibo?
 
 Xaibo is a powerful, protocol-driven framework that enables developers to build sophisticated AI agents with unprecedented flexibility and modularity. By using well-defined interfaces and dependency injection, Xaibo allows you to create, test, and deploy AI systems that are both robust and easily maintainable.
@@ -36,32 +22,50 @@ Xaibo is a powerful, protocol-driven framework that enables developers to build 
 !!! tip "Quick Start"
     **Prerequisites:** Python 3.10 or higher installed
     
-    Get up and running with Xaibo in minutes:
+    Get up and running with Xaibo in 60 seconds:
     ```bash
     pip install uv
     uvx xaibo init my_project
     cd my_project
     uv run xaibo dev
     ```
-    Start with our [Getting Started guide](tutorial/index.md) guide to create your first Xaibo agent
+    This will give you an agent that you can start modifiying immediately.
+
+    Follow our [Tutorial](tutorial/index.md) to learn how everything works.
 
 ## Why Choose Xaibo?
 
-### 🧩 **Modular Architecture**
-Easily swap components without changing other parts of the system. Want to switch from OpenAI to Anthropic? Just change the configuration.
+<div class="feature-grid">
+  <div class="feature-card">
+    <h3>🧩 Swap Models & Tools Instantly</h3>
+    <p>A modular architecture saves time and reduces complexity. Want to switch from OpenAI to Anthropic? Just change a single line in your configuration.</p>
+  </div>
+  <div class="feature-card">
+    <h3>🔌 Test with Confidence</h3>
+    <p>Components communicate through well-defined protocols. This creates clean boundaries, enabling superior unit and integration testing with predictable mocks.</p>
+  </div>
+  <div class="feature-card">
+    <h3>🔍 Visualize Every Step</h3>
+    <p>Transparent proxies capture every component interaction, providing detailed runtime insights and a powerful visual debugger so you always know what your agent is doing.</p>
+  </div>
+</div>
 
-### 🔌 **Protocol-Based Design**
-Components communicate through well-defined interfaces, creating clean boundaries and enabling superior testing capabilities.
+## See Xaibo in Action: The Visual Debug Interface
 
-### 🔍 **Complete Observability**
-Every component interaction is captured with transparent proxies, providing detailed runtime insights and automatic test case generation.
+Xaibo includes a powerful debug UI that visualizes your agent's operations in real-time:
 
-### 🚀 **Production Ready**
-Built-in web server with OpenAI-compatible API and MCP (Model Context Protocol) support for seamless integration.
+<div style="display: flex; gap: 10px; margin: 20px 0;">
+  <div style="flex: 1;">
+    <img src="images/sequence-diagram.png" alt="Xaibo Debug UI - Sequence Diagram Overview" width="100%">
+    <p><em>Sequence Diagram Overview</em></p>
+  </div>
+  <div style="flex: 1;">
+    <img src="images/detail-view.png" alt="Xaibo Debug UI - Detail View" width="100%">
+    <p><em>Detail View of Component Interactions</em></p>
+  </div>
+</div>
 
----
-
-## Key Features
+## A Framework Designed for Developers
 
 <div class="grid cards" markdown>
 
@@ -69,57 +73,69 @@ Built-in web server with OpenAI-compatible API and MCP (Model Context Protocol) 
 
     ---
 
-    Components interact through well-defined protocol interfaces, creating clear boundaries and enabling easy testing with mocks.
+    Components interact through well-defined interfaces, enabling easy testing with mocks and ensuring clean boundaries within your system.
 
 -   :material-swap-horizontal: **Dependency Injection**
 
     ---
 
-    Explicitly declare what components need, making it easy to swap implementations and inject predictable mocks for testing.
+    Explicitly declare component dependencies. This makes it trivial to swap implementations - for testing or for production - without refactoring your code.
 
 -   :material-eye-outline: **Transparent Proxies**
 
     ---
 
-    Every component is wrapped with observability that captures parameters, timing, and exceptions for complete visibility.
+    Every component is automatically wrapped with observability proxies that capture parameters, timing, and exceptions for complete visibility.
 
 -   :material-chart-timeline-variant: **Comprehensive Event System**
 
     ---
 
-    Built-in event system provides real-time monitoring, call sequences tracking, and performance insights.
+    A built-in event system provides real-time monitoring, call sequence tracking, and performance insights out of the box. 
+
+-   :material-wrench: **Arbitrary Tool Support**
+
+    ---
+
+    Use tools implemented in simple python, use MCP servers or integrate whatever other APIs you want as tools.
+
+-   :material-api: **Production-Ready API Server**
+
+    ---
+
+    Includes a built-in web server with an OpenAI-compatible API and MCP (Model Context Protocol) support for seamless integration into existing ecosystems.
 
 </div>
 
 ---
 
-## Quick Navigation
+## Your Gateway to the Xaibo Ecosystem
 
 <div class="grid cards" markdown>
 
--   :material-rocket-launch: **[Getting Started](tutorial/index.md)**
+-   :material-rocket-launch: **[Getting Started Tutorial](tutorial/index.md)**
 
     ---
 
-    Step-by-step tutorial to build your first AI agent with tools and understand Xaibo's architecture
+    Your first step. Build a complete AI agent with tools and understand Xaibo's core architecture.
 
 -   :material-book-open-page-variant: **[How-to Guides](how-to/index.md)**
 
     ---
 
-    Practical guides for installation, tool integration, LLM configuration, and deployment
+    Practical recipes for installation, tool integration, LLM configuration, and deployment.
 
 -   :material-brain: **[Core Concepts](explanation/index.md)**
 
     ---
 
-    Deep dive into protocols, modules, dependency injection, and Xaibo's design principles
+    A deep dive into protocols, modules, dependency injection, and Xaibo's design principles.
 
 -   :material-api: **[API Reference](reference/index.md)**
 
     ---
 
-    Complete technical documentation for modules, protocols, configuration, and CLI commands
+    Complete technical documentation for every module, protocol, and CLI command.
 
 -   :material-tools: **[Building Tools](tutorial/building-tools.md)**
 
@@ -135,26 +151,10 @@ Built-in web server with OpenAI-compatible API and MCP (Model Context Protocol) 
 
 </div>
 
----
-
-## Visual Debug Interface
-
-Xaibo includes a powerful debug UI that visualizes your agent's operations in real-time:
-
-<div style="display: flex; gap: 10px; margin: 20px 0;">
-  <div style="flex: 1;">
-    <img src="images/sequence-diagram.png" alt="Xaibo Debug UI - Sequence Diagram Overview" width="100%">
-    <p><em>Sequence Diagram Overview</em></p>
-  </div>
-  <div style="flex: 1;">
-    <img src="images/detail-view.png" alt="Xaibo Debug UI - Detail View" width="100%">
-    <p><em>Detail View of Component Interactions</em></p>
-  </div>
-</div>
 
 ---
 
-## Community & Support
+## Join the Community
 
 <div class="grid cards" markdown>
 
@@ -162,23 +162,23 @@ Xaibo includes a powerful debug UI that visualizes your agent's operations in re
 
     ---
 
-    Source code, issues, and contributions
+    Contribute to the source code, file issues, and track development progress.
 
 -   :fontawesome-brands-discord: **[Discord Community](https://discord.gg/uASMzSSVKe)**
 
     ---
 
-    Join our community for support and discussions
+    Join our community for support, to ask questions, and to share what you're building.
 
 -   :material-email: **[Contact Us](mailto:hello@xpress.ai)**
 
     ---
 
-    Get in touch with the Xaibo team
+    Get in touch for direct inquiries and support.
 
 </div>
 
 ---
 
-# Ready to Build?
-Start with our [Getting Started guide](tutorial/index.md) to create your first Xaibo agent, or dive into [Core Concepts](explanation/index.md) to understand the framework's architecture.
+# Ready to Build Better Agents?
+[Start the Tutorial](tutorial/index.md) to create your first Xaibo agent, or dive into [Core Concepts](explanation/index.md) to understand the framework's architecture.
