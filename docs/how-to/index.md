@@ -15,6 +15,10 @@ How-to guides provide step-by-step instructions for solving specific problems wi
 - [How to create and integrate Python tools](tools/python-tools.md) - Add custom Python functions as agent tools
 - [How to integrate MCP (Model Context Protocol) tools](tools/mcp-tools.md) - Connect external MCP servers to your agents
 
+## Integrations
+
+- [How to use Xaibo agents in LiveKit voice assistants](integrations/livekit-voice-assistant.md) - Create real-time conversational AI applications with LiveKit
+
 ## LLM Configuration
 
 - [How to switch between different LLM providers](llm/switch-providers.md) - Configure agents to use OpenAI, Anthropic, Google, or AWS Bedrock
@@ -28,6 +32,13 @@ How-to guides provide step-by-step instructions for solving specific problems wi
 - [How to deploy with OpenAI-compatible API](deployment/openai-api.md) - Expose your agents through an OpenAI-compatible REST API
 - [How to deploy as an MCP server](deployment/mcp-server.md) - Make your agents available as MCP tools for other applications
 - [How to start the OpenAI Responses API (Quickstart)](api/openai-responses-quickstart.md) - Get the OpenAI Responses API running in 2 minutes
+
+## Examples
+
+Explore complete working examples that demonstrate Xaibo in action:
+
+- [Google Calendar Example](https://github.com/xpressai/xaibo/tree/main/examples/google_calendar_example) - Build an agent that can read and create calendar events using Google Calendar API
+- [LiveKit Voice Assistant Example](https://github.com/xpressai/xaibo/tree/main/examples/livekit_example) - Create a real-time voice assistant using LiveKit for speech-to-text and text-to-speech
 
 ## Getting Help
 

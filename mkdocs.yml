@@ -104,6 +104,8 @@ nav:
     - Tools:
       - Python Tools: how-to/tools/python-tools.md
       - MCP Tools: how-to/tools/mcp-tools.md
+    - Integrations:
+      - LiveKit Voice Assistant: how-to/integrations/livekit-voice-assistant.md
     - LLM Integration:
       - Switch Providers: how-to/llm/switch-providers.md
     - Memory:
@@ -132,6 +134,8 @@ nav:
       - Web Server: reference/api/server.md
       - API Adapters: reference/api/adapters.md
       - OpenAI Responses Adapter: reference/api/openai-responses-adapter.md
+    - Integrations:
+      - LiveKit Integration: reference/integrations/livekit.md
     - Troubleshooting: reference/troubleshooting.md
   - Explanation:
     - explanation/index.md

@@ -127,6 +127,16 @@ def generate_env_content(selected_modules):
             ""
         ])
     
+    # LiveKit Configuration
+    if "livekit" in selected_modules:
+        content.extend([
+            "# Livekit Configuration",
+            "LIVEKIT_API_KEY=your_livekit_api_key_here",
+            "LIVEKIT_API_SECRET=your_livekit_api_secret_here",
+            "LIVEKIT_URL=your_livekit_url_here",
+            ""
+        ])
+    
     # Footer with instructions
     content.extend([
         "# Instructions:",
@@ -149,6 +159,7 @@ def init(args, extra_args=[]):
             questionary.Choice(title="Google", value="google", description="Allows using GoogleLLM module", checked=False),
             questionary.Choice(title="Bedrock", value="bedrock", description="Allows using BedrockLLM module", checked=False),
             questionary.Choice(title="Local", value="local", description="Allows using local embeddings and memory modules", checked=False),
+            questionary.Choice(title="LiveKit", value="livekit", description="Allows using LiveKit integration", checked=False),
         ]
     ).ask()
     project_name = args.project_name
