@@ -16,6 +16,7 @@ dependencies = [
     "numpy>=2.2.5",
     "aiohttp>=3.8.0",
     "websockets>=11.0.0",
+    "mkdocs-llmstxt>=0.2.0",
 ]
 classifiers = [
     "Intended Audience :: Developers",
