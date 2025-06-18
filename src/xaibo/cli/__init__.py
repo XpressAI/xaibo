@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 from shutil import which
 import subprocess, shlex, sys, os
+import re
 
 import questionary
 
@@ -30,6 +31,48 @@ def universal_run(command, *, timeout=None, text=True, env=None, cwd=None):
                         timeout=timeout, text=text,
                         env=env, cwd=cwd)
     return cp.stdout
+
+def check_uv_version():
+    """
+    Check if uv is installed and meets the minimum version requirement (0.6.0).
+    
+    Raises:
+        SystemExit: If uv is not installed or version is too old
+    """
+    try:
+        # Check if uv is available
+        if not which('uv'):
+            print("Error: uv is not installed or not found in PATH.")
+            print("Please install uv from https://docs.astral.sh/uv/getting-started/installation/")
+            sys.exit(1)
+        
+        # Get uv version
+        result = subprocess.run(['uv', '--version'], capture_output=True, text=True, check=True)
+        version_output = result.stdout.strip()
+        
+        # Extract version number using regex (format: "uv 0.6.0" or similar)
+        version_match = re.search(r'uv\s+(\d+\.\d+\.\d+)', version_output)
+        if not version_match:
+            print(f"Error: Could not parse uv version from output: {version_output}")
+            sys.exit(1)
+        
+        version_str = version_match.group(1)
+        version_parts = [int(x) for x in version_str.split('.')]
+        
+        # Check if version is at least 0.6.0
+        min_version = [0, 6, 0]
+        if version_parts < min_version:
+            print(f"Error: uv version {version_str} is too old.")
+            print("Please upgrade to uv 0.6.0 or later.")
+            print("Run: pip install --upgrade uv")
+            sys.exit(1)
+                            
+    except subprocess.CalledProcessError as e:
+        print(f"Error: Failed to check uv version: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: Unexpected error while checking uv version: {e}")
+        sys.exit(1)
 
 def get_default_model_for_provider(provider):
     """
@@ -151,6 +194,9 @@ def init(args, extra_args=[]):
     """
     Initialize a Xaibo project folder from scratch.
     """
+    # Check uv version before proceeding
+    check_uv_version()
+    
     modules = questionary.checkbox(
         "What dependencies do you want to include?", choices=[
             questionary.Choice(title="Webserver", value="webserver", description="The dependencies for running xaibo serve and xaibo dev", checked=True),
@@ -165,15 +211,13 @@ def init(args, extra_args=[]):
     project_name = args.project_name
     curdir = Path(os.getcwd())
     project_dir = curdir / project_name
-    universal_run(f"uv init {project_name}", cwd=curdir)
+    universal_run(f"uv init --bare {project_name}", cwd=curdir)
     universal_run(f"uv add xaibo xaibo[{','.join(modules)}] pytest", cwd=project_dir)
 
     (project_dir / "agents").mkdir()
     (project_dir / "modules").mkdir()
     (project_dir / "tools").mkdir()
     (project_dir / "tests").mkdir()
-
-    (project_dir / "main.py").unlink()
 
     # Determine LLM provider and appropriate default model
     llm_provider, default_model = select_primary_llm_provider(modules)
