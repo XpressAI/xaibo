@@ -1,8 +1,17 @@
 # How to Use Xaibo Agents in LiveKit Voice Assistants
 
+This guide shows you how to integrate your Xaibo agents with LiveKit's voice assistant framework to create real-time conversational AI applications.
+
 *See also: [LiveKit Integration Reference](../../reference/integrations/livekit.md)*
 
-This guide shows you how to integrate your Xaibo agents with LiveKit's voice assistant framework to create real-time conversational AI applications.
+!!! example "Complete Working Example"
+    For a ready-to-run implementation, see the [LiveKit Example](https://github.com/xpressai/xaibo/tree/main/examples/livekit_example) which includes:
+    
+    - Complete [`agent.py`](https://github.com/xpressai/xaibo/blob/main/examples/livekit_example/agent.py) implementation
+    - Environment configuration template ([`.env`](https://github.com/xpressai/xaibo/blob/main/examples/livekit_example/.env))
+    - Project dependencies ([`pyproject.toml`](https://github.com/xpressai/xaibo/blob/main/examples/livekit_example/pyproject.toml))
+    - Detailed setup and usage instructions ([`README.md`](https://github.com/xpressai/xaibo/blob/main/examples/livekit_example/README.md))
+
 
 ## Prerequisites
 
