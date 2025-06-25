@@ -227,9 +227,10 @@ def init(args, extra_args=[]):
     with (project_dir / ".env").open("w", encoding="utf-8") as f:
         f.write(env_content)
     
-    # Add .env to .gitignore
+    # Add .env and debug/ to .gitignore
     with (project_dir / ".gitignore").open("a", encoding="utf-8") as f:
         f.write(".env\n")
+        f.write("debug/\n")
 
 
 
