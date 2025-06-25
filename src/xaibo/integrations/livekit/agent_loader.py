@@ -227,7 +227,7 @@ class XaiboAgentLoader:
             directory: Directory to watch for changes
         """
         try:
-            async for changes in awatch(directory):
+            async for changes in awatch(directory, force_polling=True):
                 logger.debug(f"Configuration file changes detected: {changes}")
                 try:
                     self.load_agents_from_directory(directory)

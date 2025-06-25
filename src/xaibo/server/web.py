@@ -87,7 +87,7 @@ class XaiboWebServer:
 
     async def watch_config_files(self):
         try:
-            async for _ in awatch(self.agent_dir):
+            async for _ in awatch(self.agent_dir, force_polling=True):
                 self._load_configs()
         except asyncio.CancelledError:
             pass
