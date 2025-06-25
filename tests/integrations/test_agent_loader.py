@@ -279,7 +279,7 @@ modules:
             {('modified', self.test_agent_path)},
         ]
         
-        async def mock_awatch_gen(directory):
+        async def mock_awatch_gen(directory, **kwargs):
             for change in mock_changes:
                 yield change
         
@@ -305,7 +305,7 @@ modules:
             {('modified', self.test_agent_path)},
         ]
         
-        async def mock_awatch_gen(directory):
+        async def mock_awatch_gen(directory, **kwargs):
             for change in mock_changes:
                 yield change
         
