@@ -31,6 +31,7 @@ The explanations in this section are organized around different aspects of under
 - **[Modules vs Protocols](concepts/modules-vs-protocols.md)**: Understanding the relationship between implementation and interface
 - **[Exchange System](concepts/exchange-system.md)**: How components are wired together automatically
 - **[Event System](concepts/event-system.md)**: The comprehensive observability layer
+- **[ReAct Pattern](concepts/react-pattern.md)**: How reasoning and acting cycles create intelligent agent behavior
 
 ### Design Decisions
 - **[Modularity](design/modularity.md)**: Why Xaibo chose composition over inheritance

@@ -110,6 +110,7 @@ nav:
     - Building Tools: tutorial/building-tools.md
     - Understanding Protocols: tutorial/understanding-protocols.md
     - Testing Agents: tutorial/testing-agents.md
+    - Advanced Orchestration: tutorial/advanced-orchestration.md
   - How-to Guides:
     - how-to/index.md
     - Getting Started:
@@ -124,6 +125,11 @@ nav:
       - Switch Providers: how-to/llm/switch-providers.md
     - Memory:
       - Setup Vector Memory: how-to/memory/setup-vector-memory.md
+    - Orchestrator:
+      - Switch to ReAct Pattern: how-to/orchestrator/switch-to-react-pattern.md
+      - Customize ReAct Prompts: how-to/orchestrator/customize-react-prompts.md
+      - Debug Agent Reasoning: how-to/orchestrator/debug-agent-reasoning.md
+      - Handle Complex Workflows: how-to/orchestrator/handle-complex-workflows.md
     - Deployment:
       - OpenAI Chat Completions API: how-to/deployment/openai-api.md
       - OpenAI Responses API: how-to/api/openai-responses-quickstart.md
@@ -161,6 +167,7 @@ nav:
       - Modules vs Protocols: explanation/concepts/modules-vs-protocols.md
       - Exchange System: explanation/concepts/exchange-system.md
       - Event System: explanation/concepts/event-system.md
+      - ReAct Pattern: explanation/concepts/react-pattern.md
     - Design Decisions:
       - Modularity: explanation/design/modularity.md
       - Testability: explanation/design/testability.md

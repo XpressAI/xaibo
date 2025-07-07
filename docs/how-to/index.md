@@ -23,6 +23,13 @@ How-to guides provide step-by-step instructions for solving specific problems wi
 
 - [How to switch between different LLM providers](llm/switch-providers.md) - Configure agents to use OpenAI, Anthropic, Google, or AWS Bedrock
 
+## Orchestrator Configuration
+
+- [How to switch from other orchestrators to ReAct pattern](orchestrator/switch-to-react-pattern.md) - Migrate to ReActOrchestrator for structured reasoning
+- [How to customize ReAct reasoning prompts](orchestrator/customize-react-prompts.md) - Control how your agent thinks, acts, and observes
+- [How to debug agent reasoning with visual indicators](orchestrator/debug-agent-reasoning.md) - Use visual feedback to optimize agent behavior
+- [How to handle complex multi-tool workflows](orchestrator/handle-complex-workflows.md) - Manage sophisticated multi-step processes
+
 ## Memory and Storage
 
 - [How to set up vector memory for agents](memory/setup-vector-memory.md) - Enable agents to store and retrieve information using vector embeddings
