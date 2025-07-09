@@ -434,8 +434,17 @@ def eject(args, extra_args=[]):
     """
     Eject primitive modules into the current project.
     """
+    # If user ran `eject list`, list everything and exit
+    if args.action == 'list':
+        print("Available packages and their ejectable items:\n")
+        for pkg in list_top_level_packages():
+            print(f"- {pkg}:")
+            for item in sorted(list_module_contents(pkg).keys()):
+                print(f"    • {item}")
+        return
+
+    # Otherwise, perform an eject (interactive or via -m)
     dest = Path(args.dest) if args.dest else Path.cwd()
-    
     if args.module:
         # Non-interactive: resolve each module and eject
         try:
@@ -482,8 +491,10 @@ def main():
     init_parser.add_argument('project_name', type=str, help='Name of the project')
     init_parser.set_defaults(func=init)
 
-    # 'eject' command.
+    # 'eject' command
     eject_parser = subparsers.add_parser('eject', help='Eject primitive modules')
+    eject_parser.add_argument('action', nargs='?', choices=['list'],
+                             help="If `list`, show all available items to eject")
     eject_parser.add_argument("-m", "--module", nargs="+",
                              help="Which module(s) to eject; use 'pkg.item' or just 'item'")
     eject_parser.add_argument("-d", "--dest", type=str, default=None,
