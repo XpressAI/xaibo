@@ -47,6 +47,38 @@ cd my_agent_project
 
 # Project is ready for development
 ```
+## xaibo eject
+
+Extract modules from the Xaibo core library to your project for customization.
+
+**Source**: [`src/xaibo/cli/__init__.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/cli/__init__.py)
+
+### Syntax
+
+```bash
+# Interactive mode
+uvx xaibo eject
+
+# List available modules
+uvx xaibo eject list
+
+# Eject specific modules
+uvx xaibo eject -m <module_name> [<module_name>...] [-d <destination>]
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `list` | `action` | - | List all available packages and ejectable items |
+| `-m, --module` | `str[]` | - | Module(s) to eject (space-separated) |
+| `-d, --dest` | `str` | current directory | Destination directory |
+
+### Behavior Notes
+
+- Files are ejected to ./modules/ in the current working directory unless specified otherwise
+- Existing files will not be overwritten and a warning will be displayed instead
+- __init__.py files are automatically created in all necessary directories
 
 ## xaibo dev
 
