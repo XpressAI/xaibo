@@ -4,6 +4,7 @@ from pathlib import Path
 from shutil import which
 import subprocess, shlex, sys, os
 import re
+import shutil
 
 import questionary
 
@@ -190,6 +191,112 @@ def generate_env_content(selected_modules):
     
     return "\n".join(content)
 
+def get_modules_root():
+    """Get the path to the primitives modules directory."""
+    try:
+        import xaibo.primitives.modules
+        return Path(xaibo.primitives.modules.__file__).parent
+    except ImportError:
+        raise ImportError("Could not find xaibo.primitives.modules")
+
+def list_top_level_packages():
+    """List all top-level packages in the primitives modules directory."""
+    modules_root = get_modules_root()
+    return sorted(p.name for p in modules_root.iterdir() if p.is_dir() and not p.name.startswith('__'))
+
+def list_module_contents(pkg_name: str):
+    """List contents of a specific package."""
+    modules_root = get_modules_root()
+    pkg_path = modules_root / pkg_name
+    items = []
+    for p in sorted(pkg_path.iterdir()):
+        if p.name == "__init__.py":
+            continue
+        display = p.name[:-3] if p.suffix == ".py" else p.name
+        items.append((display, p))
+    return dict(items)  # map display → Path
+
+def resolve_item(arg: str):
+    """
+    Given an arg like 'memory.memory_provider' or just 'memory_provider',
+    return the (package, Path) tuple.
+    """
+    if "." in arg:
+        pkg, item = arg.split(".", 1)
+        contents = list_module_contents(pkg)
+        if item not in contents:
+            raise FileNotFoundError(f"No item {item!r} in package {pkg!r}")
+        return pkg, contents[item]
+    else:
+        # search every package for a matching item
+        matches = []
+        for pkg in list_top_level_packages():
+            contents = list_module_contents(pkg)
+            if arg in contents:
+                matches.append((pkg, contents[arg]))
+        if not matches:
+            raise FileNotFoundError(f"No item named {arg!r} in any package")
+        if len(matches) > 1:
+            pkgs = ", ".join(p for p,_ in matches)
+            raise ValueError(f"Ambiguous item {arg!r} found in: {pkgs}")
+        return matches[0]
+
+def ensure_init_py(directory: Path):
+    """Ensure __init__.py exists in the given directory."""
+    init_file = directory / "__init__.py"
+    if not init_file.exists():
+        init_file.write_text("# Auto-generated __init__.py\n")
+
+def eject_items(items_with_packages, dest_root: Path):
+    """
+    Eject the specified items to the destination with proper package structure.
+    
+    Args:
+        items_with_packages: List of (package_name, source_path) tuples
+        dest_root: Root destination directory
+    """
+    # Ensure modules directory exists
+    modules_dir = dest_root / "modules"
+    modules_dir.mkdir(exist_ok=True)
+    ensure_init_py(modules_dir)
+    
+    for pkg_name, src_path in items_with_packages:
+        # Create package directory
+        pkg_dir = modules_dir / pkg_name
+        pkg_dir.mkdir(exist_ok=True)
+        ensure_init_py(pkg_dir)
+        
+        # Determine destination path
+        dst_path = pkg_dir / src_path.name
+        
+        if dst_path.exists():
+            print(f"⚠️ Skipping {pkg_name}.{src_path.name}; already exists.")
+            continue
+        
+        # Copy the file or directory
+        if src_path.is_dir():
+            shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
+        else:
+            shutil.copy2(src_path, dst_path)
+        
+        print(f"✅ Ejected {pkg_name}.{src_path.name} → {dst_path.relative_to(dest_root)}")
+
+def interactive_eject_mode(dest: Path):
+    """Interactive mode for ejecting modules."""
+    pkg = questionary.select("What do you want to eject?", list_top_level_packages()).ask()
+    if not pkg:
+        return
+    
+    items = questionary.checkbox(
+        f"{pkg} — which item(s) do you want?",
+        choices=[questionary.Choice(k, v) for k,v in list_module_contents(pkg).items()]
+    ).ask()
+    
+    if items:
+        # Convert to (package, path) tuples
+        items_with_packages = [(pkg, item) for item in items]
+        eject_items(items_with_packages, dest)
+
 def init(args, extra_args=[]):
     """
     Initialize a Xaibo project folder from scratch.
@@ -319,9 +426,36 @@ async def test_example_agent():
     assert "time" in response.text.lower()
 """
         )
-    
+
 
     print(f"{project_name} initialized.")
+
+def eject(args, extra_args=[]):
+    """
+    Eject primitive modules into the current project.
+    """
+    # If user ran `eject list`, list everything and exit
+    if args.action == 'list':
+        print("Available packages and their ejectable items:\n")
+        for pkg in list_top_level_packages():
+            print(f"- {pkg}:")
+            for item in sorted(list_module_contents(pkg).keys()):
+                print(f"    • {item}")
+        return
+
+    # Otherwise, perform an eject (interactive or via -m)
+    dest = Path(args.dest) if args.dest else Path.cwd()
+    if args.module:
+        # Non-interactive: resolve each module and eject
+        try:
+            items_with_packages = [resolve_item(arg) for arg in args.module]
+            eject_items(items_with_packages, dest)
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Error: {e}")
+            return
+    else:
+        # Interactive mode
+        interactive_eject_mode(dest)
 
 def dev(args, extra_args=[]):
     """
@@ -333,7 +467,6 @@ def dev(args, extra_args=[]):
 
     server = XaiboWebServer(xaibo, ['xaibo.server.adapters.OpenAiApiAdapter'],'./agents', '127.0.0.1', 9001, True)
     server.start()
-
 
 def serve(args, extra_args=[]):
     """
@@ -357,6 +490,16 @@ def main():
     init_parser = subparsers.add_parser('init', help='Initialize a Xaibo project')
     init_parser.add_argument('project_name', type=str, help='Name of the project')
     init_parser.set_defaults(func=init)
+
+    # 'eject' command
+    eject_parser = subparsers.add_parser('eject', help='Eject primitive modules')
+    eject_parser.add_argument('action', nargs='?', choices=['list'],
+                             help="If `list`, show all available items to eject")
+    eject_parser.add_argument("-m", "--module", nargs="+",
+                             help="Which module(s) to eject; use 'pkg.item' or just 'item'")
+    eject_parser.add_argument("-d", "--dest", type=str, default=None,
+                             help="Destination directory (default: current directory)")
+    eject_parser.set_defaults(func=eject)
 
     # 'dev' command.
     dev_parser = subparsers.add_parser('dev', help='Start a Xaibo development session.')
