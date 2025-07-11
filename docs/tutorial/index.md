@@ -9,6 +9,8 @@ Through practical examples, you'll discover how to:
 - **Create your first agent** - Set up a basic AI agent that can respond to messages
 - **Add tools to your agent** - Give your agent the ability to perform actions like checking time or weather
 - **Understand protocols** - Learn how Xaibo's modular components work together
+- **Master advanced orchestration** - Build agents that think step-by-step using the ReAct pattern
+- **Test your agents** - Create reliable test suites for complex agent behaviors
 
 ## What You'll Build
 
@@ -29,7 +31,7 @@ Before starting, make sure you have:
 
 ## Tutorial Structure
 
-This tutorial is organized into four progressive lessons:
+This tutorial is organized into five progressive lessons:
 
 ### [1. Getting Started](getting-started.md)
 Your first steps with Xaibo. You'll install the framework, create a new project, and run your first agent. **Start here** if you're new to Xaibo.
@@ -40,7 +42,10 @@ Learn how to create custom tools that give your agent new capabilities. You'll b
 ### [3. Understanding Protocols](understanding-protocols.md)
 Discover how Xaibo's protocol-based architecture enables flexible, modular agent design. You'll learn to swap components and understand the framework's power.
 
-### [4. Testing Agents](testing-agents.md)
+### [4. Advanced Orchestration](advanced-orchestration.md)
+Master the ReAct pattern for building intelligent agents that think step-by-step. Learn to create transparent, debuggable agents that handle complex multi-step tasks with explicit reasoning.
+
+### [5. Testing Agents](testing-agents.md)
 Master testing AI agents with dependency injection and event capture. Learn to replace components with test doubles, verify agent behavior, and build reliable test suites for complex agent interactions.
 
 ## Getting Help
