@@ -84,7 +84,7 @@
 		return {
 			ref: null,
 			id: 'orchestrator',
-			module: 'xaibo.primitives.modules.orchestrator.StressingToolUser',
+			module: 'xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator',
 			provides: [
 				{ protocol: 'TextMessageHandlerProtocol', ref: null }
 			],

@@ -4,7 +4,7 @@ from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionRe
 
 import json
 
-class StressingToolUser(TextMessageHandlerProtocol):
+class SimpleToolOrchestrator(TextMessageHandlerProtocol):
     """
     A text message handler that uses tools with increasing stress levels on failures.
     
@@ -30,7 +30,7 @@ class StressingToolUser(TextMessageHandlerProtocol):
                  history: ConversationHistoryProtocol,
                  config: dict = None):
         """
-        Initialize the StressingToolUser.
+        Initialize the SimpleToolOrchestrator.
         
         Args:
             response: Protocol for sending responses back to the user

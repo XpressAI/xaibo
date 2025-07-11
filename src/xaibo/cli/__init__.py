@@ -355,7 +355,7 @@ modules:
     id: python-tools
     config:
       tool_packages: [tools.example]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10
@@ -401,7 +401,7 @@ load_dotenv()
 
 @pytest.mark.asyncio
 async def test_example_agent():
-     # Load the stressing tool user config
+     # Load the simple tool orchestrator config
     with open(r"./agents/example.yml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)

@@ -21,7 +21,7 @@ modules:
       api_key: ${OPENAI_API_KEY}  # Optional, uses env var by default
       temperature: 0.7
       max_tokens: 2000
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
 ```
 
@@ -50,7 +50,7 @@ modules:
       api_key: ${ANTHROPIC_API_KEY}
       temperature: 0.7
       max_tokens: 4000
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
 ```
 
@@ -80,7 +80,7 @@ modules:
       api_key: ${GOOGLE_API_KEY}
       temperature: 0.7
       max_tokens: 2000
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
 ```
 
@@ -111,7 +111,7 @@ modules:
       aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
       temperature: 0.7
       max_tokens: 4000
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
 ```
 
@@ -139,7 +139,7 @@ modules:
       base_url: https://your-custom-endpoint.com/v1
       api_key: ${CUSTOM_API_KEY}
       timeout: 120.0
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
 ```
 

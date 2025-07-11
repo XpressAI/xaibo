@@ -23,7 +23,7 @@ More subtly, the dependencies aren't visible from the outside. If you want to te
 Xaibo takes a different approach. Components declare their dependencies explicitly in their constructor signatures:
 
 ```python
-class StressingToolUser:
+class SimpleToolOrchestrator:
     def __init__(self,
                  response: ResponseProtocol,
                  llm: LLMProtocol,
@@ -53,13 +53,13 @@ modules:
     id: llm
     config:
       model: gpt-4
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10
 ```
 
-The exchange system analyzes the constructor signatures of these modules, identifies their dependencies, and automatically creates the necessary connections. The `StressingToolUser` needs an `LLMProtocol`, and the `OpenAILLM` provides one, so the exchange system injects the LLM instance into the orchestrator.
+The exchange system analyzes the constructor signatures of these modules, identifies their dependencies, and automatically creates the necessary connections. The `SimpleToolOrchestrator` needs an `LLMProtocol`, and the `OpenAILLM` provides one, so the exchange system injects the LLM instance into the orchestrator.
 
 ## Automatic Dependency Resolution
 

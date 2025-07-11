@@ -69,7 +69,7 @@ def test_load_echo_complete():
     _assert_exchange_matches(config, raw_yaml)
 
 def test_load_stressing_tool():
-    config, raw_yaml = _read_yaml_config("stressing_tool_user.yaml")
+    config, raw_yaml = _read_yaml_config("simple_tool_orchestrator.yaml")
     _assert_modules_match(config, raw_yaml)
     _assert_exchange_matches(config, raw_yaml)
 
@@ -86,7 +86,7 @@ def test_load_directory():
     expected_files = [
         str(yaml_dir / "echo.yaml"),
         str(yaml_dir / "echo_complete.yaml"),
-        str(yaml_dir / "stressing_tool_user.yaml")
+        str(yaml_dir / "simple_tool_orchestrator.yaml")
     ]
 
     yaml = YAML(typ='safe')

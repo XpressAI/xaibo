@@ -20,7 +20,7 @@
 				config: { tool_packages: ['xaibo_examples.demo_tools.demo_tools'] }
 			},
 			{
-				module: 'xaibo.primitives.modules.orchestrator.StressingToolUser',
+				module: 'xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator',
 				id: 'orchestrator',
 				provides: ['TextMessageHandlerProtocol'],
 				uses: ['ResponseProtocol', 'LLMProtocol', 'ToolProviderProtocol'],
@@ -79,7 +79,7 @@
                 "force_single_param": false
             }
         }, {
-            "module": "xaibo.primitives.modules.orchestrator.StressingToolUser",
+            "module": "xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator",
             "id": "orchestrator",
             "provides": ["TextMessageHandlerProtocol"],
             "uses": ["ResponseProtocol", "LLMProtocol", "ToolProviderProtocol"],
