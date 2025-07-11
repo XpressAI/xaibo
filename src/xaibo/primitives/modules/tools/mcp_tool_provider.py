@@ -55,12 +55,13 @@ class MCPClient:
     async def _connect_stdio(self):
         """Connect via stdio transport"""
         cmd = self.config.command + self.config.args
+        env = self.config.env if self.config.env else None
         self.process = await asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            env=self.config.env
+            env=env
         )
 
     async def _connect_sse(self):
