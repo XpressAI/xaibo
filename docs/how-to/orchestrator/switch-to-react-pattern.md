@@ -1,6 +1,6 @@
 # How to switch from other orchestrators to ReAct pattern
 
-This guide shows you how to migrate from [`StressingToolUser`](../../reference/modules/orchestrator.md#stressingtooluser) or other orchestrators to the [`ReActOrchestrator`](../../reference/modules/orchestrator.md#reactorchestrator) for more structured reasoning and better debugging capabilities.
+This guide shows you how to migrate from [`SimpleToolOrchestrator`](../../reference/modules/orchestrator.md#simpletoolorchestrator) or other orchestrators to the [`ReActOrchestrator`](../../reference/modules/orchestrator.md#reactorchestrator) for more structured reasoning and better debugging capabilities.
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@ This guide shows you how to migrate from [`StressingToolUser`](../../reference/m
 - Basic understanding of YAML configuration
 - Familiarity with your current orchestrator's behavior
 
-## Replace StressingToolUser with ReActOrchestrator
+## Replace SimpleToolOrchestrator with ReActOrchestrator
 
 Update your agent configuration to use the ReAct pattern:
 
@@ -28,7 +28,7 @@ modules:
       tool_packages: [tools.weather, tools.calendar]
 
   # Replace this line:
-  # - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  # - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
   # With this:
   - module: xaibo.primitives.modules.orchestrator.ReActOrchestrator
     id: orchestrator
@@ -53,11 +53,11 @@ exchange:
 
 Map your existing configuration to ReAct parameters:
 
-### From StressingToolUser
+### From SimpleToolOrchestrator
 
 ```yaml
-# Old StressingToolUser config
-- module: xaibo.primitives.modules.orchestrator.StressingToolUser
+# Old SimpleToolOrchestrator config
+- module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
   id: orchestrator
   config:
     max_thoughts: 15
@@ -80,7 +80,7 @@ Map your existing configuration to ReAct parameters:
 
 ### Configuration mapping
 
-| StressingToolUser | ReActOrchestrator | Notes |
+| SimpleToolOrchestrator | ReActOrchestrator | Notes |
 |-------------------|-------------------|-------|
 | `max_thoughts` | `max_iterations` | Same iteration limit concept |
 | `system_prompt` | `system_prompt` | Direct equivalent |
@@ -147,7 +147,7 @@ config:
 
 ### Tool execution changes
 
-ReActOrchestrator executes tools differently than StressingToolUser:
+ReActOrchestrator executes tools differently than SimpleToolOrchestrator:
 
 - Tools are called during ACTION phase only
 - Each tool execution triggers an OBSERVATION phase

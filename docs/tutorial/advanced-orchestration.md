@@ -682,7 +682,7 @@ You now have powerful ReAct agents that can handle complex research tasks. Consi
 
 The ReAct pattern provides a foundation for building transparent, reliable AI agents that users can understand and trust. Your research assistant demonstrates how structured reasoning leads to better outcomes in complex problem-solving scenarios.
 
-Ready to build more sophisticated agents? Explore the [How-to Guides](../how-to/orchestrator/index.md) for advanced ReAct techniques and customization options.
+Ready to build more sophisticated agents? Explore the [How-to Guides](../how-to/index.md#orchestratorconfiguration) for advanced ReAct techniques and customization options.
 
 ## Related Documentation
 

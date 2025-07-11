@@ -38,11 +38,11 @@ This temperature modulation creates a natural rhythm that alternates between exp
 
 ## Comparing ReAct with Traditional Approaches
 
-To understand ReAct's value, consider how it differs from the [`StressingToolUser`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/orchestrator/stressing_tool_user.py) pattern, which represents a more traditional approach.
+To understand ReAct's value, consider how it differs from the [`SimpleToolOrchestrator`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/orchestrator/simple_tool_orchestrator.py) pattern, which represents a more traditional approach.
 
-StressingToolUser follows a simpler model where the agent generates responses and uses tools in a fluid way, increasing temperature when tool execution fails to simulate cognitive stress. This reactive approach works well for straightforward tasks but lacks the systematic structure that makes ReAct powerful for complex problems.
+SimpleToolOrchestrator follows a simpler model where the agent generates responses and uses tools in a fluid way, increasing temperature when tool execution fails to simulate cognitive stress. This reactive approach works well for straightforward tasks but lacks the systematic structure that makes ReAct powerful for complex problems.
 
-ReAct is proactive rather than reactive. By forcing explicit reasoning before action, it helps prevent many errors that would trigger stress responses in simpler patterns. The structured approach also makes it easier to identify and correct problems when they occur.
+ReAct is proactive rather than reactive. By forcing explicit reasoning before action, it helps prevent many errors that would trigger temperature increases in simpler patterns. The structured approach also makes it easier to identify and correct problems when they occur.
 
 ## When to Choose ReAct
 
