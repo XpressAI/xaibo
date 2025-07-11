@@ -52,7 +52,7 @@ modules:
     config:
       memory_file_path: "./agent_memory.pkl"
       
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       system_prompt: |

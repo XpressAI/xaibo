@@ -1,1 +1,1 @@
-from .stressing_tool_user import StressingToolUser
+from .simple_tool_orchestrator import SimpleToolOrchestrator

@@ -32,7 +32,7 @@ modules:
     id: python-tools
     config:
       tool_packages: [tools.example]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10
@@ -187,7 +187,7 @@ modules:
     id: python-tools
     config:
       tool_packages: [tools.example]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10
@@ -242,7 +242,7 @@ modules:
     id: python-tools
     config:
       tool_packages: [tools.example]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10
@@ -326,7 +326,7 @@ modules:
       tool_packages: [tools.math_tools]
   - module: xaibo.primitives.modules.tools.ToolCollector
     id: all-tools
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10

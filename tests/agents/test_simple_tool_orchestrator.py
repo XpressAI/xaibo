@@ -15,8 +15,8 @@ def empty_conversation():
     return SimpleConversation()
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_instantiation(empty_conversation):
-    """Test instantiating a stressing tool user agent"""
+async def test_simple_tool_orchestrator_instantiation(empty_conversation):
+    """Test instantiating a simple tool orchestrator agent"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
         pytest.skip("OPENAI_API_KEY environment variable not set")
@@ -25,8 +25,8 @@ async def test_stressing_tool_user_instantiation(empty_conversation):
     test_dir = Path(__file__).parent
     resources_dir = test_dir.parent / "resources"
     
-    # Load the stressing tool user config
-    with open(resources_dir / "yaml" / "stressing_tool_user.yaml") as f:
+    # Load the simple tool orchestrator config
+    with open(resources_dir / "yaml" / "simple_tool_orchestrator.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
 
@@ -49,8 +49,8 @@ async def test_stressing_tool_user_instantiation(empty_conversation):
 
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_current_time(caplog, empty_conversation):
-    """Test stressing tool user with current_time tool"""
+async def test_simple_tool_orchestrator_current_time(caplog, empty_conversation):
+    """Test simple tool orchestrator with current_time tool"""
     caplog.set_level(logging.DEBUG, 'xaibo.events')
 
     # Skip if no API key is available
@@ -61,8 +61,8 @@ async def test_stressing_tool_user_current_time(caplog, empty_conversation):
     test_dir = Path(__file__).parent
     resources_dir = test_dir.parent / "resources"
     
-    # Load the stressing tool user config
-    with open(resources_dir / "yaml" / "stressing_tool_user.yaml") as f:
+    # Load the simple tool orchestrator config
+    with open(resources_dir / "yaml" / "simple_tool_orchestrator.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -87,8 +87,8 @@ async def test_stressing_tool_user_current_time(caplog, empty_conversation):
 
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_calendar(empty_conversation):
-    """Test stressing tool user with calendar tool"""
+async def test_simple_tool_orchestrator_calendar(empty_conversation):
+    """Test simple tool orchestrator with calendar tool"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
         pytest.skip("OPENAI_API_KEY environment variable not set")
@@ -97,8 +97,8 @@ async def test_stressing_tool_user_calendar(empty_conversation):
     test_dir = Path(__file__).parent
     resources_dir = test_dir.parent / "resources"
     
-    # Load the stressing tool user config
-    with open(resources_dir / "yaml" / "stressing_tool_user.yaml") as f:
+    # Load the simple tool orchestrator config
+    with open(resources_dir / "yaml" / "simple_tool_orchestrator.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     
@@ -127,8 +127,8 @@ async def test_stressing_tool_user_calendar(empty_conversation):
 
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_time_and_calendar(empty_conversation):
-    """Test stressing tool user with time and calendar tool"""
+async def test_simple_tool_orchestrator_time_and_calendar(empty_conversation):
+    """Test simple tool orchestrator with time and calendar tool"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
         pytest.skip("OPENAI_API_KEY environment variable not set")
@@ -137,8 +137,8 @@ async def test_stressing_tool_user_time_and_calendar(empty_conversation):
     test_dir = Path(__file__).parent
     resources_dir = test_dir.parent / "resources"
 
-    # Load the stressing tool user config
-    with open(resources_dir / "yaml" / "stressing_tool_user.yaml") as f:
+    # Load the simple tool orchestrator config
+    with open(resources_dir / "yaml" / "simple_tool_orchestrator.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
 
@@ -169,8 +169,8 @@ async def test_stressing_tool_user_time_and_calendar(empty_conversation):
     assert "standup" in response.text.lower() or "focus time" in response.text.lower()
 
 @pytest.mark.asyncio
-async def test_stressing_tool_user_error_handling(empty_conversation):
-    """Test stressing tool user handles tool errors gracefully"""
+async def test_simple_tool_orchestrator_error_handling(empty_conversation):
+    """Test simple tool orchestrator handles tool errors gracefully"""
     # Skip if no API key is available
     if not os.environ.get("OPENAI_API_KEY"):
         pytest.skip("OPENAI_API_KEY environment variable not set")
@@ -180,8 +180,8 @@ async def test_stressing_tool_user_error_handling(empty_conversation):
     test_dir = Path(__file__).parent
     resources_dir = test_dir.parent / "resources"
     
-    # Load the stressing tool user config
-    with open(resources_dir / "yaml" / "stressing_tool_user.yaml") as f:
+    # Load the simple tool orchestrator config
+    with open(resources_dir / "yaml" / "simple_tool_orchestrator.yaml") as f:
         content = f.read()
         config = AgentConfig.from_yaml(content)
     

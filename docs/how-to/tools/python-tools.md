@@ -56,7 +56,7 @@ modules:
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
       tool_packages: [tools.my_tools]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10
@@ -214,7 +214,7 @@ modules:
         - tools.my_tools
         - tools.advanced_tools
         - tools.robust_tools
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
 ```
 

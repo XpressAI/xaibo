@@ -24,7 +24,7 @@ modules:
           transport: stdio
           command: ["python", "-m", "mcp_server_filesystem"]
           args: ["--root", "/workspace"]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10
@@ -146,7 +146,7 @@ modules:
           url: "ws://localhost:8080/mcp"
           headers:
             X-Database-Key: "your-db-key"
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       system_prompt: |

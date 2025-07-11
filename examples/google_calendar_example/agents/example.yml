@@ -9,7 +9,7 @@ modules:
     module: xaibo.primitives.modules.tools.PythonToolProvider
     config:
       tool_packages: [tools.calendar_tools]
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 10

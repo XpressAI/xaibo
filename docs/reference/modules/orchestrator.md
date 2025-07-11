@@ -2,13 +2,13 @@
 
 Orchestrator modules coordinate agent behavior by managing interactions between LLMs, tools, and memory systems. They implement the core agent logic and decision-making processes.
 
-## StressingToolUser
+## SimpleToolOrchestrator
 
 An orchestrator that processes user messages by leveraging an LLM to generate responses and potentially use tools. If tool execution fails, it increases the temperature (stress level) for subsequent LLM calls, simulating cognitive stress.
 
-**Source**: [`src/xaibo/primitives/modules/orchestrator/stressing_tool_user.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/orchestrator/stressing_tool_user.py)
+**Source**: [`src/xaibo/primitives/modules/orchestrator/simple_tool_orchestrator.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/orchestrator/simple_tool_orchestrator.py)
 
-**Module Path**: `xaibo.primitives.modules.orchestrator.StressingToolUser`
+**Module Path**: `xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator`
 
 **Dependencies**: None
 
@@ -69,7 +69,7 @@ modules:
     config:
       tool_packages: [tools.weather, tools.calendar]
   
-  - module: xaibo.primitives.modules.orchestrator.StressingToolUser
+  - module: xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator
     id: orchestrator
     config:
       max_thoughts: 15
@@ -92,7 +92,7 @@ exchange:
 
 ### Behavior
 
-The StressingToolUser follows this process:
+The SimpleToolOrchestrator follows this process:
 
 1. **Conversation Setup**: Retrieves conversation history and adds system prompt if configured
 2. **User Message Processing**: Adds the user's message to the conversation
@@ -130,10 +130,10 @@ When tools are called:
 ### Example Usage
 
 ```python
-from xaibo.primitives.modules.orchestrator.stressing_tool_user import StressingToolUser
+from xaibo.primitives.modules.orchestrator.simple_tool_orchestrator import SimpleToolOrchestrator
 
 # Initialize with dependencies
-orchestrator = StressingToolUser(
+orchestrator = SimpleToolOrchestrator(
     response=response_handler,
     llm=llm_provider,
     tool_provider=tool_provider,

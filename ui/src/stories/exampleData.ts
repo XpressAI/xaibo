@@ -16,7 +16,7 @@ export const config = {
 				config: { tool_packages: ['xaibo_examples.demo_tools.demo_tools'] }
 			},
 			{
-				module: 'xaibo.primitives.modules.orchestrator.StressingToolUser',
+				module: 'xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator',
 				id: 'orchestrator',
 				provides: ['TextMessageHandlerProtocol'],
 				uses: ['ResponseProtocol', 'LLMProtocol', 'ToolProviderProtocol'],
@@ -51,10 +51,10 @@ export const config = {
 
 export const events = [{
 	"agent_id": "minimal-tool-user",
-	"event_name": "xaibo.primitives.modules.orchestrator.stressing_tool_user.StressingToolUser.handle_text.call",
+	"event_name": "xaibo.primitives.modules.orchestrator.simple_tool_orchestrator.SimpleToolOrchestrator.handle_text.call",
 	"event_type": "call",
 	"module_id": "orchestrator",
-	"module_class": "StressingToolUser",
+	"module_class": "SimpleToolOrchestrator",
 	"method_name": "handle_text",
 	"time": 1742043803.8765922,
 	"call_id": "2867981821184-2868010854976-1",
@@ -635,10 +635,10 @@ export const events = [{
 	"exception": null
 }, {
 	"agent_id": "minimal-tool-user",
-	"event_name": "xaibo.primitives.modules.orchestrator.stressing_tool_user.StressingToolUser.handle_text.result",
+	"event_name": "xaibo.primitives.modules.orchestrator.simple_tool_orchestrator.SimpleToolOrchestrator.handle_text.result",
 	"event_type": "result",
 	"module_id": "orchestrator",
-	"module_class": "StressingToolUser",
+	"module_class": "SimpleToolOrchestrator",
 	"method_name": "handle_text",
 	"time": 1742043806.7711153,
 	"call_id": "2867981821184-2868010854976-1",
