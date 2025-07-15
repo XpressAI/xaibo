@@ -5,6 +5,7 @@ from shutil import which
 import subprocess, shlex, sys, os
 import re
 import shutil
+from difflib import get_close_matches
 
 import questionary
 
@@ -225,7 +226,7 @@ def resolve_item(arg: str):
         pkg, item = arg.split(".", 1)
         contents = list_module_contents(pkg)
         if item not in contents:
-            raise FileNotFoundError(f"No item {item!r} in package {pkg!r}")
+            raise FileNotFoundError(f"No module {item!r} in package {pkg!r}")
         return pkg, contents[item]
     else:
         # search every package for a matching item
@@ -235,10 +236,10 @@ def resolve_item(arg: str):
             if arg in contents:
                 matches.append((pkg, contents[arg]))
         if not matches:
-            raise FileNotFoundError(f"No item named {arg!r} in any package")
+            raise FileNotFoundError(f"No module named {arg!r} in any package")
         if len(matches) > 1:
             pkgs = ", ".join(p for p,_ in matches)
-            raise ValueError(f"Ambiguous item {arg!r} found in: {pkgs}")
+            raise ValueError(f"Ambiguous module {arg!r} found in: {pkgs}")
         return matches[0]
 
 def ensure_init_py(directory: Path):
@@ -432,7 +433,7 @@ async def test_example_agent():
 
 def eject(args, extra_args=[]):
     """
-    Eject primitive modules into the current project.
+    Eject primitive modules into the current project, with fuzzy suggestions on typos.
     """
     # If user ran `eject list`, list everything and exit
     if args.action == 'list':
@@ -443,19 +444,39 @@ def eject(args, extra_args=[]):
                 print(f"    • {item}")
         return
 
-    # Otherwise, perform an eject (interactive or via -m)
-    dest = Path(args.dest) if args.dest else Path.cwd()
+    # Non-interactive mode: try to resolve each module name, suggest on typos
     if args.module:
-        # Non-interactive: resolve each module and eject
-        try:
-            items_with_packages = [resolve_item(arg) for arg in args.module]
-            eject_items(items_with_packages, dest)
-        except (FileNotFoundError, ValueError) as e:
-            print(f"Error: {e}")
-            return
+        dest = Path(args.dest) if args.dest else Path.cwd()
+
+        # Build a flat list of all valid names to match against
+        available = []
+        for pkg in list_top_level_packages():
+            available.append(pkg)
+            for item in list_module_contents(pkg).keys():
+                available.append(item)
+                available.append(f"{pkg}.{item}")
+
+        items_with_packages = []
+        for arg in args.module:
+            try:
+                items_with_packages.append(resolve_item(arg))
+            except FileNotFoundError:
+                suggestions = get_close_matches(arg, available, n=3, cutoff=0.6)
+                if suggestions:
+                    print(f"Error: No module named '{arg}' found. Did you mean: {', '.join(suggestions)}?")
+                else:
+                    print(f"Error: No module named '{arg}' found.")
+                return
+            except ValueError as e:
+                # Ambiguous without a clear pkg.item
+                print(f"Error: {e}")
+                return
+
+        eject_items(items_with_packages, dest)
+
     else:
         # Interactive mode
-        interactive_eject_mode(dest)
+        interactive_eject_mode(Path.cwd())
 
 def dev(args, extra_args=[]):
     """
