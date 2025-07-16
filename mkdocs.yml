@@ -134,6 +134,9 @@ nav:
       - OpenAI Chat Completions API: how-to/deployment/openai-api.md
       - OpenAI Responses API: how-to/api/openai-responses-quickstart.md
       - MCP Server: how-to/deployment/mcp-server.md
+    - Contribute:
+        - Contributing: how-to/contribute/contributing.md
+
   - Reference:
     - reference/index.md
     - Configuration:
