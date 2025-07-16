@@ -451,7 +451,6 @@ def eject(args, extra_args=[]):
         # Build a flat list of all valid names to match against
         available = []
         for pkg in list_top_level_packages():
-            available.append(pkg)
             for item in list_module_contents(pkg).keys():
                 available.append(item)
                 available.append(f"{pkg}.{item}")
