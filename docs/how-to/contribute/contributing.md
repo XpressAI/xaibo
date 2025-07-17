@@ -7,7 +7,8 @@ This guide will walk you through everything you need to know to contribute to th
 Before you begin, make sure you have the following installed:
 
 - [uv](https://docs.astral.sh/uv/) - Python package manager
-- [pnpm](https://pnpm.io/) (for UI contributions only)
+- [Node.js](https://nodejs.org/) - JavaScript runtime
+- [pnpm](https://pnpm.io/) - Node.js package manager
 
 ## Local Xaibo Setup
 
@@ -58,7 +59,12 @@ The `uvx` command points to your local xaibo directory (`../xaibo`) allowing you
 
 ## Contributing to Xaibo UI
 
-The UI frontend is located at [`ui/`](https://github.com/XpressAI/xaibo/tree/main/ui). We use Svelte.
+The UI frontend is located at [`ui/`](https://github.com/XpressAI/xaibo/tree/main/ui).
+
+Our UI stack includes:
+- **Svelte 5** - Frontend framework
+- **Houdini GraphQL** - Frontend GraphQL client ([houdinigraphql.com](https://houdinigraphql.com/))
+- **Strawberry** - Server-side GraphQL server ([strawberry.rocks](https://strawberry.rocks/)) - see implementation at [`src/xaibo/api/graphql`](https://github.com/XpressAI/xaibo/tree/main/ui/src/lib/graphql)
 
 ### Setting Up UI Development
 
@@ -103,7 +109,7 @@ Now you can visit `http://localhost:5173/` to see your UI changes in real-time a
 
 ## Contributing to Xaibo Documentation
 
-Our documentation uses [MkDocs](https://www.mkdocs.org/) and follows the [Divio documentation system](https://docs.divio.com/documentation-system/).
+Our documentation uses [MkDocs](https://www.mkdocs.org/) with the [Material theme](https://squidfunk.github.io/mkdocs-material/) and follows the [Divio documentation system](https://docs.divio.com/documentation-system/).
 
 ### Working with Documentation
 
