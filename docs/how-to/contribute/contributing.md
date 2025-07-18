@@ -57,6 +57,33 @@ uvx ../xaibo init my_test_agent
 
 The `uvx` command points to your local xaibo directory (`../xaibo`) allowing you to test your changes directly.
 
+### Running the Test Suite
+
+Before pushing your PR, ensure that it doesn't break existing features by running the test suite.
+
+First, make sure you have all dependencies including test dependencies installed:
+
+```bash
+# From the root xaibo directory
+uv sync --all-extras
+```
+
+Then run the test suite:
+
+```bash
+uv run pytest
+```
+
+!!! info "API Provider Integration Tests"
+
+    Integration tests for API providers will be skipped if no API keys are available in the environment. To run these tests, make sure you have the required API keys configured in your environment variables.
+
+!!! tip "PyCharm Configuration"
+
+    If you're using PyCharm to run tests, you'll need to configure it to show logging output for easier debugging of test failures.
+
+    Go to **File > Settings > Advanced Settings > Python** and check the option: `Pytest: do not add "--no-header --no-summary -q"`.
+
 ## Contributing to Xaibo UI
 
 The UI frontend is located at [`ui/`](https://github.com/XpressAI/xaibo/tree/main/ui).
@@ -149,8 +176,6 @@ For feature requests:
 ## Getting Help
 
 If you need help or have questions, check the existing [issues](https://github.com/XpressAI/xaibo/issues) or open a new one for support.
-
----
 
 Thank you for contributing to Xaibo! Your contributions help make AI agent development more accessible and powerful for everyone.
 

@@ -139,9 +139,15 @@ The core principles and APIs are stable for production use.
 ### Contributing
 
 #### Running Tests
-Tests are implemented using pytest. If you are using PyCharm to run them, you 
-will need to configure it to also show logging output. That way some failures
-will be a lot easier to debug.
+Tests are implemented using pytest.
+
+```bash
+# From the root xaibo directory
+uv sync --all-extras
+uv run pytest
+```
+
+If you are using PyCharm to run them, you will need to configure it to also show logging output. That way some failures will be a lot easier to debug.
 
 Go to File > Settings > Advanced Settings > Python and check the option 
 `Pytest: do not add "--no-header --no-summary -q"`.
