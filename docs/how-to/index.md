@@ -17,6 +17,7 @@ How-to guides provide step-by-step instructions for solving specific problems wi
 
 ## Integrations
 
+- [How to embed xaibo into your application without a server](integrations/embed-xaibo-directly.md) - Integrate xaibo agents directly into your Python application
 - [How to use Xaibo agents in LiveKit voice assistants](integrations/livekit-voice-assistant.md) - Create real-time conversational AI applications with LiveKit
 
 ## LLM Configuration

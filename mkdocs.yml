@@ -121,6 +121,7 @@ nav:
       - MCP Tools: how-to/tools/mcp-tools.md
     - Integrations:
       - LiveKit Voice Assistant: how-to/integrations/livekit-voice-assistant.md
+      - Embed Xaibo Directly: how-to/integrations/embed-xaibo-directly.md
     - LLM Integration:
       - Switch Providers: how-to/llm/switch-providers.md
     - Memory:
