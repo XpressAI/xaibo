@@ -89,9 +89,35 @@ async def main():
 asyncio.run(main())
 ```
 
-## Optional: Add event listeners
+## Enable debug logging for web interface monitoring
 
-Monitor agent activity by adding event listeners:
+Enable comprehensive debug logging to collect detailed execution traces that can be viewed in xaibo's web interface:
+
+```python
+import logging
+from xaibo.primitives.event_listeners.debug_event_listener import register_debug_listener
+
+# Configure logging to capture debug events
+logging.basicConfig(level=logging.DEBUG)
+
+# Create xaibo instance and register debug listener
+xaibo = Xaibo()
+register_debug_listener(xaibo.event_registry, log_level=logging.INFO)
+
+# Register your agent
+xaibo.register_agent(config)
+```
+
+This captures all agent calls, results, and events with detailed information including:
+
+- Method calls with arguments
+- Return values and execution results
+- Event timestamps and call IDs
+- Module and method names
+
+## Optional: Add custom event listeners
+
+Monitor specific agent activity by adding custom event listeners:
 
 ```python
 events = []
