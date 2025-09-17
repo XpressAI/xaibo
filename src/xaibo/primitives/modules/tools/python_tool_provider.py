@@ -8,6 +8,9 @@ import docstring_parser
 from xaibo.core.models.tools import Tool, ToolParameter, ToolResult
 from xaibo.core.protocols.tools import ToolProviderProtocol
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class PythonToolProvider(ToolProviderProtocol):
     """Provider for Python function-based tools"""
@@ -39,8 +42,9 @@ class PythonToolProvider(ToolProviderProtocol):
                 for obj in pkg.__dict__.values():
                     if hasattr(obj, "__xaibo_tool__"):
                         tools.append(self._function_to_tool(obj))
-            except ImportError:
-                # Skip packages that don't exist
+
+            except ImportError as e:
+                logger.warning("Failed to import tool module '%s'", package_path, exc_info=True)
                 continue
         
         # Get tools from directly provided functions
