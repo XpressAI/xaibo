@@ -29,6 +29,10 @@
 							{
 								title: 'Configuration',
 								url: `/agents/${x.id}/config`,
+							},
+							{
+								title: 'Chat',
+								url: `/agents/${x.id}/chat`,
 							}/*,
 							{
 								title: 'Monitoring',
