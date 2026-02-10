@@ -141,7 +141,7 @@ class UiApiAdapter:
                 conversation = SimpleConversation.from_openai_messages(request.history)
 
                 # Get agent with conversation history injected via ConfigOverrides
-                agent = xaibo.get_agent_with(agent_id, ConfigOverrides(
+                agent = self.xaibo.get_agent_with(agent_id, ConfigOverrides(
                     instances={
                         '__conversation_history__': conversation
                     },
@@ -152,7 +152,7 @@ class UiApiAdapter:
                 ))
 
                 # Call agent.handle_text to get response
-                response = await agent.handle_text(request.message)
+                response = await agent.handle_text(request.message, entry_point='__entry__')
 
                 # Build updated history with assistant response
                 updated_history = list(request.history)

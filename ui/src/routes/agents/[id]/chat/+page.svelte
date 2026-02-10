@@ -7,18 +7,53 @@
 	import Send from '@lucide/svelte/icons/send';
 	import User from '@lucide/svelte/icons/user';
 	import Bot from '@lucide/svelte/icons/bot';
-	import { tick } from 'svelte';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import { tick, onMount } from 'svelte';
 
 	type ChatMessage = {
 		role: 'user' | 'assistant';
 		content: string;
 	};
 
+	// Storage key based on agent ID for per-agent chat history
+	const STORAGE_KEY = `chat-history-${page.params.id}`;
+
 	let messages = $state<ChatMessage[]>([]);
 	let inputMessage = $state('');
 	let isLoading = $state(false);
 	let errorMessage = $state('');
 	let chatContainerRef = $state<HTMLDivElement | null>(null);
+
+	// Check if we're in the browser
+	const isBrowser = typeof window !== 'undefined';
+
+	// Load messages from sessionStorage on mount
+	onMount(() => {
+		if (!isBrowser) return;
+		const stored = sessionStorage.getItem(STORAGE_KEY);
+		if (stored) {
+			try {
+				messages = JSON.parse(stored);
+			} catch (e) {
+				console.error('Failed to load chat history:', e);
+			}
+		}
+	});
+
+	// Save messages to sessionStorage whenever they change
+	$effect(() => {
+		if (!isBrowser) return;
+		if (messages.length > 0) {
+			sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+		}
+	});
+
+	function clearChat() {
+		if (confirm('Clear this conversation?')) {
+			messages = [];
+			sessionStorage.removeItem(STORAGE_KEY);
+		}
+	}
 
 	async function sendMessage() {
 		if (!inputMessage.trim() || isLoading) return;
@@ -82,9 +117,17 @@
 	}
 </script>
 
-<PageHeader title="Chat with {page.params.id}" />
+<div class="flex items-center justify-between mb-4 pr-4 pl-4">
+	<PageHeader title="Chat with {page.params.id}" />
+	{#if messages.length > 0}
+		<Button variant="outline" size="sm" onclick={clearChat}>
+			<Trash2 class="mr-2 h-4 w-4" />
+			Clear Chat
+		</Button>
+	{/if}
+</div>
 
-<div class="flex h-[calc(100vh-8rem)] w-full flex-col pr-4 pl-4">
+<div class="flex h-[calc(100vh-10rem)] w-full flex-col pr-4 pl-4">
 	<!-- Chat messages area -->
 	<div class="flex-1 overflow-hidden rounded-lg border bg-card">
 		<div bind:this={chatContainerRef} class="h-full overflow-y-auto">
