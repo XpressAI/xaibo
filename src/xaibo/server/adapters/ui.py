@@ -1,21 +1,33 @@
 from os import PathLike
 
 import strawberry
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 from strawberry.fastapi import GraphQLRouter, BaseContext
 from typing import List, Optional, Dict, Union
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 
 from strawberry.scalars import JSON
 
-from xaibo import Xaibo
+from xaibo import Xaibo, ConfigOverrides, ExchangeConfig
 from xaibo.core import models
+from xaibo.primitives.modules.conversation.conversation import SimpleConversation
 import json
 from pathlib import Path
 from importlib.resources import files
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[Dict[str, str]] = []
+
+
+class ChatResponse(BaseModel):
+    response: str
+    history: List[Dict[str, str]]
 
 
 class UiContext(BaseContext):
@@ -36,7 +48,7 @@ class ModuleConfig:
     config: Optional[JSON]
 
 @strawberry.type
-class ExchangeConfig:
+class ExchangeConfigGQL:
     module: Optional[str] = None
     field_name: Optional[str] = None
     protocol: str
@@ -46,7 +58,7 @@ class ExchangeConfig:
 class AgentConfig:
     id: str
     modules: List[ModuleConfig]
-    exchange: List[ExchangeConfig]
+    exchange: List[ExchangeConfigGQL]
 
 @strawberry.type
 class Event:
@@ -82,7 +94,7 @@ class Query:
         return AgentConfig(
             id=cfg.id,
             modules=[ModuleConfig(id=m.id, module=m.module, provides=m.provides, uses=m.uses, config=m.config) for m in cfg.modules],
-            exchange=[ExchangeConfig(module=e.module, protocol=e.protocol, provider=e.provider) for e in cfg.exchange]
+            exchange=[ExchangeConfigGQL(module=e.module, protocol=e.protocol, provider=e.provider) for e in cfg.exchange]
         )
 
     @strawberry.field
@@ -120,6 +132,43 @@ class UiApiAdapter:
         )
 
         self.router.include_router(graphql_router, prefix="/graphql")
+
+        # REST endpoint for chat
+        @self.router.post("/chat/{agent_id}", response_model=ChatResponse)
+        async def chat(agent_id: str, request: ChatRequest) -> ChatResponse:
+            try:
+                # Convert history to SimpleConversation format
+                conversation = SimpleConversation.from_openai_messages(request.history)
+
+                # Get agent with conversation history injected via ConfigOverrides
+                agent = self.xaibo.get_agent_with(agent_id, ConfigOverrides(
+                    instances={
+                        '__conversation_history__': conversation
+                    },
+                    exchange=[ExchangeConfig(
+                        protocol='ConversationHistoryProtocol',
+                        provider='__conversation_history__'
+                    )]
+                ))
+
+                # Call agent.handle_text to get response
+                response = await agent.handle_text(request.message, entry_point='__entry__')
+
+                # Build updated history with assistant response
+                updated_history = list(request.history)
+                # Add user's message
+                updated_history.append({"role": "user", "content": request.message})
+                # Add assistant's response
+                updated_history.append({"role": "assistant", "content": response.text or ""})
+
+                return ChatResponse(
+                    response=response.text or "",
+                    history=updated_history
+                )
+            except KeyError:
+                raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
 
         self.static_path = files("xaibo.server.adapters") / "ui" / "static" / "build"
 
