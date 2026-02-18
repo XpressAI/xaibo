@@ -32,7 +32,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libswresample-dev
+          sudo apt-get install -y ffmpeg
 
       - name: Install dependencies
         run: |
@@ -73,7 +73,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libswresample-dev
+          sudo apt-get install -y ffmpeg
 
       - name: Extract version from tag
         id: get_version
