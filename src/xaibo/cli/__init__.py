@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from pathlib import Path
 from shutil import which
@@ -8,6 +9,8 @@ import shutil
 from difflib import get_close_matches
 
 import questionary
+
+logger = logging.getLogger(__name__)
 
 from xaibo import Xaibo, __version__
 try:
@@ -44,8 +47,8 @@ def check_uv_version():
     try:
         # Check if uv is available
         if not which('uv'):
-            print("Error: uv is not installed or not found in PATH.")
-            print("Please install uv from https://docs.astral.sh/uv/getting-started/installation/")
+            logger.error("uv is not installed or not found in PATH.")
+            logger.error("Please install uv from https://docs.astral.sh/uv/getting-started/installation/")
             sys.exit(1)
         
         # Get uv version
@@ -55,7 +58,7 @@ def check_uv_version():
         # Extract version number using regex (format: "uv 0.6.0" or similar)
         version_match = re.search(r'uv\s+(\d+\.\d+\.\d+)', version_output)
         if not version_match:
-            print(f"Error: Could not parse uv version from output: {version_output}")
+            logger.error(f"Could not parse uv version from output: {version_output}")
             sys.exit(1)
         
         version_str = version_match.group(1)
@@ -64,16 +67,16 @@ def check_uv_version():
         # Check if version is at least 0.6.0
         min_version = [0, 6, 0]
         if version_parts < min_version:
-            print(f"Error: uv version {version_str} is too old.")
-            print("Please upgrade to uv 0.6.0 or later.")
-            print("Run: pip install --upgrade uv")
+            logger.error(f"uv version {version_str} is too old.")
+            logger.error("Please upgrade to uv 0.6.0 or later.")
+            logger.error("Run: pip install --upgrade uv")
             sys.exit(1)
-                            
+                    
     except subprocess.CalledProcessError as e:
-        print(f"Error: Failed to check uv version: {e}")
+        logger.error(f"Failed to check uv version: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f"Error: Unexpected error while checking uv version: {e}")
+        logger.error(f"Unexpected error while checking uv version: {e}")
         sys.exit(1)
 
 def get_default_model_for_provider(provider):
@@ -271,7 +274,7 @@ def eject_items(items_with_packages, dest_root: Path):
         dst_path = pkg_dir / src_path.name
         
         if dst_path.exists():
-            print(f"⚠️ Skipping {pkg_name}.{src_path.name}; already exists.")
+            logger.warning(f"Skipping {pkg_name}.{src_path.name}; already exists.")
             continue
         
         # Copy the file or directory
@@ -280,7 +283,7 @@ def eject_items(items_with_packages, dest_root: Path):
         else:
             shutil.copy2(src_path, dst_path)
         
-        print(f"✅ Ejected {pkg_name}.{src_path.name} → {dst_path.relative_to(dest_root)}")
+        logger.info(f"Ejected {pkg_name}.{src_path.name} → {dst_path.relative_to(dest_root)}")
 
 def interactive_eject_mode(dest: Path):
     """Interactive mode for ejecting modules."""
@@ -429,7 +432,7 @@ async def test_example_agent():
         )
 
 
-    print(f"{project_name} initialized.")
+    logger.info(f"{project_name} initialized.")
 
 def eject(args, extra_args=[]):
     """
@@ -437,11 +440,11 @@ def eject(args, extra_args=[]):
     """
     # If user ran `eject list`, list everything and exit
     if args.action == 'list':
-        print("Available packages and their ejectable items:\n")
+        logger.info("Available packages and their ejectable items:")
         for pkg in list_top_level_packages():
-            print(f"- {pkg}:")
+            logger.info(f"- {pkg}:")
             for item in sorted(list_module_contents(pkg).keys()):
-                print(f"    • {item}")
+                logger.info(f"    • {item}")
         return
 
     # Non-interactive mode: try to resolve each module name, suggest on typos
@@ -462,13 +465,13 @@ def eject(args, extra_args=[]):
             except FileNotFoundError:
                 suggestions = get_close_matches(arg, available, n=3, cutoff=0.6)
                 if suggestions:
-                    print(f"Error: No module named '{arg}' found. Did you mean: {', '.join(suggestions)}?")
+                    logger.error(f"No module named '{arg}' found. Did you mean: {', '.join(suggestions)}?")
                 else:
-                    print(f"Error: No module named '{arg}' found.")
+                    logger.error(f"No module named '{arg}' found.")
                 return
             except ValueError as e:
                 # Ambiguous without a clear pkg.item
-                print(f"Error: {e}")
+                logger.error(f"{e}")
                 return
 
         eject_items(items_with_packages, dest)
@@ -483,9 +486,9 @@ def dev(args, extra_args=[]):
     :return:
     """
     if XaiboWebServer is None:
-        print("Error: XaiboWebServer is not available.")
-        print("The webserver dependencies are required for 'xaibo dev'.")
-        print("Install them with: uv add xaibo[webserver]")
+        logger.error("XaiboWebServer is not available.")
+        logger.error("The webserver dependencies are required for 'xaibo dev'.")
+        logger.error("Install them with: uv add xaibo[webserver]")
         sys.exit(1)
     
     sys.path.append(os.getcwd())
@@ -500,9 +503,9 @@ def serve(args, extra_args=[]):
     :return:
     """
     if XaiboWebServer is None:
-        print("Error: XaiboWebServer is not available.")
-        print("The webserver dependencies are required for 'xaibo serve'.")
-        print("Install them with: uv add xaibo[webserver]")
+        logger.error("XaiboWebServer is not available.")
+        logger.error("The webserver dependencies are required for 'xaibo serve'.")
+        logger.error("Install them with: uv add xaibo[webserver]")
         sys.exit(1)
     
     sys.path.append(os.getcwd())
