@@ -482,6 +482,12 @@ def dev(args, extra_args=[]):
     Start a Xaibo development session
     :return:
     """
+    if XaiboWebServer is None:
+        print("Error: XaiboWebServer is not available.")
+        print("The webserver dependencies are required for 'xaibo dev'.")
+        print("Install them with: uv add xaibo[webserver]")
+        sys.exit(1)
+    
     sys.path.append(os.getcwd())
     xaibo = Xaibo()
 
@@ -493,6 +499,12 @@ def serve(args, extra_args=[]):
     Run Xaibo server with just the OpenAI API
     :return:
     """
+    if XaiboWebServer is None:
+        print("Error: XaiboWebServer is not available.")
+        print("The webserver dependencies are required for 'xaibo serve'.")
+        print("Install them with: uv add xaibo[webserver]")
+        sys.exit(1)
+    
     sys.path.append(os.getcwd())
 
     xaibo = Xaibo()
