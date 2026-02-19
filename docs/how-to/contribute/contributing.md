@@ -89,6 +89,7 @@ uv run pytest
 The UI frontend is located at [`ui/`](https://github.com/XpressAI/xaibo/tree/main/ui).
 
 Our UI stack includes:
+
 - **Svelte 5** - Frontend framework
 - **Houdini GraphQL** - Frontend GraphQL client ([houdinigraphql.com](https://houdinigraphql.com/))
 - **Strawberry** - Server-side GraphQL server ([strawberry.rocks](https://strawberry.rocks/)) - see implementation at [`src/xaibo/api/graphql`](https://github.com/XpressAI/xaibo/tree/main/ui/src/lib/graphql)
