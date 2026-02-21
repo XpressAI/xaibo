@@ -15,7 +15,7 @@ This guide shows you how to integrate your Xaibo agents with LiveKit's voice ass
 
 ## Prerequisites
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - uv package manager installed
 - Agent configurations in YAML format
 - Environment variables configured (`.env` file)

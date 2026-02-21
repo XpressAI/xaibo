@@ -5,7 +5,7 @@ authors = [{ name = "Xpress AI", email = "hello@xpress.ai"}]
 description = "Xaibo is a framework for building powerful, transparent, and modular AI agents."
 keywords = ["AI", "agent", "framework", "modular"]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "docstring-parser>=0.16",
     "pydantic>=2.10.6",
@@ -27,7 +27,6 @@ classifiers = [
     "Topic :: Multimedia :: Video",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
