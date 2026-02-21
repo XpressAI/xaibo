@@ -20,7 +20,7 @@
 Xaibo is a powerful, protocol-driven framework that enables developers to build sophisticated AI agents with unprecedented flexibility and modularity. By using well-defined interfaces and dependency injection, Xaibo allows you to create, test, and deploy AI systems that are both robust and easily maintainable.
 
 !!! tip "Quick Start"
-    **Prerequisites:** Python 3.10 or higher installed
+    **Prerequisites:** Python 3.11 or higher installed
     
     Get up and running with Xaibo in 60 seconds:
     ```bash

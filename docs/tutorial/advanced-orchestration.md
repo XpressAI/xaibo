@@ -27,7 +27,7 @@ Before starting, make sure you have:
 
 - Completed the [Getting Started](getting-started.md) tutorial
 - Basic understanding of agent configuration
-- Python 3.10 or higher installed
+- Python 3.11 or higher installed
 - An OpenAI API key configured
 
 ## Understanding the ReAct Pattern
