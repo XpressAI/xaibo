@@ -11,7 +11,7 @@ Initialize a new Xaibo project with recommended structure.
 ### Syntax
 
 ```bash
-uvx xaibo init <project_name>
+uvx xaibo init <project_name> [--python <version>]
 ```
 
 ### Parameters
@@ -19,6 +19,7 @@ uvx xaibo init <project_name>
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `project_name` | `str` | Yes | Name of the project directory to create |
+| `--python` | `str` | No | Python version to use (e.g., `3.11`, `3.12`, `3.13`). If not specified, uv will use the version from `.python-version` file, or the first Python found on PATH |
 
 ### Generated Structure
 
@@ -41,6 +42,9 @@ project_name/
 ```bash
 # Create a new project
 uvx xaibo init my_agent_project
+
+# Create a new project with specific Python version
+uvx xaibo init my_agent_project --python 3.12
 
 # Navigate to project
 cd my_agent_project
