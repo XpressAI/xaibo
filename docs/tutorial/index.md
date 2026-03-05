@@ -25,7 +25,7 @@ You'll create a personal assistant agent that can:
 
 Before starting, make sure you have:
 
-- Python 3.10 or higher installed
+- Python 3.11 or higher installed
 - Basic familiarity with command line operations
 - A text editor for editing configuration files
 

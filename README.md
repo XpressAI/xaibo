@@ -37,7 +37,7 @@ tests for your agent's logic. Ensure your agent behaves as expected before you e
 
 Get your first Xaibo agent running in under a minute.
 
-**Prerequisites:** Python 3.10+ and `pip`.
+**Prerequisites:** Python 3.11+ and `pip`.
 
 1.  **Install `uv`:** _(if you don't already have it)_
 

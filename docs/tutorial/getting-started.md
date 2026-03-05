@@ -4,7 +4,7 @@ In this lesson, you'll create your first Xaibo agent from scratch. You'll instal
 
 ## Step 1: Install Xaibo
 
-**Prerequisites:** Ensure you have Python 3.10 or higher installed on your system.
+**Prerequisites:** Ensure you have Python 3.11 or higher installed on your system.
 
 First, let's install the `uv` package manager if you don't have it:
 

@@ -20,7 +20,7 @@ This reference provides systematic solutions for common issues encountered when 
 
 **Resolution:**
 
-1. Verify Python version: `python --version` (requires >=3.10)
+1. Verify Python version: `python --version` (requires >=3.11)
 2. Install with required dependency groups:
    ```bash
    pip install xaibo[webserver,openai,anthropic]

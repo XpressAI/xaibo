@@ -5,7 +5,7 @@ This guide shows you how to install Xaibo with only the dependencies you need fo
 ## Prerequisites
 
 Before installing Xaibo, ensure you have:
-- Python 3.10 or higher installed
+- Python 3.11 or higher installed
 - pip or uv package manager
 
 ## Install core Xaibo package
