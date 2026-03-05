@@ -319,7 +319,12 @@ def init(args, extra_args=[]):
     project_name = args.project_name
     curdir = Path(os.getcwd())
     project_dir = curdir / project_name
-    universal_run(f"uv init --bare {project_name}", cwd=curdir)
+    
+    # Build uv init command with optional python version
+    uv_init_cmd = f"uv init --bare {project_name}"
+    if args.python:
+        uv_init_cmd += f" --python {args.python}"
+    universal_run(uv_init_cmd, cwd=curdir)
     universal_run(f"uv add xaibo xaibo[{','.join(modules)}] pytest", cwd=project_dir)
 
     (project_dir / "agents").mkdir()
@@ -509,6 +514,8 @@ def main():
     # 'init' command.
     init_parser = subparsers.add_parser('init', help='Initialize a Xaibo project')
     init_parser.add_argument('project_name', type=str, help='Name of the project')
+    init_parser.add_argument('--python', type=str, default=None,
+                            help='Python version to use (e.g., 3.11, 3.12, 3.13). If not specified, uv will use the version from .python-version file, or the first Python found on PATH.')
     init_parser.set_defaults(func=init)
 
     # 'eject' command
