@@ -6,7 +6,7 @@
 
     let {data} = $props();
     let {AgentConfig, DebugTrace} = $derived(data);
-    let {debugLog} = $derived($DebugTrace.data)
+    let debugLog = $derived($DebugTrace?.data?.debugLog);
 
     let debugClear = new ClearDebugLogStore();
     async function clearLog() {
@@ -21,7 +21,7 @@
 
 <PageHeader title={page.params.id} />
 <div class="flex h-full w-full flex-col pr-4 pl-4 overflow-auto">
-    <EventSequenceRenderer events={debugLog.events} onClear={clearLog}/>
+    <EventSequenceRenderer events={debugLog?.events ?? []} onClear={() => { clearLog() }}/>
 </div>
 
 
