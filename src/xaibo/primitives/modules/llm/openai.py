@@ -215,19 +215,50 @@ class OpenAILLM(LLMProtocol):
             response: ChatCompletion = await self.client.chat.completions.create(**kwargs)
             
             # Process the response
-            message = response.choices[0].message
-            
+            choice = response.choices[0]
+            message = choice.message
+            finish_reason = choice.finish_reason
+
             # Handle tool calls
             tool_calls = None
+            truncated_tool_calls = []
             if message.tool_calls and len(message.tool_calls) > 0:
-                tool_calls = [
-                    LLMFunctionCall(
-                        id=tool_call.id,
-                        name=tool_call.function.name,
-                        arguments=json.loads(tool_call.function.arguments)
+                if finish_reason == "length":
+                    # Response was truncated due to token limit — tool call
+                    # arguments are almost certainly incomplete JSON.
+                    # Don't attempt to execute them; instead, surface the
+                    # truncation so the caller can retry or inform the user.
+                    logger.warning(
+                        "LLM response truncated (finish_reason='length') with "
+                        f"{len(message.tool_calls)} tool call(s) — "
+                        "discarding incomplete tool calls"
                     )
-                    for tool_call in message.tool_calls
-                ]
+                    truncated_tool_calls = [
+                        {
+                            "name": tc.function.name,
+                            "raw_arguments": tc.function.arguments
+                        }
+                        for tc in message.tool_calls
+                    ]
+                else:
+                    parsed_tool_calls = []
+                    for tool_call in message.tool_calls:
+                        try:
+                            parsed_tool_calls.append(
+                                LLMFunctionCall(
+                                    id=tool_call.id,
+                                    name=tool_call.function.name,
+                                    arguments=json.loads(tool_call.function.arguments)
+                                )
+                            )
+                        except json.JSONDecodeError as e:
+                            logger.warning(
+                                f"Skipping tool call '{tool_call.function.name}' — "
+                                f"malformed JSON in arguments: {e}. "
+                                f"Raw arguments: {tool_call.function.arguments!r}"
+                            )
+
+                    tool_calls = parsed_tool_calls if parsed_tool_calls else None
 
             # Handle usage statistics
             usage = None
@@ -237,12 +268,30 @@ class OpenAILLM(LLMProtocol):
                     completion_tokens=response.usage.completion_tokens,
                     total_tokens=response.usage.total_tokens
                 )
-            
+
+            # When the response was truncated and tool calls were discarded,
+            # replace the content so the caller sees an actionable message
+            # instead of silence.
+            content = message.content or ""
+            if truncated_tool_calls:
+                tool_names = ", ".join(tc["name"] for tc in truncated_tool_calls)
+                content = (
+                    f"[Error: LLM response was truncated due to token limit. "
+                    f"Tool call(s) to {tool_names} had incomplete arguments and "
+                    f"could not be executed. Consider increasing max_tokens or "
+                    f"reducing the conversation context.]"
+                )
+
             return LLMResponse(
-                content=message.content or "",
+                content=content,
                 tool_calls=tool_calls,
                 usage=usage,
-                vendor_specific={"id": response.id, "model": response.model}
+                vendor_specific={
+                    "id": response.id,
+                    "model": response.model,
+                    "finish_reason": finish_reason,
+                    **({"truncated_tool_calls": truncated_tool_calls} if truncated_tool_calls else {})
+                }
             )
             
         except Exception as e:
