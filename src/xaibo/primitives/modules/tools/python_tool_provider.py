@@ -112,7 +112,7 @@ class PythonToolProvider(ToolProviderProtocol):
         parameters = {}
         for param in inspect.signature(fn).parameters.values():
             parameters[param.name] = ToolParameter(
-                type=param.annotation.__name__ if param.annotation != inspect._empty else "any",
+                type=self._annotation_type_name(param.annotation),
                 description=param_docs.get(param.name, ""),
                 required=param.default == inspect.Parameter.empty
             )
@@ -126,6 +126,21 @@ class PythonToolProvider(ToolProviderProtocol):
             description=docstr.description or "",
             parameters=parameters
         )
+
+    @staticmethod
+    def _annotation_type_name(annotation) -> str:
+        """Best-effort type name for a parameter annotation.
+
+        Never raises: annotations may be strings (quoted annotations, or any
+        module using `from __future__ import annotations`) or typing
+        constructs without a usable __name__ — listing tools must not crash
+        on legal Python.
+        """
+        if annotation is inspect.Parameter.empty:
+            return "any"
+        if isinstance(annotation, str):
+            return annotation
+        return getattr(annotation, "__name__", None) or str(annotation)
 
     def _get_tool_name(self, fn) -> str:
         """Get the full tool name including module path"""

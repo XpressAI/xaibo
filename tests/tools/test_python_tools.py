@@ -203,3 +203,28 @@ async def test_mixed_tool_sources():
     result = await provider.execute_tool(divide_tool.name, {"numerator": 10, "denominator": 0})
     assert result.success is False
     assert "divide by zero" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_string_annotations_do_not_crash():
+    """Quoted annotations (or `from __future__ import annotations` in the
+    tool module) make param.annotation a *string* at runtime; list_tools
+    must map them like real classes, not crash with AttributeError."""
+    @tool
+    def shout(text: "str", times: "int" = 1):
+        """Repeat text loudly
+
+        Args:
+            text: What to shout
+            times: How many times
+        """
+        return (text.upper() + "! ") * times
+
+    provider = PythonToolProvider({"tool_functions": [shout]})
+    tools = await provider.list_tools()
+    assert len(tools) == 1
+    params = tools[0].parameters
+    assert params["text"].type == "string"
+    assert params["times"].type == "integer"
+    assert params["text"].required is True
+    assert params["times"].required is False
