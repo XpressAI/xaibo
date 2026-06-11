@@ -1,6 +1,8 @@
 import importlib
 import inspect
 import sys
+import types
+import typing
 from typing import Any, Dict, List
 
 import docstring_parser
@@ -116,10 +118,6 @@ class PythonToolProvider(ToolProviderProtocol):
                 description=param_docs.get(param.name, ""),
                 required=param.default == inspect.Parameter.empty
             )
-            if parameters[param.name].type == 'str':
-                parameters[param.name].type = 'string'
-            elif parameters[param.name].type == 'int':
-                parameters[param.name].type = 'integer'
 
         return Tool(
             name=self._get_tool_name(fn),
@@ -127,20 +125,51 @@ class PythonToolProvider(ToolProviderProtocol):
             parameters=parameters
         )
 
-    @staticmethod
-    def _annotation_type_name(annotation) -> str:
-        """Best-effort type name for a parameter annotation.
+    # Python type names → JSON Schema types. Anything outside JSON Schema's
+    # {string,integer,number,boolean,array,object,null} gets rejected by
+    # providers with strict schema validation (OpenAI 400s the whole request
+    # over a single 'Optional'/'dict'/'list' type), so unknowns degrade to
+    # 'string' — never to an invalid schema.
+    _JSON_SCHEMA_TYPES = {
+        'str': 'string', 'int': 'integer', 'float': 'number', 'bool': 'boolean',
+        'list': 'array', 'tuple': 'array', 'set': 'array', 'frozenset': 'array',
+        'dict': 'object', 'mapping': 'object', 'sequence': 'array',
+        'iterable': 'array', 'bytes': 'string', 'none': 'null', 'nonetype': 'null',
+        'any': 'string', 'string': 'string', 'integer': 'integer',
+        'number': 'number', 'boolean': 'boolean', 'array': 'array',
+        'object': 'object', 'null': 'null',
+    }
 
-        Never raises: annotations may be strings (quoted annotations, or any
-        module using `from __future__ import annotations`) or typing
-        constructs without a usable __name__ — listing tools must not crash
-        on legal Python.
+    @classmethod
+    def _annotation_type_name(cls, annotation) -> str:
+        """JSON Schema type for a parameter annotation.
+
+        Never raises, and never emits a type outside JSON Schema's vocabulary.
+        Handles real typing objects via get_origin/get_args (so
+        Optional[list[str]] maps to 'array' on every Python version, instead of
+        leaking 'Optional'/'Union' from __name__), plain classes, and string
+        annotations (quoted, or any module using
+        `from __future__ import annotations`).
         """
         if annotation is inspect.Parameter.empty:
-            return "any"
+            return "string"
         if isinstance(annotation, str):
-            return annotation
-        return getattr(annotation, "__name__", None) or str(annotation)
+            token = annotation.strip()
+            lowered = token.lower()
+            if lowered.startswith('optional[') and lowered.endswith(']'):
+                return cls._annotation_type_name(token[9:-1])
+            return cls._JSON_SCHEMA_TYPES.get(lowered.split('[', 1)[0], 'string')
+        origin = typing.get_origin(annotation)
+        union_kinds = (typing.Union, getattr(types, 'UnionType', typing.Union))
+        if origin in union_kinds:
+            args = [a for a in typing.get_args(annotation) if a is not type(None)]
+            return cls._annotation_type_name(args[0]) if args else 'string'
+        if origin is not None:
+            annotation = origin
+        if annotation is type(None):
+            return 'null'
+        name = getattr(annotation, '__name__', None) or str(annotation)
+        return cls._JSON_SCHEMA_TYPES.get(name.lower(), 'string')
 
     def _get_tool_name(self, fn) -> str:
         """Get the full tool name including module path"""

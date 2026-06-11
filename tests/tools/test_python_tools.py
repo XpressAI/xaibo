@@ -206,6 +206,67 @@ async def test_mixed_tool_sources():
 
 
 @pytest.mark.asyncio
+async def test_parameter_types_are_valid_json_schema():
+    """Strict providers (OpenAI) reject any type outside JSON Schema's vocabulary —
+    one 'Optional'/'dict'/'list' 400s the whole request. Mirrors the real failure:
+    gpt-5.5 rejecting github_tools.create_issue over Optional[list[str]]."""
+    from typing import Optional
+
+    @tool
+    def create_issue(repo: str, title: str, count: int, score: float, flag: bool,
+                     labels: Optional[list[str]] = None, meta: dict = None, anything=None):
+        """File an issue
+
+        Args:
+            repo: repository
+            title: issue title
+            count: how many
+            score: how good
+            flag: whether
+            labels: labels to apply
+            meta: extra fields
+            anything: untyped
+        """
+        return None
+
+    provider = PythonToolProvider({"tool_functions": [create_issue]})
+    tools = await provider.list_tools()
+    p = tools[0].parameters
+
+    assert p["repo"].type == "string"
+    assert p["count"].type == "integer"
+    assert p["score"].type == "number"
+    assert p["flag"].type == "boolean"
+    assert p["labels"].type == "array", "Optional[list[str]] must map to array, not 'Optional'"
+    assert p["meta"].type == "object"
+    assert p["anything"].type == "string"
+
+    valid = {"string", "integer", "number", "boolean", "array", "object", "null"}
+    assert all(q.type in valid for q in p.values()), {k: q.type for k, q in p.items()}
+
+
+@pytest.mark.asyncio
+async def test_string_annotation_complex_types_map_to_json_schema():
+    """String annotations (future-import modules) with typing constructs must also
+    land on valid JSON Schema types."""
+    @tool
+    def fancy(labels: "Optional[list[str]]" = None, meta: "dict" = None):
+        """Fancy
+
+        Args:
+            labels: labels
+            meta: meta
+        """
+        return None
+
+    provider = PythonToolProvider({"tool_functions": [fancy]})
+    tools = await provider.list_tools()
+    p = tools[0].parameters
+    assert p["labels"].type == "array"
+    assert p["meta"].type == "object"
+
+
+@pytest.mark.asyncio
 async def test_string_annotations_do_not_crash():
     """Quoted annotations (or `from __future__ import annotations` in the
     tool module) make param.annotation a *string* at runtime; list_tools
