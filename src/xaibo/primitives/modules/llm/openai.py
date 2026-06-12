@@ -51,9 +51,28 @@ class OpenAILLM(LLMProtocol):
         )
         
         # Store any additional parameters as default kwargs
-        self.default_kwargs = {k: v for k, v in config.items() 
+        self.default_kwargs = {k: v for k, v in config.items()
                               if k not in ['api_key', 'model', 'base_url', 'timeout']}
-    
+
+    @staticmethod
+    def _parse_tool_arguments(raw: str) -> Dict[str, Any]:
+        """Parse model-emitted tool-call arguments tolerantly.
+
+        Models routinely emit raw control characters (literal newlines) inside
+        JSON string values; strict json.loads rejects those and one malformed
+        tool call used to abort the entire turn. strict=False accepts them, and
+        anything still unparseable degrades to a {"_raw": ...} payload so the
+        tool (or its error path) reports a bad argument instead of the run dying.
+        """
+        if raw is None or raw == "":
+            return {}
+        try:
+            parsed = json.loads(raw, strict=False)
+            return parsed if isinstance(parsed, dict) else {"_raw": parsed}
+        except (json.JSONDecodeError, TypeError):
+            logger.warning("Unparseable tool-call arguments (%d chars); passing raw", len(str(raw)))
+            return {"_raw": str(raw)}
+
     def _prepare_messages(self, messages: List[LLMMessage]) -> List[Dict[str, Any]]:
         """Convert our messages to OpenAI format"""
         prepared_messages = []
@@ -224,7 +243,7 @@ class OpenAILLM(LLMProtocol):
                     LLMFunctionCall(
                         id=tool_call.id,
                         name=tool_call.function.name,
-                        arguments=json.loads(tool_call.function.arguments)
+                        arguments=self._parse_tool_arguments(tool_call.function.arguments)
                     )
                     for tool_call in message.tool_calls
                 ]
