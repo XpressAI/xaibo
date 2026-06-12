@@ -73,6 +73,24 @@ class OpenAILLM(LLMProtocol):
             logger.warning("Unparseable tool-call arguments (%d chars); passing raw", len(str(raw)))
             return {"_raw": str(raw)}
 
+    @staticmethod
+    def _require_choices(response) -> None:
+        """Fail loudly when a completion response carries no choices.
+
+        Some OpenAI-compatible gateways return upstream error bodies with
+        HTTP 200. The SDK constructs those leniently (choices ends up None),
+        so subscripting raises a bare "'NoneType' object is not subscriptable"
+        that hides the actual upstream error. Surface the body instead — it
+        usually contains the real reason (rate limit, quota, provider error).
+        """
+        if getattr(response, "choices", None):
+            return
+        try:
+            detail = response.model_dump_json(exclude_none=True)
+        except Exception:
+            detail = repr(response)
+        raise RuntimeError(f"LLM API returned a completion without choices: {detail[:500]}")
+
     def _prepare_messages(self, messages: List[LLMMessage]) -> List[Dict[str, Any]]:
         """Convert our messages to OpenAI format"""
         prepared_messages = []
@@ -232,8 +250,9 @@ class OpenAILLM(LLMProtocol):
 
             # Make the API call
             response: ChatCompletion = await self.client.chat.completions.create(**kwargs)
-            
+
             # Process the response
+            self._require_choices(response)
             message = response.choices[0].message
             
             # Handle tool calls
