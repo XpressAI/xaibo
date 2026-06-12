@@ -51,9 +51,27 @@ class OpenAILLM(LLMProtocol):
         )
         
         # Store any additional parameters as default kwargs
-        self.default_kwargs = {k: v for k, v in config.items() 
+        self.default_kwargs = {k: v for k, v in config.items()
                               if k not in ['api_key', 'model', 'base_url', 'timeout']}
-    
+
+    @staticmethod
+    def _require_choices(response) -> None:
+        """Fail loudly when a completion response carries no choices.
+
+        Some OpenAI-compatible gateways return upstream error bodies with
+        HTTP 200. The SDK constructs those leniently (choices ends up None),
+        so subscripting raises a bare "'NoneType' object is not subscriptable"
+        that hides the actual upstream error. Surface the body instead — it
+        usually contains the real reason (rate limit, quota, provider error).
+        """
+        if getattr(response, "choices", None):
+            return
+        try:
+            detail = response.model_dump_json(exclude_none=True)
+        except Exception:
+            detail = repr(response)
+        raise RuntimeError(f"LLM API returned a completion without choices: {detail[:500]}")
+
     def _prepare_messages(self, messages: List[LLMMessage]) -> List[Dict[str, Any]]:
         """Convert our messages to OpenAI format"""
         prepared_messages = []
@@ -215,6 +233,7 @@ class OpenAILLM(LLMProtocol):
             response: ChatCompletion = await self.client.chat.completions.create(**kwargs)
             
             # Process the response
+            self._require_choices(response)
             choice = response.choices[0]
             message = choice.message
             finish_reason = choice.finish_reason
