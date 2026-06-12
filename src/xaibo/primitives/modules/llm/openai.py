@@ -55,6 +55,27 @@ class OpenAILLM(LLMProtocol):
                               if k not in ['api_key', 'model', 'base_url', 'timeout']}
 
     @staticmethod
+    def _parse_tool_arguments(raw) -> Optional[Dict[str, Any]]:
+        """Parse model-emitted tool-call arguments tolerantly.
+
+        Models routinely emit raw control characters (literal newlines) inside
+        JSON string values; strict json.loads rejects those even though the
+        arguments are otherwise perfectly usable. Parameterless tools arrive
+        with empty arguments, which strict parsing also rejects — those must
+        become {} rather than dropping the call.
+
+        Returns the parsed dict, or None when the arguments are irrecoverable
+        (the caller skips that tool call with a warning).
+        """
+        if raw is None or raw == "":
+            return {}
+        try:
+            parsed = json.loads(raw, strict=False)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+
+    @staticmethod
     def _require_choices(response) -> None:
         """Fail loudly when a completion response carries no choices.
 
@@ -262,20 +283,21 @@ class OpenAILLM(LLMProtocol):
                 else:
                     parsed_tool_calls = []
                     for tool_call in message.tool_calls:
-                        try:
-                            parsed_tool_calls.append(
-                                LLMFunctionCall(
-                                    id=tool_call.id,
-                                    name=tool_call.function.name,
-                                    arguments=json.loads(tool_call.function.arguments)
-                                )
-                            )
-                        except json.JSONDecodeError as e:
+                        arguments = self._parse_tool_arguments(tool_call.function.arguments)
+                        if arguments is None:
                             logger.warning(
                                 f"Skipping tool call '{tool_call.function.name}' — "
-                                f"malformed JSON in arguments: {e}. "
+                                f"malformed JSON in arguments. "
                                 f"Raw arguments: {tool_call.function.arguments!r}"
                             )
+                            continue
+                        parsed_tool_calls.append(
+                            LLMFunctionCall(
+                                id=tool_call.id,
+                                name=tool_call.function.name,
+                                arguments=arguments
+                            )
+                        )
 
                     tool_calls = parsed_tool_calls if parsed_tool_calls else None
 
