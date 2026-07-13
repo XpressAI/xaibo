@@ -1,3 +1,4 @@
+import inspect
 from itertools import chain
 from collections import defaultdict
 from typing import Type, Union, Any
@@ -258,18 +259,29 @@ class MethodProxy:
                     print("Exception during event handling")
                     traceback.print_exc()
                 
-    async def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         """Forward calls to the wrapped method.
-        
+
+        Dispatches on the kind of the wrapped method so the proxy stays
+        transparent: coroutine methods return a coroutine to await, generator
+        methods return a wrapping generator to iterate.
+
         Args:
             *args: Positional arguments to pass to wrapped method
             **kwargs: Keyword arguments to pass to wrapped method
-            
+
         Returns:
             The result of calling the wrapped method
         """
+        if inspect.isasyncgenfunction(self._method):
+            return self._call_async_generator(*args, **kwargs)
+        if inspect.isgeneratorfunction(self._method):
+            return self._call_generator(*args, **kwargs)
+        return self._call_async(*args, **kwargs)
+
+    async def _call_async(self, *args, **kwargs):
         self._call_id += 1
-        
+
         # Emit call event
         self._emit_event(
             EventType.CALL,
@@ -295,6 +307,68 @@ class MethodProxy:
         )
 
         return result
+
+    async def _call_async_generator(self, *args, **kwargs):
+        self._call_id += 1
+
+        # Emit call event
+        self._emit_event(
+            EventType.CALL,
+            arguments={"args": args, "kwargs": kwargs}
+        )
+
+        chunks = 0
+        try:
+            async for chunk in self._method(*args, **kwargs):
+                chunks += 1
+                yield chunk
+        except GeneratorExit:
+            # Consumer stopped iterating early; not an error
+            raise
+        except:
+            self._emit_event(
+                EventType.EXCEPTION,
+                exception=traceback.format_exc()
+            )
+            traceback.print_exc()
+            raise
+
+        # Emit result event
+        self._emit_event(
+            EventType.RESULT,
+            result={"stream": True, "chunks": chunks}
+        )
+
+    def _call_generator(self, *args, **kwargs):
+        self._call_id += 1
+
+        # Emit call event
+        self._emit_event(
+            EventType.CALL,
+            arguments={"args": args, "kwargs": kwargs}
+        )
+
+        chunks = 0
+        try:
+            for chunk in self._method(*args, **kwargs):
+                chunks += 1
+                yield chunk
+        except GeneratorExit:
+            # Consumer stopped iterating early; not an error
+            raise
+        except:
+            self._emit_event(
+                EventType.EXCEPTION,
+                exception=traceback.format_exc()
+            )
+            traceback.print_exc()
+            raise
+
+        # Emit result event
+        self._emit_event(
+            EventType.RESULT,
+            result={"stream": True, "chunks": chunks}
+        )
 
     def __repr__(self):
         return f"MethodProxy({self._method.__name__})"
