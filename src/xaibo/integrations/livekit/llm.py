@@ -294,6 +294,10 @@ class XaiboLLMStream(llm.LLMStream):
                 """Handle streaming text chunks from the agent"""
                 await chunk_queue.put(text)
 
+            async def respond_event(self, event) -> None:
+                """Agent internals are not forwarded to the voice pipeline"""
+                pass
+
             async def get_response(self):
                 """Return None as we handle streaming via respond_text"""
                 return None

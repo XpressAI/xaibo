@@ -127,6 +127,10 @@ class OpenAiApiAdapter:
                     response = create_chunk_response({"content": text})
                     await queue.put(f"data: {json.dumps(response)}\n\n")
 
+                async def respond_event(self, event) -> None:
+                    # The OpenAI chat completion grammar has no lane for agent internals
+                    pass
+
                 async def get_response(self):
                     return None
 

@@ -412,6 +412,10 @@ class OpenAiResponsesApiAdapter:
                     await queue.put(f"data: {json.dumps(event_data)}\n\n")
                     self.accumulated_text += text
 
+                async def respond_event(self, event) -> None:
+                    # Agent internals are not part of the responses API surface yet
+                    pass
+
                 async def get_response(self):
                     return None
 
