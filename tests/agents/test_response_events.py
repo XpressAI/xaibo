@@ -158,6 +158,55 @@ async def test_orchestrator_emits_tool_result_on_exception():
 
 
 @pytest.mark.asyncio
+async def test_legacy_response_handler_without_respond_event_still_works():
+    """A handler that predates respond_event is skipped, not crashed (events are an optional capability)."""
+    class LegacyResponseHandler:
+        def __init__(self):
+            self._text = None
+
+        async def respond_text(self, text):
+            self._text = text
+
+        async def get_response(self):
+            return Response(text=self._text)
+
+    tools = StubToolProvider(ToolResult(success=True, result="12:00"))
+    config = AgentConfig(
+        id="event-emitter",
+        modules=[
+            ModuleConfig(
+                module="xaibo.primitives.modules.llm.MockLLM",
+                id="llm",
+                config={"responses": [TOOL_CALL_RESPONSE, FINAL_RESPONSE]},
+            ),
+            ModuleConfig(
+                module="xaibo.primitives.modules.orchestrator.SimpleToolOrchestrator",
+                id="orchestrator",
+                config={"max_thoughts": 5},
+            ),
+        ],
+    )
+    xaibo = Xaibo()
+    xaibo.register_agent(config)
+    agent = xaibo.get_agent_with("event-emitter", ConfigOverrides(
+        instances={
+            "tools": tools,
+            "history": SimpleConversation(),
+            "__response__": LegacyResponseHandler(),
+        },
+        exchange=[
+            ExchangeConfig(protocol="ToolProviderProtocol", provider="tools"),
+            ExchangeConfig(protocol="ConversationHistoryProtocol", provider="history"),
+        ],
+    ))
+
+    response = await agent.handle_text("What time is it?")
+
+    assert response.text == "It is noon."
+    assert len(tools.calls) == 1
+
+
+@pytest.mark.asyncio
 async def test_tool_result_event_is_json_serializable():
     from datetime import datetime
 

@@ -4,6 +4,9 @@ from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionRe
 from xaibo.core.models.response import ToolCallEvent, ToolResultEvent, UsageEvent
 
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _json_safe(value):
@@ -55,6 +58,14 @@ class SimpleToolOrchestrator(TextMessageHandlerProtocol):
         self.tool_provider: ToolProviderProtocol = tool_provider
         self.history = history
 
+    async def _emit_event(self, event) -> None:
+        """Send a response event if the response handler supports it."""
+        respond_event = getattr(self.response, "respond_event", None)
+        if respond_event is None:
+            logger.debug("Response handler does not implement respond_event; dropping %s event", event.type)
+            return
+        await respond_event(event)
+
     async def handle_text(self, text: str) -> None:
         """
         Process a user text message, potentially using tools to generate a response.
@@ -99,7 +110,7 @@ class SimpleToolOrchestrator(TextMessageHandlerProtocol):
             llm_response = await self.llm.generate(conversation, options)
 
             if llm_response.usage:
-                await self.response.respond_event(UsageEvent(**llm_response.usage.model_dump()))
+                await self._emit_event(UsageEvent(**llm_response.usage.model_dump()))
 
             # Add assistant response to conversation
             assistant_message = LLMMessage(
@@ -121,7 +132,7 @@ class SimpleToolOrchestrator(TextMessageHandlerProtocol):
                     tool_name = tool_call.name
                     tool_args = tool_call.arguments
 
-                    await self.response.respond_event(ToolCallEvent(
+                    await self._emit_event(ToolCallEvent(
                         id=tool_call.id,
                         name=tool_name,
                         arguments=tool_args
@@ -152,7 +163,7 @@ class SimpleToolOrchestrator(TextMessageHandlerProtocol):
                         })
                         stress_level += 0.1
 
-                    await self.response.respond_event(ToolResultEvent(
+                    await self._emit_event(ToolResultEvent(
                         id=tool_call.id,
                         name=tool_name,
                         success=success,
