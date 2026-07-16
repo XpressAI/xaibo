@@ -19,6 +19,10 @@ class DummyStreamer:
         for i in range(count):
             yield i
 
+    def failing_sync_stream(self):
+        yield "first"
+        raise ValueError("stream broke")
+
     async def typed_stream(self):
         yield {"type": "text_delta", "text": "Hello"}
         yield {"type": "usage", "total_tokens": 5}
@@ -134,6 +138,46 @@ async def test_proxy_sync_generator():
     assert event_types == [EventType.CALL, EventType.YIELD, EventType.YIELD, EventType.YIELD, EventType.RESULT]
     assert [e.result for e in events[1:4]] == [0, 1, 2]
     assert events[4].result == {"stream": True, "chunks": 3}
+
+
+def test_proxy_sync_generator_exception_mid_stream():
+    events = []
+
+    def event_handler(event: Event):
+        events.append(event)
+
+    obj = DummyStreamer()
+    proxy = Proxy(obj, event_listeners=[("", event_handler)], agent_id="test-agent", caller_id="test-caller", module_id="test-module")
+
+    received = []
+    with pytest.raises(ValueError, match="stream broke"):
+        for chunk in proxy.failing_sync_stream():
+            received.append(chunk)
+
+    assert received == ["first"]
+
+    event_types = [e.event_type for e in events]
+    assert event_types == [EventType.CALL, EventType.YIELD, EventType.EXCEPTION]
+    assert events[1].result == "first"
+    assert "stream broke" in events[2].exception
+
+
+def test_proxy_sync_generator_early_close():
+    events = []
+
+    def event_handler(event: Event):
+        events.append(event)
+
+    obj = DummyStreamer()
+    proxy = Proxy(obj, event_listeners=[("", event_handler)], agent_id="test-agent", caller_id="test-caller", module_id="test-module")
+
+    gen = proxy.sync_stream(10)
+    assert next(gen) == 0
+    gen.close()
+
+    event_types = [e.event_type for e in events]
+    assert event_types == [EventType.CALL, EventType.YIELD, EventType.RESULT]
+    assert events[2].result == {"stream": True, "chunks": 1, "closed_early": True}
 
 
 @pytest.mark.asyncio
