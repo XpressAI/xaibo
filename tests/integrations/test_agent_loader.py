@@ -181,6 +181,36 @@ modules:
         mock_debug_listener.assert_called_once_with(Path(debug_dir))
         # Note: We can't easily test the event listener registration without mocking deeper
 
+    @patch('xaibo.primitives.event_listeners.stream_consolidating_event_listener.StreamConsolidatingEventListener')
+    @patch('xaibo.server.adapters.ui.UIDebugTraceEventListener')
+    def test_enable_debug_logging_consolidate_streams(self, mock_debug_listener, mock_consolidator):
+        """Test debug logging with stream consolidation enabled."""
+        debug_dir = os.path.join(self.temp_dir, "debug")
+        mock_listener_instance = Mock()
+        mock_debug_listener.return_value = mock_listener_instance
+
+        with patch.object(self.loader._xaibo, 'register_event_listener') as mock_register:
+            self.loader.enable_debug_logging(debug_dir, consolidate_streams=True)
+
+        # The consolidating listener wraps the debug listener's handler...
+        mock_consolidator.assert_called_once_with(mock_listener_instance.handle_event)
+        # ...and its own handler is what gets registered
+        mock_register.assert_called_once_with("", mock_consolidator.return_value.handle_event)
+
+    @patch('xaibo.primitives.event_listeners.stream_consolidating_event_listener.StreamConsolidatingEventListener')
+    @patch('xaibo.server.adapters.ui.UIDebugTraceEventListener')
+    def test_enable_debug_logging_default_registers_raw_listener(self, mock_debug_listener, mock_consolidator):
+        """Test that without consolidate_streams the raw debug listener is registered."""
+        debug_dir = os.path.join(self.temp_dir, "debug")
+        mock_listener_instance = Mock()
+        mock_debug_listener.return_value = mock_listener_instance
+
+        with patch.object(self.loader._xaibo, 'register_event_listener') as mock_register:
+            self.loader.enable_debug_logging(debug_dir)
+
+        mock_consolidator.assert_not_called()
+        mock_register.assert_called_once_with("", mock_listener_instance.handle_event)
+
     def test_enable_debug_logging_import_error(self):
         """Test enabling debug logging when UI dependencies are missing."""
         with patch('xaibo.server.adapters.ui.UIDebugTraceEventListener', side_effect=ImportError("No module")):

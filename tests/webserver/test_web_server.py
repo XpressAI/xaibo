@@ -286,6 +286,55 @@ def test_web_server_debug_mode_adds_ui_adapter(xaibo_instance, temp_agent_dir):
         mock_listener.assert_called_once()
 
 
+def test_web_server_debug_mode_consolidate_streams_wraps_listener(xaibo_instance, temp_agent_dir):
+    """Test that consolidate_streams wraps the debug listener in the consolidating listener"""
+    with patch('xaibo.server.web.get_class_by_path') as mock_get_class, \
+         patch('xaibo.server.adapters.ui.UIDebugTraceEventListener') as mock_listener, \
+         patch('xaibo.primitives.event_listeners.stream_consolidating_event_listener.StreamConsolidatingEventListener') as mock_consolidator:
+
+        mock_adapter_class = Mock()
+        mock_adapter_class.return_value = Mock()
+        mock_adapter_class.__name__ = "MockAdapter"
+        mock_get_class.return_value = mock_adapter_class
+
+        with patch.object(xaibo_instance, 'register_event_listener') as mock_register:
+            XaiboWebServer(
+                xaibo=xaibo_instance,
+                adapters=["test.MockAdapter"],
+                agent_dir=temp_agent_dir,
+                debug=True,
+                consolidate_streams=True
+            )
+
+        # The consolidating listener wraps the debug listener's handler...
+        mock_consolidator.assert_called_once_with(mock_listener.return_value.handle_event)
+        # ...and its own handler is what gets registered
+        mock_register.assert_called_once_with("", mock_consolidator.return_value.handle_event)
+
+
+def test_web_server_debug_mode_default_registers_raw_listener(xaibo_instance, temp_agent_dir):
+    """Test that without consolidate_streams the raw debug listener is registered"""
+    with patch('xaibo.server.web.get_class_by_path') as mock_get_class, \
+         patch('xaibo.server.adapters.ui.UIDebugTraceEventListener') as mock_listener, \
+         patch('xaibo.primitives.event_listeners.stream_consolidating_event_listener.StreamConsolidatingEventListener') as mock_consolidator:
+
+        mock_adapter_class = Mock()
+        mock_adapter_class.return_value = Mock()
+        mock_adapter_class.__name__ = "MockAdapter"
+        mock_get_class.return_value = mock_adapter_class
+
+        with patch.object(xaibo_instance, 'register_event_listener') as mock_register:
+            XaiboWebServer(
+                xaibo=xaibo_instance,
+                adapters=["test.MockAdapter"],
+                agent_dir=temp_agent_dir,
+                debug=True
+            )
+
+        mock_consolidator.assert_not_called()
+        mock_register.assert_called_once_with("", mock_listener.return_value.handle_event)
+
+
 def test_command_line_argument_parsing():
     """Test command line argument parsing for API keys"""
     import argparse
@@ -297,6 +346,7 @@ def test_command_line_argument_parsing():
     parser.add_argument("--host", dest="host", default="127.0.0.1", action="store")
     parser.add_argument("--port", dest="port", default=8000, type=int, action="store")
     parser.add_argument("--debug-ui", dest="debug", default=False, type=bool, action="store")
+    parser.add_argument("--consolidate-streams", dest="consolidate_streams", default=False, action="store_true")
     parser.add_argument("--openai-api-key", dest="openai_api_key", default=None, action="store")
     parser.add_argument("--mcp-api-key", dest="mcp_api_key", default=None, action="store")
     
@@ -314,6 +364,10 @@ def test_command_line_argument_parsing():
     assert args.host == "127.0.0.1"
     assert args.port == 8000
     assert args.debug is False
+    assert args.consolidate_streams is False
+
+    args = parser.parse_args(["--consolidate-streams"])
+    assert args.consolidate_streams is True
     
     # Test parsing without API keys (should default to None)
     args = parser.parse_args([])

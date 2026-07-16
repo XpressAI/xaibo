@@ -149,15 +149,17 @@ class XaiboAgentLoader:
             ],
         }
 
-    def enable_debug_logging(self, debug_dir: str = "./debug") -> None:
+    def enable_debug_logging(self, debug_dir: str = "./debug", consolidate_streams: bool = False) -> None:
         """
         Enable Xaibo's debug logging system.
-        
+
         This enables the same debugging capabilities as the Xaibo web server,
         writing debug traces to the specified directory.
-        
+
         Args:
             debug_dir: Directory to write debug traces to (default: "./debug")
+            consolidate_streams: Fold streamed YIELD events into their closing
+                RESULT before they are written to the debug traces
         """
         self._debug_enabled = True
         self._debug_dir = debug_dir
@@ -169,8 +171,11 @@ class XaiboAgentLoader:
         try:
             from xaibo.server.adapters.ui import UIDebugTraceEventListener
             
-            debug_listener = UIDebugTraceEventListener(Path(debug_dir))
-            self._xaibo.register_event_listener("", debug_listener.handle_event)
+            handler = UIDebugTraceEventListener(Path(debug_dir)).handle_event
+            if consolidate_streams:
+                from xaibo.primitives.event_listeners.stream_consolidating_event_listener import StreamConsolidatingEventListener
+                handler = StreamConsolidatingEventListener(handler).handle_event
+            self._xaibo.register_event_listener("", handler)
             
             logger.info(f"Debug logging enabled. Traces will be written to: {debug_dir}")
             

@@ -67,7 +67,7 @@ Get agent metadata and configuration details.
 **Raises:**
 - `ValueError`: If the agent ID is not found
 
-##### [`enable_debug_logging(debug_dir: str = "./debug") -> None`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/integrations/livekit/agent_loader.py:152)
+##### [`enable_debug_logging(debug_dir: str = "./debug", consolidate_streams: bool = False) -> None`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/integrations/livekit/agent_loader.py:152)
 
 Enable Xaibo's debug logging system.
 
@@ -75,6 +75,7 @@ Enables the same debugging capabilities as the Xaibo web server, writing debug t
 
 **Parameters:**
 - `debug_dir` (str, optional): Directory to write debug traces to. Defaults to "./debug"
+- `consolidate_streams` (bool, optional): Fold streamed YIELD events into their closing RESULT before they are written to the debug traces. Defaults to False
 
 **Raises:**
 - `ValueError`: If debug logging dependencies are not available

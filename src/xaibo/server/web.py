@@ -20,7 +20,7 @@ def get_class_by_path(path: str) -> Type:
     return clazz
 
 class XaiboWebServer:
-    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000, debug: bool = False, openai_api_key: Optional[str] = None, mcp_api_key: Optional[str] = None) -> None:
+    def __init__(self, xaibo: Xaibo, adapters: list[str], agent_dir: str, host: str = "127.0.0.1", port: int = 8000, debug: bool = False, openai_api_key: Optional[str] = None, mcp_api_key: Optional[str] = None, consolidate_streams: bool = False) -> None:
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             self.watcher_task = asyncio.create_task(self.watch_config_files())
@@ -52,7 +52,11 @@ class XaiboWebServer:
         if debug:
             from xaibo.server.adapters.ui import UIDebugTraceEventListener
             adapters.append("xaibo.server.adapters.UiApiAdapter")
-            self.xaibo.register_event_listener("", UIDebugTraceEventListener(Path("./debug")).handle_event)
+            handler = UIDebugTraceEventListener(Path("./debug")).handle_event
+            if consolidate_streams:
+                from xaibo.primitives.event_listeners.stream_consolidating_event_listener import StreamConsolidatingEventListener
+                handler = StreamConsolidatingEventListener(handler).handle_event
+            self.xaibo.register_event_listener("", handler)
 
 
         for adapter in adapters:
@@ -108,6 +112,8 @@ if __name__ == "__main__":
                         help="Port to run the server on")
     parser.add_argument("--debug-ui", dest="debug", default=False, type=bool, action="store",
                         help="Enable writing debug traces and start web ui")
+    parser.add_argument("--consolidate-streams", dest="consolidate_streams", default=False, action="store_true",
+                        help="Fold streamed YIELD events into their closing RESULT in debug traces")
     parser.add_argument("--openai-api-key", dest="openai_api_key", default=None, action="store",
                         help="API key for OpenAI adapter authentication (optional)")
     parser.add_argument("--mcp-api-key", dest="mcp_api_key", default=None, action="store",
@@ -117,5 +123,5 @@ if __name__ == "__main__":
 
     xaibo = Xaibo()
 
-    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir, args.host, args.port, args.debug, args.openai_api_key, args.mcp_api_key)
+    server = XaiboWebServer(xaibo, args.adapters, args.agent_dir, args.host, args.port, args.debug, args.openai_api_key, args.mcp_api_key, args.consolidate_streams)
     server.start()

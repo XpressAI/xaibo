@@ -499,7 +499,7 @@ def dev(args, extra_args=[]):
     sys.path.append(os.getcwd())
     xaibo = Xaibo()
 
-    server = XaiboWebServer(xaibo, ['xaibo.server.adapters.OpenAiApiAdapter'],'./agents', '127.0.0.1', 9001, True)
+    server = XaiboWebServer(xaibo, ['xaibo.server.adapters.OpenAiApiAdapter'],'./agents', '127.0.0.1', 9001, True, consolidate_streams=args.consolidate_streams)
     server.start()
 
 def serve(args, extra_args=[]):
@@ -545,6 +545,8 @@ def main():
 
     # 'dev' command.
     dev_parser = subparsers.add_parser('dev', help='Start a Xaibo development session.')
+    dev_parser.add_argument('--consolidate-streams', dest='consolidate_streams', default=False, action='store_true',
+                            help='Fold streamed YIELD events into their closing RESULT in debug traces')
     dev_parser.set_defaults(func=dev)
 
     # 'serve' command.

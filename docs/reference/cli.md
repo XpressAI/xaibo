@@ -94,6 +94,12 @@ Start the development server with debug UI and API adapters.
 uv run xaibo dev [options]
 ```
 
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--consolidate-streams` | `flag` | `false` | Fold streamed YIELD events into their closing RESULT in debug traces |
+
 ### Default Adapters
 
 The development server automatically includes:
@@ -130,6 +136,7 @@ python -m xaibo.server.web [options]
 | `--host` | `str` | `127.0.0.1` | Host address to bind the server |
 | `--port` | `int` | `8000` | Port number for the server |
 | `--debug-ui` | `bool` | `false` | Enable debug UI and event tracing |
+| `--consolidate-streams` | `flag` | `false` | Fold streamed YIELD events into their closing RESULT in debug traces |
 | `--openai-api-key` | `str` | `None` | API key for OpenAI adapter authentication (optional) |
 | `--mcp-api-key` | `str` | `None` | API key for MCP adapter authentication (optional) |
 
