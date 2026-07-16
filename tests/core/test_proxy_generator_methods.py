@@ -44,20 +44,23 @@ async def test_proxy_async_generator_streams_chunks():
     chunks = [chunk async for chunk in proxy.stream_method(3, prefix="foo")]
     assert chunks == ["foo-0", "foo-1", "foo-2"]
 
-    # Should have generated 2 events (call and result)
-    assert len(events) == 2
+    # One CALL, one YIELD per chunk, one RESULT
+    event_types = [e.event_type for e in events]
+    assert event_types == [EventType.CALL, EventType.YIELD, EventType.YIELD, EventType.YIELD, EventType.RESULT]
 
     call_event = events[0]
-    assert call_event.event_type == EventType.CALL
     assert call_event.module_class == "DummyStreamer"
     assert call_event.method_name == "stream_method"
     assert call_event.arguments == {"args": (3,), "kwargs": {"prefix": "foo"}}
     assert call_event.agent_id == "test-agent"
 
-    result_event = events[1]
-    assert result_event.event_type == EventType.RESULT
-    assert result_event.method_name == "stream_method"
-    assert result_event.result == {"stream": True, "chunks": 3, "content": "foo-0foo-1foo-2"}
+    yield_events = events[1:4]
+    assert [e.result for e in yield_events] == ["foo-0", "foo-1", "foo-2"]
+    assert all(e.call_id == call_event.call_id for e in yield_events)
+    assert yield_events[0].event_name.endswith("stream_method.yield")
+
+    result_event = events[4]
+    assert result_event.result == {"stream": True, "chunks": 3}
     assert result_event.call_id == call_event.call_id
 
 
@@ -87,9 +90,11 @@ async def test_proxy_async_generator_exception_mid_stream():
 
     assert received == ["first"]
 
+    # The chunk that made it out is observable before the exception
     event_types = [e.event_type for e in events]
-    assert event_types == [EventType.CALL, EventType.EXCEPTION]
-    assert "stream broke" in events[1].exception
+    assert event_types == [EventType.CALL, EventType.YIELD, EventType.EXCEPTION]
+    assert events[1].result == "first"
+    assert "stream broke" in events[2].exception
 
 
 @pytest.mark.asyncio
@@ -106,15 +111,10 @@ async def test_proxy_async_generator_early_close():
     assert await anext(gen) == "chunk-0"
     await gen.aclose()
 
-    # Early close is not an error, but the partial output is still recorded
+    # Early close is not an error; the RESULT still closes out the call
     event_types = [e.event_type for e in events]
-    assert event_types == [EventType.CALL, EventType.RESULT]
-    assert events[1].result == {
-        "stream": True,
-        "chunks": 1,
-        "content": "chunk-0",
-        "closed_early": True,
-    }
+    assert event_types == [EventType.CALL, EventType.YIELD, EventType.RESULT]
+    assert events[2].result == {"stream": True, "chunks": 1, "closed_early": True}
 
 
 @pytest.mark.asyncio
@@ -131,14 +131,13 @@ async def test_proxy_sync_generator():
     assert chunks == [0, 1, 2]
 
     event_types = [e.event_type for e in events]
-    assert event_types == [EventType.CALL, EventType.RESULT]
-    # Non-string chunks are kept as a list rather than joined
-    assert events[1].result == {"stream": True, "chunks": 3, "content": [0, 1, 2]}
+    assert event_types == [EventType.CALL, EventType.YIELD, EventType.YIELD, EventType.YIELD, EventType.RESULT]
+    assert [e.result for e in events[1:4]] == [0, 1, 2]
+    assert events[4].result == {"stream": True, "chunks": 3}
 
 
 @pytest.mark.asyncio
-async def test_proxy_async_generator_typed_chunks_kept_as_list():
-    """Non-string chunks (e.g. future typed stream events) are recorded as a list."""
+async def test_proxy_async_generator_typed_chunks():
     events = []
 
     def event_handler(event: Event):
@@ -150,15 +149,11 @@ async def test_proxy_async_generator_typed_chunks_kept_as_list():
     chunks = [chunk async for chunk in proxy.typed_stream()]
     assert len(chunks) == 2
 
-    assert events[1].event_type == EventType.RESULT
-    assert events[1].result == {
-        "stream": True,
-        "chunks": 2,
-        "content": [
-            {"type": "text_delta", "text": "Hello"},
-            {"type": "usage", "total_tokens": 5},
-        ],
-    }
+    event_types = [e.event_type for e in events]
+    assert event_types == [EventType.CALL, EventType.YIELD, EventType.YIELD, EventType.RESULT]
+    assert events[1].result == {"type": "text_delta", "text": "Hello"}
+    assert events[2].result == {"type": "usage", "total_tokens": 5}
+    assert events[3].result == {"stream": True, "chunks": 2}
 
 
 @pytest.mark.asyncio
@@ -176,7 +171,7 @@ async def test_proxy_async_generator_empty_stream():
 
     event_types = [e.event_type for e in events]
     assert event_types == [EventType.CALL, EventType.RESULT]
-    assert events[1].result == {"stream": True, "chunks": 0, "content": ""}
+    assert events[1].result == {"stream": True, "chunks": 0}
 
 
 @pytest.mark.asyncio
@@ -212,10 +207,9 @@ async def test_proxy_llm_generate_stream():
     chunks = [chunk async for chunk in proxy.generate_stream(messages)]
 
     assert "".join(chunks) == "Hello World"
-    event_types = [e.event_type for e in events]
-    assert event_types == [EventType.CALL, EventType.RESULT]
-    assert events[1].result["stream"] is True
-    assert events[1].result["chunks"] == len(chunks)
-    # The full streamed text is observable, matching what non-streaming
-    # generate() would have recorded in its RESULT event
-    assert events[1].result["content"] == "Hello World"
+    yield_events = [e for e in events if e.event_type == EventType.YIELD]
+    # Every chunk that crossed the module boundary is on the event log
+    assert [e.result for e in yield_events] == chunks
+    assert events[0].event_type == EventType.CALL
+    assert events[-1].event_type == EventType.RESULT
+    assert events[-1].result == {"stream": True, "chunks": len(chunks)}

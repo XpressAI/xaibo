@@ -262,10 +262,6 @@ class MethodProxy:
     def __call__(self, *args, **kwargs):
         """Forward calls to the wrapped method.
 
-        Dispatches on the kind of the wrapped method so the proxy stays
-        transparent: coroutine methods return a coroutine to await, generator
-        methods return a wrapping generator to iterate.
-
         Args:
             *args: Positional arguments to pass to wrapped method
             **kwargs: Keyword arguments to pass to wrapped method
@@ -308,19 +304,6 @@ class MethodProxy:
 
         return result
 
-    @staticmethod
-    def _stream_result(collected, closed_early=False):
-        """Build the RESULT payload for a finished stream."""
-        # Join all-str chunks (chunk boundaries are a provider detail); keep other types as a list
-        if all(isinstance(chunk, str) for chunk in collected):
-            content = "".join(collected)
-        else:
-            content = collected
-        result = {"stream": True, "chunks": len(collected), "content": content}
-        if closed_early:
-            result["closed_early"] = True
-        return result
-
     async def _call_async_generator(self, *args, **kwargs):
         self._call_id += 1
 
@@ -330,16 +313,21 @@ class MethodProxy:
             arguments={"args": args, "kwargs": kwargs}
         )
 
-        collected = []
+        chunks = 0
         try:
             async for chunk in self._method(*args, **kwargs):
-                collected.append(chunk)
+                # Emit yield event
+                self._emit_event(
+                    EventType.YIELD,
+                    result=chunk
+                )
+                chunks += 1
                 yield chunk
         except GeneratorExit:
-            # Consumer stopped iterating early; not an error, but record the partial output
+            # Consumer stopped iterating early; not an error
             self._emit_event(
                 EventType.RESULT,
-                result=self._stream_result(collected, closed_early=True)
+                result={"stream": True, "chunks": chunks, "closed_early": True}
             )
             raise
         except:
@@ -353,7 +341,7 @@ class MethodProxy:
         # Emit result event
         self._emit_event(
             EventType.RESULT,
-            result=self._stream_result(collected)
+            result={"stream": True, "chunks": chunks}
         )
 
     def _call_generator(self, *args, **kwargs):
@@ -365,16 +353,21 @@ class MethodProxy:
             arguments={"args": args, "kwargs": kwargs}
         )
 
-        collected = []
+        chunks = 0
         try:
             for chunk in self._method(*args, **kwargs):
-                collected.append(chunk)
+                # Emit yield event
+                self._emit_event(
+                    EventType.YIELD,
+                    result=chunk
+                )
+                chunks += 1
                 yield chunk
         except GeneratorExit:
-            # Consumer stopped iterating early; not an error, but record the partial output
+            # Consumer stopped iterating early; not an error
             self._emit_event(
                 EventType.RESULT,
-                result=self._stream_result(collected, closed_early=True)
+                result={"stream": True, "chunks": chunks, "closed_early": True}
             )
             raise
         except:
@@ -388,7 +381,7 @@ class MethodProxy:
         # Emit result event
         self._emit_event(
             EventType.RESULT,
-            result=self._stream_result(collected)
+            result={"stream": True, "chunks": chunks}
         )
 
     def __repr__(self):
