@@ -51,9 +51,48 @@ class OpenAILLM(LLMProtocol):
         )
         
         # Store any additional parameters as default kwargs
-        self.default_kwargs = {k: v for k, v in config.items() 
+        self.default_kwargs = {k: v for k, v in config.items()
                               if k not in ['api_key', 'model', 'base_url', 'timeout']}
-    
+
+    @staticmethod
+    def _parse_tool_arguments(raw) -> Optional[Dict[str, Any]]:
+        """Parse model-emitted tool-call arguments tolerantly.
+
+        Models routinely emit raw control characters (literal newlines) inside
+        JSON string values; strict json.loads rejects those even though the
+        arguments are otherwise perfectly usable. Parameterless tools arrive
+        with empty arguments, which strict parsing also rejects — those must
+        become {} rather than dropping the call.
+
+        Returns the parsed dict, or None when the arguments are irrecoverable
+        (the caller skips that tool call with a warning).
+        """
+        if raw is None or raw == "":
+            return {}
+        try:
+            parsed = json.loads(raw, strict=False)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+
+    @staticmethod
+    def _require_choices(response) -> None:
+        """Fail loudly when a completion response carries no choices.
+
+        Some OpenAI-compatible gateways return upstream error bodies with
+        HTTP 200. The SDK constructs those leniently (choices ends up None),
+        so subscripting raises a bare "'NoneType' object is not subscriptable"
+        that hides the actual upstream error. Surface the body instead — it
+        usually contains the real reason (rate limit, quota, provider error).
+        """
+        if getattr(response, "choices", None):
+            return
+        try:
+            detail = response.model_dump_json(exclude_none=True)
+        except Exception:
+            detail = repr(response)
+        raise RuntimeError(f"LLM API returned a completion without choices: {detail[:500]}")
+
     def _prepare_messages(self, messages: List[LLMMessage]) -> List[Dict[str, Any]]:
         """Convert our messages to OpenAI format"""
         prepared_messages = []
@@ -215,6 +254,7 @@ class OpenAILLM(LLMProtocol):
             response: ChatCompletion = await self.client.chat.completions.create(**kwargs)
             
             # Process the response
+            self._require_choices(response)
             choice = response.choices[0]
             message = choice.message
             finish_reason = choice.finish_reason
@@ -243,20 +283,21 @@ class OpenAILLM(LLMProtocol):
                 else:
                     parsed_tool_calls = []
                     for tool_call in message.tool_calls:
-                        try:
-                            parsed_tool_calls.append(
-                                LLMFunctionCall(
-                                    id=tool_call.id,
-                                    name=tool_call.function.name,
-                                    arguments=json.loads(tool_call.function.arguments)
-                                )
-                            )
-                        except json.JSONDecodeError as e:
+                        arguments = self._parse_tool_arguments(tool_call.function.arguments)
+                        if arguments is None:
                             logger.warning(
                                 f"Skipping tool call '{tool_call.function.name}' — "
-                                f"malformed JSON in arguments: {e}. "
+                                f"malformed JSON in arguments. "
                                 f"Raw arguments: {tool_call.function.arguments!r}"
                             )
+                            continue
+                        parsed_tool_calls.append(
+                            LLMFunctionCall(
+                                id=tool_call.id,
+                                name=tool_call.function.name,
+                                arguments=arguments
+                            )
+                        )
 
                     tool_calls = parsed_tool_calls if parsed_tool_calls else None
 
