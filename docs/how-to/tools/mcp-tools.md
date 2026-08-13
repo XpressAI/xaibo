@@ -184,7 +184,7 @@ Install popular MCP servers for common use cases:
 
 ```bash
 # Filesystem server
-pip install mcp-server-filesystem
+npm install -g mcp-server-filesystem
 
 # Git server (Node.js)
 npm install -g @modelcontextprotocol/server-git
