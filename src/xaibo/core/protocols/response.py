@@ -1,6 +1,6 @@
 from typing import Protocol, BinaryIO, runtime_checkable
 
-from xaibo.core.models.response import Response
+from xaibo.core.models.response import Response, ResponseEvent
 
 
 @runtime_checkable
@@ -52,5 +52,17 @@ class ResponseProtocol(Protocol):
 
         Args:
             response: Response object containing text and attachments
+        """
+        ...
+
+    async def respond_event(self, event: ResponseEvent) -> None:
+        """Report a structured event produced while generating the response.
+
+        Events carry the internals of response generation (tool calls, tool
+        results, usage) so that adapters can surface them instead of only
+        the final text.
+
+        Args:
+            event: The event to report
         """
         ...
