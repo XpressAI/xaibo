@@ -12,7 +12,8 @@ export type CallGroup = {
 export enum EventType {
     CALL = "call",
     RESULT = "result",
-    EXCEPTION = "exception"
+    EXCEPTION = "exception",
+    YIELD = "yield"
 }
 
 export type Event = {

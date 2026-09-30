@@ -141,6 +141,10 @@
         for (let i = 0; i < events.length; i++) {
             let event = events[i];
             let group: CallGroup;
+            if (event.event_type == EventType.YIELD) {
+                // Stream chunks don't close out their call group
+                continue;
+            }
             if (openGroups.has(event.call_id)) {
                 group = openGroups.get(event.call_id)!;
                 group.length = i - group.length;

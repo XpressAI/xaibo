@@ -8,6 +8,7 @@ class EventType(str, Enum):
     CALL = "call"
     RESULT = "result"
     EXCEPTION = "exception"
+    YIELD = "yield"
 
 
 class Event(BaseModel):
