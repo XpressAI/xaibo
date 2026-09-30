@@ -1,8 +1,17 @@
 from xaibo.core.protocols import TextMessageHandlerProtocol, ResponseProtocol, LLMProtocol, ToolProviderProtocol, \
     ConversationHistoryProtocol
 from xaibo.core.models.llm import LLMMessage, LLMOptions, LLMRole, LLMFunctionResult, LLMMessageContentType, LLMMessageContent
+from xaibo.core.models.response import ToolCallEvent, ToolResultEvent, UsageEvent
 
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _json_safe(value):
+    """Coerce a tool result into JSON-serializable form"""
+    return json.loads(json.dumps(value, default=repr))
 
 class SimpleToolOrchestrator(TextMessageHandlerProtocol):
     """
@@ -49,6 +58,14 @@ class SimpleToolOrchestrator(TextMessageHandlerProtocol):
         self.tool_provider: ToolProviderProtocol = tool_provider
         self.history = history
 
+    async def _emit_event(self, event) -> None:
+        """Send a response event if the response handler supports it."""
+        respond_event = getattr(self.response, "respond_event", None)
+        if respond_event is None:
+            logger.debug("Response handler does not implement respond_event; dropping %s event", event.type)
+            return
+        await respond_event(event)
+
     async def handle_text(self, text: str) -> None:
         """
         Process a user text message, potentially using tools to generate a response.
@@ -91,7 +108,10 @@ class SimpleToolOrchestrator(TextMessageHandlerProtocol):
             )
             
             llm_response = await self.llm.generate(conversation, options)
-            
+
+            if llm_response.usage:
+                await self._emit_event(UsageEvent(**llm_response.usage.model_dump()))
+
             # Add assistant response to conversation
             assistant_message = LLMMessage(
                 role=LLMRole.FUNCTION if llm_response.tool_calls else LLMRole.ASSISTANT,
@@ -111,32 +131,45 @@ class SimpleToolOrchestrator(TextMessageHandlerProtocol):
                 for tool_call in llm_response.tool_calls:
                     tool_name = tool_call.name
                     tool_args = tool_call.arguments
-                    
+
+                    await self._emit_event(ToolCallEvent(
+                        id=tool_call.id,
+                        name=tool_name,
+                        arguments=tool_args
+                    ))
+
                     try:
                         tool_result = await self.tool_provider.execute_tool(tool_name, tool_args)
-                        
-                        if tool_result.success:
-                            tool_results.append({
-                                "id": tool_call.id,
-                                "name": tool_name,
-                                "result": json.dumps(tool_result.result, default=repr)
-                            })
-                        else:
-                            # Tool execution failed
-                            tool_results.append({
-                                "id": tool_call.id,
-                                "name": tool_name,
-                                "error": f"Error: {tool_result.error}"
-                            })
-                            stress_level += 0.1
+                        success = tool_result.success
+                        result = tool_result.result if success else None
+                        error = tool_result.error if not success else None
                     except Exception as e:
                         # Handle any exceptions during tool execution
+                        success = False
+                        result = None
+                        error = str(e)
+
+                    if success:
                         tool_results.append({
                             "id": tool_call.id,
                             "name": tool_name,
-                            "error": f"Error: {str(e)}"
+                            "result": json.dumps(result, default=repr)
+                        })
+                    else:
+                        tool_results.append({
+                            "id": tool_call.id,
+                            "name": tool_name,
+                            "error": f"Error: {error}"
                         })
                         stress_level += 0.1
+
+                    await self._emit_event(ToolResultEvent(
+                        id=tool_call.id,
+                        name=tool_name,
+                        success=success,
+                        result=_json_safe(result),
+                        error=error
+                    ))
 
                 conversation.append(LLMMessage(
                     role=LLMRole.FUNCTION,                        

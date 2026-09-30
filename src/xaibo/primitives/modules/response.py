@@ -1,7 +1,7 @@
 from typing import BinaryIO
 
 from xaibo.core.protocols import ResponseProtocol
-from xaibo.core.models import FileAttachment, FileType, Response
+from xaibo.core.models import FileAttachment, FileType, Response, ResponseEvent
 
 
 class ResponseHandler(ResponseProtocol):
@@ -9,7 +9,14 @@ class ResponseHandler(ResponseProtocol):
         self._response = Response()
 
     async def get_response(self) -> Response:
-        return self._response
+        # Events are turn-scoped: hand them off and reset
+        response = Response(
+            text=self._response.text,
+            attachments=self._response.attachments,
+            events=self._response.events
+        )
+        self._response.events = []
+        return response
 
     async def respond_text(self, response: str) -> None:
         if self._response.text is None:
@@ -33,3 +40,7 @@ class ResponseHandler(ResponseProtocol):
             else:
                 self._response.text += response.text
         self._response.attachments.extend(response.attachments)
+        self._response.events.extend(response.events)
+
+    async def respond_event(self, event: ResponseEvent) -> None:
+        self._response.events.append(event)
