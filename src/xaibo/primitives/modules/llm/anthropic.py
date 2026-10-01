@@ -272,7 +272,10 @@ class AnthropicLLM(LLMProtocol):
                 usage = LLMUsage(
                     prompt_tokens=response.usage.input_tokens,
                     completion_tokens=response.usage.output_tokens,
-                    total_tokens=response.usage.input_tokens + response.usage.output_tokens
+                    total_tokens=response.usage.input_tokens + response.usage.output_tokens,
+                    # cache reads are billed and still counted inside
+                    # input_tokens, so this stays a subset of the prompt
+                    cached_tokens=getattr(response.usage, "cache_read_input_tokens", 0) or 0
                 )
             
             return LLMResponse(

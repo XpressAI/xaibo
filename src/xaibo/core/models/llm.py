@@ -112,10 +112,17 @@ class LLMOptions(BaseModel):
 
 
 class LLMUsage(BaseModel):
-    """Token usage statistics from an LLM response"""
+    """Token usage statistics from an LLM response
+
+    `cached_tokens` is the subset of `prompt_tokens` the provider served from
+    its prompt cache. It is never an extra spend — `total_tokens` stays prompt
+    plus completion — and a provider that reports cache hits nowhere leaves it
+    at 0.
+    """
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+    cached_tokens: int = 0
 
 
 class LLMResponse(BaseModel):
@@ -141,12 +148,14 @@ class LLMResponse(BaseModel):
                     merged_usage = LLMUsage(
                         prompt_tokens=response.usage.prompt_tokens,
                         completion_tokens=response.usage.completion_tokens,
-                        total_tokens=response.usage.total_tokens
+                        total_tokens=response.usage.total_tokens,
+                        cached_tokens=response.usage.cached_tokens
                     )
                 else:
                     merged_usage.prompt_tokens += response.usage.prompt_tokens
                     merged_usage.completion_tokens += response.usage.completion_tokens
                     merged_usage.total_tokens += response.usage.total_tokens
+                    merged_usage.cached_tokens += response.usage.cached_tokens
             if response.vendor_specific:
                 merged_vendor_specific.update(response.vendor_specific)
 

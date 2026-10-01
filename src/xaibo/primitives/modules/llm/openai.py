@@ -304,10 +304,14 @@ class OpenAILLM(LLMProtocol):
             # Handle usage statistics
             usage = None
             if response.usage:
+                # the cache report sits one level deeper, in a details object
+                # the SDK leaves absent whenever nothing was cached
+                details = getattr(response.usage, "prompt_tokens_details", None)
                 usage = LLMUsage(
                     prompt_tokens=response.usage.prompt_tokens,
                     completion_tokens=response.usage.completion_tokens,
-                    total_tokens=response.usage.total_tokens
+                    total_tokens=response.usage.total_tokens,
+                    cached_tokens=getattr(details, "cached_tokens", 0) or 0
                 )
 
             # When the response was truncated and tool calls were discarded,
