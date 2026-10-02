@@ -237,7 +237,8 @@ class GoogleLLM(LLMProtocol):
             usage = LLMUsage(
                 prompt_tokens=getattr(response.usage_metadata, "prompt_token_count", 0),
                 completion_tokens=getattr(response.usage_metadata, "candidates_token_count", 0),
-                total_tokens=getattr(response.usage_metadata, "total_token_count", 0)
+                total_tokens=getattr(response.usage_metadata, "total_token_count", 0),
+                cached_tokens=getattr(response.usage_metadata, "cached_content_token_count", 0) or 0
             )
         
         # Create the response object

@@ -231,7 +231,7 @@ Configuration options for LLM generation.
 
 Response from language model generation.
 
-**Source**: [`src/xaibo/core/models/llm.py:121`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L121)
+**Source**: [`src/xaibo/core/models/llm.py:128`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L128)
 
 #### Fields
 
@@ -300,6 +300,7 @@ Token usage statistics from the model.
 | `prompt_tokens` | `int` | Yes | Tokens used in the input prompt |
 | `completion_tokens` | `int` | Yes | Tokens generated in the response |
 | `total_tokens` | `int` | Yes | Total tokens used (prompt + completion) |
+| `cached_tokens` | `int` | No (0) | Subset of `prompt_tokens` served from the provider's prompt cache — never an extra spend, so `total_tokens` stays prompt + completion. Providers name it differently (OpenAI-compatible: `usage.prompt_tokens_details.cached_tokens`; Anthropic: `cache_read_input_tokens`); a provider that reports nothing leaves it at 0 |
 
 ## Implementation Example
 

@@ -320,7 +320,10 @@ class BedrockLLM(LLMProtocol):
                 usage = LLMUsage(
                     prompt_tokens=response['usage'].get('inputTokens', 0),
                     completion_tokens=response['usage'].get('outputTokens', 0),
-                    total_tokens=response['usage'].get('totalTokens', 0)
+                    total_tokens=response['usage'].get('totalTokens', 0),
+                    # Anthropic-family models on Bedrock report cache reads in
+                    # the raw usage dict, under the Anthropic name
+                    cached_tokens=response['usage'].get('cache_read_input_tokens', 0) or 0
                 )
             
             return LLMResponse(
