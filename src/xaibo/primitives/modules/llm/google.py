@@ -6,6 +6,7 @@ from google.genai import types
 
 import base64
 
+from xaibo.core.models import reasoning
 from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 from xaibo.core.protocols.llm import LLMProtocol
 
@@ -28,8 +29,13 @@ class GoogleLLM(LLMProtocol):
                     - vertexai: Whether to use Vertex AI (default: False)
                     - project: Project ID for Vertex AI
                     - location: Location for Vertex AI (default: 'us-central1')
+                    - reasoning_mode: "level" (default) for models that take a
+                      thinkingLevel enum (Gemini 3+), "budget" for those that take
+                      a thinking_budget in tokens (Gemini 2.5 and earlier).
         """
         self.model = config.get("model", "gemini-2.0-flash-001")
+        # Which shape of the thinking dial this model speaks (see the mapping).
+        self.reasoning_mode = config.get("reasoning_mode", "level")
         
         # Initialize the client based on configuration
         if config.get("vertexai", False):
@@ -193,10 +199,16 @@ class GoogleLLM(LLMProtocol):
                 tools.append(types.Tool(function_declarations=[function_declaration]))
             config_dict["tools"] = tools
             
+        # The reasoning level, in the shape this model takes (nothing when unset).
+        # Before vendor_specific so a hand-set thinking_config still wins.
+        thinking = reasoning.gemini_thinking(options.reasoning_effort, self.reasoning_mode)
+        if thinking:
+            config_dict["thinking_config"] = types.ThinkingConfig(**thinking)
+
         # Add any vendor-specific parameters
         if options.vendor_specific:
             config_dict.update(options.vendor_specific)
-            
+
         return types.GenerateContentConfig(**config_dict)
 
     def _extract_system_instruction(self, messages: List[LLMMessage]) -> Optional[str]:

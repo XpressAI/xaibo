@@ -222,6 +222,9 @@ class OpenAILLM(LLMProtocol):
             "max_tokens": options.max_tokens,
             "stop": options.stop_sequences,
             "tools": functions,
+            # the API's own name for the reasoning dial, so the level travels
+            # unchanged to OpenAI-compatible gateways that implement it
+            "reasoning_effort": options.reasoning_effort.value if options.reasoning_effort else None,
             **self.default_kwargs,
             **options.vendor_specific
         }

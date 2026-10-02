@@ -4,6 +4,7 @@ from typing import List, Optional, AsyncIterator, Dict, Any
 
 
 from xaibo.core.protocols.llm import LLMProtocol
+from xaibo.core.models import reasoning
 from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,10 @@ class AnthropicLLM(LLMProtocol):
                 - model: The model to use for generation. Default is "claude-3-opus-20240229".
                 - base_url: Base URL for the Anthropic API.
                 - timeout: Timeout for API requests in seconds. Default is 60.0.
+                - reasoning_mode: How this model takes a reasoning level —
+                    "effort" (default) for adaptive-thinking models (Claude 4.6+),
+                    which get `output_config.effort`; "budget" for models that only
+                    take `thinking.budget_tokens` (Claude 4.5 and earlier).
                 - Any additional keys will be passed as arguments to the API.
         """
         from anthropic import AsyncAnthropic
@@ -47,10 +52,14 @@ class AnthropicLLM(LLMProtocol):
             client_kwargs["base_url"] = base_url
         
         self.client = AsyncAnthropic(**client_kwargs)
-        
+
+        # Which shape of the thinking dial this model speaks (see the mapping).
+        self.reasoning_mode = config.get('reasoning_mode', 'effort')
+
         # Store any additional parameters as default kwargs
-        self.default_kwargs = {k: v for k, v in config.items() 
-                              if k not in ['api_key', 'model', 'base_url', 'timeout']}
+        self.default_kwargs = {k: v for k, v in config.items()
+                              if k not in ['api_key', 'model', 'base_url', 'timeout',
+                                           'reasoning_mode']}
     
     def _prepare_messages(self, messages: List[LLMMessage]) -> tuple[list, Optional[str]]:
         """Convert our messages to Anthropic format and extract system message if present"""
@@ -229,7 +238,19 @@ class AnthropicLLM(LLMProtocol):
         # Add stop sequences if present
         if options.stop_sequences:
             kwargs["stop_sequences"] = options.stop_sequences
-            
+
+        # The reasoning level, mapped to this model's shape (nothing when unset).
+        # An explicit `thinking`/`output_config` from config or vendor_specific
+        # still wins, the way vendor_specific already outranks the options above.
+        for key, value in reasoning.anthropic_kwargs(
+                options.reasoning_effort, self.reasoning_mode, kwargs.get("max_tokens")).items():
+            if key == "max_tokens":
+                # budget-based thinking bills against the ceiling and must be
+                # strictly below it, so a level may only ever raise the ceiling
+                kwargs[key] = max(kwargs[key], value)
+            else:
+                kwargs.setdefault(key, value)
+
         return kwargs
     
     async def generate(

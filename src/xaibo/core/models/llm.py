@@ -87,6 +87,26 @@ class LLMMessage(BaseModel):
 
 
 
+class ReasoningEffort(str, Enum):
+    """How much thinking a reasoning model may do before it answers.
+
+    One vocabulary for the dial every provider names differently
+    (`reasoning_effort` on OpenAI-compatible APIs, `thinking.budget_tokens` on
+    Anthropic, `thinkingConfig.thinking_budget` on Gemini). A provider sends
+    only the levels its model understands and leaves the request untouched for
+    the rest: an effort that means nothing to a model must not fail the call.
+
+    `NONE` is the explicit off switch for models that reason by default.
+    """
+    NONE = "none"
+    MINIMAL = "minimal"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    XHIGH = "xhigh"
+    MAX = "max"
+
+
 class LLMOptions(BaseModel):
     """Common options for LLM requests"""
     temperature: Optional[float] = 1.0
@@ -94,6 +114,7 @@ class LLMOptions(BaseModel):
     max_tokens: Optional[int] = None
     stop_sequences: Optional[List[str]] = None
     functions: Optional[List[Tool]] = None
+    reasoning_effort: Optional[ReasoningEffort] = None
     vendor_specific: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     @field_validator('temperature')
