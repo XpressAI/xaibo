@@ -254,15 +254,19 @@ options = LLMOptions(reasoning_effort="high")   # or ReasoningEffort.HIGH
 response = await llm.generate(messages, options)
 ```
 
-Each bundled provider maps it to the shape its API takes — see
-[`xaibo.core.models.reasoning`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/reasoning.py)
-for the single place those mappings live, and the
-[LLM modules reference](../modules/llm.md) for the `reasoning_mode` each module
-offers (Anthropic's `output_config.effort` vs `thinking.budget_tokens`, Gemini's
-`thinkingLevel` vs `thinkingBudget`, Bedrock's `additionalModelRequestFields`).
-OpenAI-compatible providers need no mapping: `reasoning_effort` is already that
-API's own field name. A `vendor_specific` value for the same field always wins —
-someone who wrote it by hand meant it.
+**Mapping it to the wire is each provider's business**, the same way its message
+format and usage fields are: the core carries the vocabulary, the implementation
+carries the API's spelling. See the
+[LLM modules reference](../modules/llm.md) for what each one sends and the
+`reasoning_mode` it offers — Anthropic's `output_config.effort` vs
+`thinking.budget_tokens` ([`claude_thinking.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/llm/claude_thinking.py),
+shared with Bedrock, whose Converse API carries the same fields), Gemini's
+`thinkingLevel` vs `thinkingBudget`, OpenAI-compatible APIs verbatim (that API
+already names the field `reasoning_effort`, so there is nothing to map).
+
+A provider that cannot express a level lowers it rather than dropping it, and a
+`vendor_specific` value for the same field always wins — someone who wrote it by
+hand meant it.
 
 ### LLMResponse
 

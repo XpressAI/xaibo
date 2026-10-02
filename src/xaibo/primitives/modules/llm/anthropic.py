@@ -4,8 +4,9 @@ from typing import List, Optional, AsyncIterator, Dict, Any
 
 
 from xaibo.core.protocols.llm import LLMProtocol
-from xaibo.core.models import reasoning
 from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
+
+from .claude_thinking import thinking_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -239,10 +240,10 @@ class AnthropicLLM(LLMProtocol):
         if options.stop_sequences:
             kwargs["stop_sequences"] = options.stop_sequences
 
-        # The reasoning level, mapped to this model's shape (nothing when unset).
-        # An explicit `thinking`/`output_config` from config or vendor_specific
-        # still wins, the way vendor_specific already outranks the options above.
-        for key, value in reasoning.anthropic_kwargs(
+        # The reasoning level, in this model's shape (nothing when unset). An
+        # explicit `thinking`/`output_config` from config or vendor_specific still
+        # wins, the way vendor_specific already outranks the options above.
+        for key, value in thinking_kwargs(
                 options.reasoning_effort, self.reasoning_mode, kwargs.get("max_tokens")).items():
             if key == "max_tokens":
                 # budget-based thinking bills against the ceiling and must be

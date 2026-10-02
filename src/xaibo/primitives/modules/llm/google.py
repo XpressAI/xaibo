@@ -6,11 +6,24 @@ from google.genai import types
 
 import base64
 
-from xaibo.core.models import reasoning
 from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 from xaibo.core.protocols.llm import LLMProtocol
 
 logger = logging.getLogger(__name__)
+
+# Gemini's thinkingLevel enum (the SDK's values are uppercase). The ladder stops
+# at HIGH, so `xhigh`/`max` take HIGH rather than being dropped, and `minimal`
+# takes LOW because not every model has a MINIMAL rung. `none` also takes LOW:
+# Gemini 3 cannot disable thinking at all, so there is no off rung to send.
+# The budget shape (Gemini 2.5 and earlier) does have one — `thinking_budget: 0`.
+LEVELS = {"none": "LOW", "minimal": "LOW", "low": "LOW",
+          "medium": "MEDIUM", "high": "HIGH", "xhigh": "HIGH", "max": "HIGH"}
+
+# Token budgets for the budget shape, where depth is only a number of thinking
+# tokens. The rungs above high share high's budget: this shape has no ladder
+# past it, so they can only mean "at least this much".
+BUDGETS = {"minimal": 1024, "low": 2048, "medium": 8192,
+           "high": 16384, "xhigh": 16384, "max": 16384}
 
 
 class GoogleLLM(LLMProtocol):
@@ -157,6 +170,21 @@ class GoogleLLM(LLMProtocol):
         
         return schema_dict
 
+    def _thinking_config(self, effort) -> Dict[str, Any]:
+        """`thinkingConfig` fields carrying a `reasoning_effort`.
+
+        Unset sends nothing: a model not asked how much to think uses its own
+        dynamic default, which is a real choice rather than a missing one.
+        """
+        if not effort:
+            return {}
+        if self.reasoning_mode == "budget":
+            return {"thinking_budget": 0 if effort == "none"
+                    else BUDGETS.get(effort, BUDGETS["high"])}
+        # a str enum member and its name are the same key, so the option needs no
+        # normalizing; an unknown level clamps to HIGH rather than vanishing
+        return {"thinking_level": LEVELS.get(effort, "HIGH")}
+
     def _prepare_config(self, options: Optional[LLMOptions]) -> types.GenerateContentConfig:
         """Prepare configuration for the API request"""
         if not options:
@@ -201,7 +229,7 @@ class GoogleLLM(LLMProtocol):
             
         # The reasoning level, in the shape this model takes (nothing when unset).
         # Before vendor_specific so a hand-set thinking_config still wins.
-        thinking = reasoning.gemini_thinking(options.reasoning_effort, self.reasoning_mode)
+        thinking = self._thinking_config(options.reasoning_effort)
         if thinking:
             config_dict["thinking_config"] = types.ThinkingConfig(**thinking)
 

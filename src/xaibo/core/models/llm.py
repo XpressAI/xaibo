@@ -90,13 +90,17 @@ class LLMMessage(BaseModel):
 class ReasoningEffort(str, Enum):
     """How much thinking a reasoning model may do before it answers.
 
-    One vocabulary for the dial every provider names differently
-    (`reasoning_effort` on OpenAI-compatible APIs, `thinking.budget_tokens` on
-    Anthropic, `thinkingConfig.thinking_budget` on Gemini). A provider sends
-    only the levels its model understands and leaves the request untouched for
-    the rest: an effort that means nothing to a model must not fail the call.
+    The vocabulary only — how a level reaches the wire is each provider module's
+    business, since every vendor names the dial differently and some changed
+    spelling between model generations. Three rules a provider implementation
+    owes this enum:
 
-    `NONE` is the explicit off switch for models that reason by default.
+    - **unset sends nothing.** A model not asked how much to think uses its own
+      default; inventing a value would make a UI's "default" a lie.
+    - **a level the model cannot express is lowered, never dropped.** Asking for
+      more thinking and silently getting none is the wrong direction of error.
+    - **a model with no off switch has no `NONE`.** Take its lowest rung instead
+      of sending a disable flag it rejects.
     """
     NONE = "none"
     MINIMAL = "minimal"
