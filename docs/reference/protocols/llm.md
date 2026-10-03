@@ -209,7 +209,7 @@ Enumeration of content types.
 
 Configuration options for LLM generation.
 
-**Source**: [`src/xaibo/core/models/llm.py:90`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L90)
+**Source**: [`src/xaibo/core/models/llm.py:110`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L110)
 
 #### Fields
 
@@ -220,18 +220,59 @@ Configuration options for LLM generation.
 | `max_tokens` | `int` | `None` | Maximum tokens to generate |
 | `stop_sequences` | `List[str]` | `None` | Sequences that stop generation |
 | `functions` | `List[Tool]` | `None` | Available tools for function calling |
+| `reasoning_effort` | [`ReasoningEffort`](#reasoningeffort) | `None` | How much a reasoning model may think before answering |
 | `vendor_specific` | `Dict[str, Any]` | `{}` | Provider-specific options |
 
 #### Validation
 
 - `temperature`: Must be between 0.0 and 2.0
 - `top_p`: Must be between 0.0 and 1.0
+- `reasoning_effort`: One of the `ReasoningEffort` values (its string works too)
+
+### ReasoningEffort
+
+How hard a reasoning model is asked to think. One vocabulary for a dial every
+provider names differently — a provider maps the levels its model understands
+and leaves the request untouched for the rest, so a level that means nothing to
+a model never fails the call. Unset (the default) sends nothing: the model uses
+its own effort.
+
+**Source**: [`src/xaibo/core/models/llm.py:90`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L90)
+
+| Value | Description |
+|-------|-------------|
+| `none` | Explicit off switch for models that reason by default |
+| `minimal` | A little thinking, mostly answering |
+| `low` | Quick reasoning |
+| `medium` | Balanced reasoning |
+| `high` | Thorough reasoning |
+| `xhigh` | Very thorough (not every model has it) |
+| `max` | As much as the model allows |
+
+```python
+options = LLMOptions(reasoning_effort="high")   # or ReasoningEffort.HIGH
+response = await llm.generate(messages, options)
+```
+
+**Mapping it to the wire is each provider's business**, the same way its message
+format and usage fields are: the core carries the vocabulary, the implementation
+carries the API's spelling. See the
+[LLM modules reference](../modules/llm.md) for what each one sends and the
+`reasoning_mode` it offers — Anthropic's `output_config.effort` vs
+`thinking.budget_tokens` ([`claude_thinking.py`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/primitives/modules/llm/claude_thinking.py),
+shared with Bedrock, whose Converse API carries the same fields), Gemini's
+`thinkingLevel` vs `thinkingBudget`, OpenAI-compatible APIs verbatim (that API
+already names the field `reasoning_effort`, so there is nothing to map).
+
+A provider that cannot express a level lowers it rather than dropping it, and a
+`vendor_specific` value for the same field always wins — someone who wrote it by
+hand meant it.
 
 ### LLMResponse
 
 Response from language model generation.
 
-**Source**: [`src/xaibo/core/models/llm.py:128`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L128)
+**Source**: [`src/xaibo/core/models/llm.py:149`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L149)
 
 #### Fields
 
@@ -291,7 +332,7 @@ Result from executing a function call.
 
 Token usage statistics from the model.
 
-**Source**: [`src/xaibo/core/models/llm.py:114`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L114)
+**Source**: [`src/xaibo/core/models/llm.py:135`](https://github.com/xpressai/xaibo/blob/main/src/xaibo/core/models/llm.py#L135)
 
 #### Fields
 

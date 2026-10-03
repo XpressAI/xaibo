@@ -155,6 +155,7 @@ class TextBasedToolCallAdapter(LLMProtocol):
             temperature=options.temperature,
             top_p=options.top_p,
             max_tokens=options.max_tokens,
+            reasoning_effort=options.reasoning_effort,
             vendor_specific=options.vendor_specific
         )
         
@@ -206,6 +207,7 @@ class TextBasedToolCallAdapter(LLMProtocol):
             temperature=options.temperature,
             top_p=options.top_p,
             max_tokens=options.max_tokens,
+            reasoning_effort=options.reasoning_effort,
             vendor_specific=options.vendor_specific
         )
         

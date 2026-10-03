@@ -26,6 +26,12 @@ OpenAI language model integration supporting GPT models.
 | `max_tokens` | `int` | `None` | Default maximum tokens to generate |
 | `top_p` | `float` | `None` | Default nucleus sampling parameter |
 
+**Reasoning levels.** [`reasoning_effort`](../protocols/llm.md#reasoningeffort) is
+sent as the API's own `reasoning_effort` field, so it works unchanged against
+OpenAI-compatible gateways that implement it (`none`…`max`) and is simply absent
+when unset. No `reasoning_mode` is needed here: the framework name already is the
+provider name.
+
 **Note**: Additional configuration keys become default_kwargs and are passed to the OpenAI API.
 
 
@@ -98,7 +104,14 @@ Anthropic Claude model integration.
 | `timeout` | `float` | `60.0` | Request timeout in seconds |
 | `temperature` | `float` | `None` | Default sampling temperature |
 | `max_tokens` | `int` | `None` | Default maximum tokens to generate |
+| `reasoning_mode` | `str` | `"effort"` | Shape a [`reasoning_effort`](../protocols/llm.md#reasoningeffort) is sent in: `"effort"` → `output_config.effort` (adaptive thinking, Claude 4.6+), `"budget"` → `thinking.budget_tokens` (Claude 4.5 and earlier; deprecated on 4.6, rejected by 4.7+) |
 
+**Reasoning levels.** Unset sends no thinking fields at all, so the model's own
+default stands. `none` maps to `thinking: {type: "disabled"}`, and `minimal` —
+which is not on Anthropic's effort ladder — to `low`. In `"budget"` mode the module
+also raises `max_tokens` above the budget, since thinking tokens are billed
+against that ceiling. A `thinking` or `output_config` you set yourself, in `config`
+or `vendor_specific`, always wins.
 
 ### Example Configuration
 
@@ -160,6 +173,20 @@ Google Gemini model integration with Vertex AI support.
 | `location` | `str` | `"us-central1"` | Vertex AI location |
 | `temperature` | `float` | `None` | Default sampling temperature |
 | `max_tokens` | `int` | `None` | Default maximum tokens to generate (mapped to `max_output_tokens` internally) |
+| `reasoning_mode` | `str` | `"level"` | Shape a [`reasoning_effort`](../protocols/llm.md#reasoningeffort) is sent in: `"level"` → `thinkingConfig.thinking_level` (Gemini 3+, the recommended spelling), `"budget"` → `thinkingConfig.thinking_budget` tokens (Gemini 2.5 and earlier, where `0` disables thinking) |
+
+**Reasoning levels.** Gemini's level enum stops at `HIGH`, so `xhigh`/`max` take
+`HIGH` rather than being dropped, and `none`/`minimal` take `LOW` — Gemini 3 cannot
+switch thinking off at all. Unset sends no `thinking_config`; a `thinking_config`
+in `vendor_specific` wins.
+
+| `ReasoningEffort` | `"level"` | `"budget"` |
+|---|---|---|
+| `none` | `LOW` | `0` |
+| `minimal` / `low` | `LOW` | `1024` / `2048` |
+| `medium` | `MEDIUM` | `8192` |
+| `high` | `HIGH` | `16384` |
+| `xhigh` / `max` | `HIGH` | `16384` (high's budget — these models have no rung above it) |
 
 **Note**: The `config` parameter is required for initialization. Either `api_key` (for AI Studio) or `vertexai=true` with `project` (for Vertex AI) must be provided.
 
@@ -232,7 +259,15 @@ AWS Bedrock model integration supporting multiple providers.
 | `timeout` | `float` | `60.0` | Request timeout in seconds |
 | `temperature` | `float` | `None` | Default sampling temperature |
 | `max_tokens` | `int` | `None` | Default maximum tokens to generate |
+| `reasoning_mode` | `str` | `"effort"` | How a [`reasoning_effort`](../protocols/llm.md#reasoningeffort) reaches `additionalModelRequestFields`: `"effort"` (adaptive-thinking Claude — Opus 4.6+, Sonnet 4.6+), `"budget"` (budget-based Claude), `"off"` to send nothing |
 
+**Reasoning levels.** Converse carries Anthropic's `thinking` / `output_config`
+fields verbatim, so the mapping is [Anthropic's](#anthropicllm); the output ceiling
+it has to fit a budget under is spelled `inferenceConfig.maxTokens`. Converse does
+not expose which shape a model speaks, so `reasoning_mode` is a config choice —
+`"off"` is the honest value for anything that is not Claude (`meta.*`, `mistral.*`,
+imported models). A `thinking`/`output_config` you set in `vendor_specific` wins
+over the level.
 
 ### Example Configuration
 

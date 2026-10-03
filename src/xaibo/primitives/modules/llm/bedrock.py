@@ -9,6 +9,8 @@ from xaibo.core.protocols.llm import LLMProtocol
 from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions, LLMResponse, LLMFunctionCall, LLMUsage, LLMRole
 
 
+from .claude_thinking import thinking_kwargs
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,6 +31,12 @@ class BedrockLLM(LLMProtocol):
                 - region_name: AWS region. Default is "us-east-1".
                 - model: The model to use. Default is "anthropic.claude-v2".
                 - timeout: Timeout for API requests in seconds. Default is 60.0.
+                - reasoning_mode: How a reasoning level is put on the wire for
+                    Claude models — "effort" (default) for adaptive-thinking
+                    Claude (Opus 4.6+, Sonnet 4.6+), "budget" for budget-based
+                    Claude, "off" to never send one (any non-Claude model:
+                    Converse has no thinking field they share, so this cannot be
+                    inferred from the model id here).
                 - Any additional keys will be passed as arguments to the API.
         """
         import boto3
@@ -52,11 +60,16 @@ class BedrockLLM(LLMProtocol):
         )
         
         self.model = config.get('model', 'anthropic.claude-v2')
+        # Which Claude thinking shape the model behind this client speaks.
+        # Converse does not expose it, and the model id is not a reliable read
+        # (imported/endpoints/aliases), so it is a config choice; 'off' for
+        # anything that is not Claude.
+        self.reasoning_mode = config.get('reasoning_mode', 'effort')
         
         # Store any additional parameters as default kwargs
         self.default_kwargs = {k: v for k, v in config.items() 
                              if k not in ['aws_access_key_id', 'aws_secret_access_key', 
-                                        'region_name', 'model', 'timeout']}
+                                        'region_name', 'model', 'timeout', 'reasoning_mode']}
 
     def _prepare_messages(self, messages: List[LLMMessage], options: LLMOptions) -> tuple[List[Dict[str, Any]], Optional[List[Dict[str, Any]]], Optional[Dict[str, Any]]]:
         """Prepare the messages, system prompt, and tool config for the Bedrock Converse API"""
@@ -288,9 +301,25 @@ class BedrockLLM(LLMProtocol):
             request["toolConfig"] = tool_config
             
         # Add vendor specific parameters
-        if options.vendor_specific:
-            request["additionalModelRequestFields"] = options.vendor_specific
-            
+        fields: Dict[str, Any] = dict(options.vendor_specific or {})
+
+        # The reasoning level rides in the same additional fields (nothing when
+        # unset). Applied first, so an explicit hand-set thinking/output_config
+        # in vendor_specific still wins.
+        if self.reasoning_mode != 'off':
+            for key, value in thinking_kwargs(
+                    options.reasoning_effort, self.reasoning_mode,
+                    inference_config["maxTokens"]).items():
+                if key == "max_tokens":
+                    # Converse spells the ceiling differently, and thinking tokens
+                    # are billed against it: a level may only ever raise it.
+                    inference_config["maxTokens"] = max(inference_config["maxTokens"], value)
+                else:
+                    fields.setdefault(key, value)
+
+        if fields:
+            request["additionalModelRequestFields"] = fields
+
         return request
 
     async def generate(

@@ -87,6 +87,30 @@ class LLMMessage(BaseModel):
 
 
 
+class ReasoningEffort(str, Enum):
+    """How much thinking a reasoning model may do before it answers.
+
+    The vocabulary only — how a level reaches the wire is each provider module's
+    business, since every vendor names the dial differently and some changed
+    spelling between model generations. Three rules a provider implementation
+    owes this enum:
+
+    - **unset sends nothing.** A model not asked how much to think uses its own
+      default; inventing a value would make a UI's "default" a lie.
+    - **a level the model cannot express is lowered, never dropped.** Asking for
+      more thinking and silently getting none is the wrong direction of error.
+    - **a model with no off switch has no `NONE`.** Take its lowest rung instead
+      of sending a disable flag it rejects.
+    """
+    NONE = "none"
+    MINIMAL = "minimal"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    XHIGH = "xhigh"
+    MAX = "max"
+
+
 class LLMOptions(BaseModel):
     """Common options for LLM requests"""
     temperature: Optional[float] = 1.0
@@ -94,6 +118,7 @@ class LLMOptions(BaseModel):
     max_tokens: Optional[int] = None
     stop_sequences: Optional[List[str]] = None
     functions: Optional[List[Tool]] = None
+    reasoning_effort: Optional[ReasoningEffort] = None
     vendor_specific: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     @field_validator('temperature')
