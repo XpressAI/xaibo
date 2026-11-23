@@ -75,7 +75,7 @@ modules:
   - module: xaibo.primitives.modules.llm.OpenAILLM
     id: llm
     config:
-      model: gpt-4.1-nano
+      model: gpt-5.6-luna
   - module: xaibo.primitives.modules.tools.PythonToolProvider
     id: python-tools
     config:
