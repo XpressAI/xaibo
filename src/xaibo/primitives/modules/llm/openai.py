@@ -12,6 +12,9 @@ from xaibo.core.models.llm import LLMMessage, LLMMessageContentType, LLMOptions,
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_OPENAI_MODEL = "gpt-5.6-luna"
+DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
+
 
 class OpenAILLM(LLMProtocol):
     """Implementation of LLMProtocol for OpenAI API"""
@@ -26,7 +29,7 @@ class OpenAILLM(LLMProtocol):
         Args:
             config: Configuration dictionary with the following optional keys:
                 - api_key: OpenAI API key. If not provided, will try to get from OPENAI_API_KEY env var.
-                - model: The model to use for generation. Default is "gpt-4.1-nano".
+                - model: The model to use for generation. Default is "gpt-5.6-luna" on OpenAI.
                 - base_url: Base URL for the OpenAI API. Default is "https://api.openai.com/v1".
                 - timeout: Timeout for API requests in seconds. Default is 60.0.
                 - Any additional keys will be passed as arguments to the API.
@@ -37,10 +40,8 @@ class OpenAILLM(LLMProtocol):
         if not self.api_key:
             raise ValueError("OpenAI API key must be provided or set as OPENAI_API_KEY environment variable")
         
-        self.model = config.get('model', "gpt-4.1-nano")
-        
+        base_url = config.get('base_url', DEFAULT_OPENAI_BASE_URL)
         # Extract known configuration parameters
-        base_url = config.get('base_url', "https://api.openai.com/v1")
         timeout = config.get('timeout', 60.0)
         
         # Create client with core parameters
@@ -50,6 +51,10 @@ class OpenAILLM(LLMProtocol):
             timeout=timeout
         )
         
+        endpoint = self.client.base_url
+        self._direct_openai = endpoint.scheme == "https" and endpoint.host == "api.openai.com"
+        self.model = config.get('model', DEFAULT_OPENAI_MODEL if self._direct_openai else "gpt-4.1-nano")
+
         # Store any additional parameters as default kwargs
         self.default_kwargs = {k: v for k, v in config.items()
                               if k not in ['api_key', 'model', 'base_url', 'timeout']}
@@ -230,6 +235,17 @@ class OpenAILLM(LLMProtocol):
         }
         
         
+        if self._direct_openai and kwargs["model"] == DEFAULT_OPENAI_MODEL:
+            # Preserve the prior non-reasoning default and the token cap.
+            if kwargs["reasoning_effort"] is None:
+                kwargs["reasoning_effort"] = "none"
+            max_tokens = kwargs.pop("max_tokens")
+            if kwargs.get("max_completion_tokens") is None and max_tokens is not None:
+                kwargs["max_completion_tokens"] = max_tokens
+            if kwargs["reasoning_effort"] != "none":
+                kwargs.pop("temperature", None)
+                kwargs.pop("top_p", None)
+
         # Add stream parameter if streaming
         if stream:
             kwargs["stream"] = True

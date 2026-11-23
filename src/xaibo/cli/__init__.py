@@ -91,13 +91,13 @@ def get_default_model_for_provider(provider):
     """
 
     provider_configs = {
-        'openai': ('OpenAILLM', 'gpt-4.1-nano'),  
+        'openai': ('OpenAILLM', 'gpt-5.6-luna'),
         'anthropic': ('AnthropicLLM', 'claude-3-5-sonnet-20241022'), 
         'google': ('GoogleLLM', 'gemini-1.5-flash'),  
         'bedrock': ('BedrockLLM', 'anthropic.claude-3-5-sonnet-20241022-v2:0')
     }
     
-    return provider_configs.get(provider, ('OpenAILLM', 'gpt-4o-mini'))
+    return provider_configs.get(provider, provider_configs['openai'])
 
 def select_primary_llm_provider(modules):
     """
